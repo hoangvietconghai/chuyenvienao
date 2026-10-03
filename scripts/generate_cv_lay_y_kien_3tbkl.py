@@ -7,12 +7,19 @@ Tạo tệp Word (.docx) Công văn lấy ý kiến Ủy viên Ban Thường v�
 
 import os
 import sys
+from pathlib import Path
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from scripts.export_docx import PartyDocumentBuilder
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+try:
+    from scripts.export_docx import PartyDocumentBuilder
+except ImportError:
+    from export_docx import PartyDocumentBuilder
 
 
 def generate_cv_lay_y_kien():
@@ -50,7 +57,7 @@ def generate_cv_lay_y_kien():
     builder.build_body()
     builder.build_footer()
 
-    out_file = os.path.abspath(r"van_ban_du_thao\CV_lay_y_kien_BTV_ve_03_TBKL_kiem_tra_PCTNLPTC_2026.docx")
+    out_file = str(BASE_DIR / "van_ban_du_thao" / "CV_lay_y_kien_BTV_ve_03_TBKL_kiem_tra_PCTNLPTC_2026.docx")
     builder.save(out_file)
     print(f"Đã xuất Công văn lấy ý kiến chùm 03 TBKL: {out_file}")
     return out_file

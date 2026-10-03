@@ -10,12 +10,19 @@ Tạo 4 tệp Word (.docx) chuẩn thể thức Đảng theo HD 05-HD/VPTW:
 
 import os
 import sys
+from pathlib import Path
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from scripts.export_docx import PartyDocumentBuilder
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+try:
+    from scripts.export_docx import PartyDocumentBuilder
+except ImportError:
+    from export_docx import PartyDocumentBuilder
 
 
 def generate_bao_cao_tham_dinh_tong_hop():
@@ -91,7 +98,7 @@ def generate_bao_cao_tham_dinh_tong_hop():
     builder.build_body()
     builder.build_footer()
     
-    out_file = os.path.abspath(r"van_ban_du_thao\BC_tham_dinh_chum_03_TBKL_kiem_tra_PCTNLPTC_2026.docx")
+    out_file = str(BASE_DIR / "van_ban_du_thao" / "BC_tham_dinh_chum_03_TBKL_kiem_tra_PCTNLPTC_2026.docx")
     builder.save(out_file)
     print(f"Đã xuất Báo cáo Thẩm định tổng hợp: {out_file}")
     return out_file
@@ -153,7 +160,7 @@ def generate_tbkl_suoi_gieng():
     b.build_title_section()
     b.build_body()
     b.build_footer()
-    out = os.path.abspath(r"van_ban_du_thao\TBKL_kiem_tra_Chi_bo_thon_Suoi_Gieng_chuan_hoa.docx")
+    out = str(BASE_DIR / "van_ban_du_thao" / "TBKL_kiem_tra_Chi_bo_thon_Suoi_Gieng_chuan_hoa.docx")
     b.save(out)
     print(f"Đã xuất TBKL Suối Giếng: {out}")
     return out
@@ -215,7 +222,7 @@ def generate_tbkl_truong_mau_giao():
     b.build_title_section()
     b.build_body()
     b.build_footer()
-    out = os.path.abspath(r"van_ban_du_thao\TBKL_kiem_tra_Chi_bo_Truong_Mau_giao_chuan_hoa.docx")
+    out = str(BASE_DIR / "van_ban_du_thao" / "TBKL_kiem_tra_Chi_bo_Truong_Mau_giao_chuan_hoa.docx")
     b.save(out)
     print(f"Đã xuất TBKL Trường Mẫu giáo: {out}")
     return out
@@ -271,7 +278,7 @@ def generate_tbkl_cong_an_xa():
     b.build_title_section()
     b.build_body()
     b.build_footer()
-    out = os.path.abspath(r"van_ban_du_thao\TBKL_kiem_tra_Chi_bo_Cong_an_xa_chuan_hoa.docx")
+    out = str(BASE_DIR / "van_ban_du_thao" / "TBKL_kiem_tra_Chi_bo_Cong_an_xa_chuan_hoa.docx")
     b.save(out)
     print(f"Đã xuất TBKL Công an xã: {out}")
     return out

@@ -8,23 +8,36 @@ Tạo 2 tệp văn bản Word (.docx):
 
 import os
 import sys
+from pathlib import Path
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 import docx
 from docx.shared import Mm, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.enum.table import WD_TABLE_ALIGNMENT
 
-from scripts.export_docx import (
-    PartyDocumentBuilder,
-    set_cell_margins,
-    remove_table_borders,
-    add_horizontal_line,
-    parse_markdown_runs
-)
+try:
+    from scripts.export_docx import (
+        PartyDocumentBuilder,
+        set_cell_margins,
+        remove_table_borders,
+        add_horizontal_line,
+        parse_markdown_runs
+    )
+except ImportError:
+    from export_docx import (
+        PartyDocumentBuilder,
+        set_cell_margins,
+        remove_table_borders,
+        add_horizontal_line,
+        parse_markdown_runs
+    )
 
 
 def generate_cong_van_lay_y_kien():
@@ -59,7 +72,7 @@ def generate_cong_van_lay_y_kien():
     builder.build_body()
     builder.build_footer()
 
-    out_file = os.path.abspath(r"van_ban_du_thao\CV_lay_y_kien_BTV_ve_TBKL_kiem_tra_Chi_bo_Suoi_Gieng.docx")
+    out_file = str(BASE_DIR / "van_ban_du_thao" / "CV_lay_y_kien_BTV_ve_TBKL_kiem_tra_Chi_bo_Suoi_Gieng.docx")
     builder.save(out_file)
     print(f"Đã xuất Công văn lấy ý kiến: {out_file}")
     return out_file
@@ -361,7 +374,7 @@ def generate_phieu_xin_y_kien():
     r.font.size = Pt(14)
     r.font.bold = True
 
-    out_file = os.path.abspath(r"van_ban_du_thao\Phieu_xin_y_kien_BTV_ve_TBKL_kiem_tra_Chi_bo_Suoi_Gieng.docx")
+    out_file = str(BASE_DIR / "van_ban_du_thao" / "Phieu_xin_y_kien_BTV_ve_TBKL_kiem_tra_Chi_bo_Suoi_Gieng.docx")
     doc.save(out_file)
     print(f"Đã xuất Phiếu xin ý kiến: {out_file}")
     return out_file

@@ -81,10 +81,10 @@ def add_horizontal_line(paragraph, width_pt=186, weight_pt=0.75):
 
 def parse_markdown_runs(paragraph, text, base_font_size=14, base_font_name="Times New Roman", default_bold=False, default_italic=False):
     """
-    Phân tích chuỗi có định dạng markdown cơ bản (**in đậm**, *in nghiêng*) 
+    Phân tích chuỗi có định dạng markdown cơ bản (***vừa đậm vừa nghiêng***, **in đậm**, *in nghiêng*) 
     và thêm các run tương ứng vào paragraph.
     """
-    pattern = r'(\*\*.*?\*\*|\*.*?\*)'
+    pattern = r'(\*\*\*.*?\*\*\*|\*\*.*?\*\*|\*.*?\*)'
     tokens = re.split(pattern, text)
     
     for token in tokens:
@@ -94,7 +94,11 @@ def parse_markdown_runs(paragraph, text, base_font_size=14, base_font_name="Time
         is_italic = default_italic
         clean_text = token
         
-        if token.startswith('**') and token.endswith('**') and len(token) >= 4:
+        if token.startswith('***') and token.endswith('***') and len(token) >= 6:
+            is_bold = True
+            is_italic = True
+            clean_text = token[3:-3]
+        elif token.startswith('**') and token.endswith('**') and len(token) >= 4:
             is_bold = True
             clean_text = token[2:-2]
         elif token.startswith('*') and token.endswith('*') and len(token) >= 2:
@@ -435,7 +439,7 @@ class PartyDocumentBuilder:
             body_part = text[colon_idx + 1:].strip()
             
             # Làm sạch các ký hiệu markdown trong phần tiền tố và tiêu đề để nhận diện
-            clean_prefix = prefix_part.replace('**', '').replace('*', '').strip()
+            clean_prefix = prefix_part.replace('***', '').replace('**', '').replace('*', '').strip()
             
             # Khớp tiền tố chỉ mục: Chỉ áp dụng in đậm đồng bộ cho Số (1., 2.) và Chữ cái (a), b), a., b.)
             # Tuyệt đối KHÔNG in đậm chỉ mục dấu gạch ngang (-) và dấu cộng (+) (chuẩn Cấp 4, 5 HD 05-HD/VPTW)
@@ -456,7 +460,7 @@ class PartyDocumentBuilder:
                     r_title.font.color.rgb = RGBColor(0, 0, 0)
                     
                     # Dọn sạch các ký tự markdown thừa ở đầu body_part nếu có
-                    clean_body = re.sub(r'^\*\*\s*', '', body_part)
+                    clean_body = re.sub(r'^\*{1,3}\s*', '', body_part)
                     if clean_body:
                         # BẮT BUỘC: Nội dung sau dấu hai chấm là chữ in thường
                         parse_markdown_runs(p, clean_body, base_font_size=14, default_bold=False, default_italic=default_italic)
@@ -465,7 +469,7 @@ class PartyDocumentBuilder:
         # 2. Nhận diện Tiêu đề tiểu mục độc lập (ví dụ: "1. Mục tiêu tổng quát", "2. Nhiệm vụ và giải pháp")
         m_sub = re.match(r'^((?:\d+\.|[a-z]\))\s+[A-ZÀ-Ỹ][^.\n]{2,80})$', text)
         if m_sub:
-            clean_sub = text.replace('**', '').replace('*', '').strip()
+            clean_sub = text.replace('***', '').replace('**', '').replace('*', '').strip()
             r_sub = p.add_run(clean_sub)
             r_sub.font.name = "Times New Roman"
             r_sub.font.size = Pt(14)
@@ -501,7 +505,7 @@ class PartyDocumentBuilder:
                 p = self.doc.add_paragraph()
                 
                 # 1. Nhận diện Tiêu đề mục lớn độc lập (PHẦN THỨ..., I., II., III. không có nội dung sau dấu :)
-                is_major_heading = bool(re.match(r'^(PHẦN\s+[A-Z0-9À-Ỹ]+|[I|V|X]+\.\s+[^\n:]+$)', text))
+                is_major_heading = bool(re.match(r'^(PHẦN\s+[A-Z0-9À-Ỹ]+|[IVX]+\.\s+[^\n:]+$)', text))
                 
                 if is_major_heading:
                     self._format_body_paragraph(p, first_line_indent_mm=10, before_pt=6, after_pt=6, line_spacing_pt=18, align=WD_ALIGN_PARAGRAPH.JUSTIFY)

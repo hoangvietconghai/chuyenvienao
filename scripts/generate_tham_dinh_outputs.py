@@ -8,13 +8,20 @@ Tạo 2 tệp văn bản Word (.docx) chuẩn thể thức Đảng theo HD 05-HD
 
 import os
 import sys
+from pathlib import Path
 
 # Thiết lập encoding UTF-8
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from scripts.export_docx import PartyDocumentBuilder
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+try:
+    from scripts.export_docx import PartyDocumentBuilder
+except ImportError:
+    from export_docx import PartyDocumentBuilder
 
 
 def generate_bao_cao_tham_dinh():
@@ -79,7 +86,7 @@ def generate_bao_cao_tham_dinh():
     builder.build_body()
     builder.build_footer()
     
-    out_file = os.path.abspath(r"van_ban_du_thao\BC_tham_dinh_du_thao_TBKL_kiem_tra_Chi_bo_Suoi_Gieng.docx")
+    out_file = str(BASE_DIR / "van_ban_du_thao" / "BC_tham_dinh_du_thao_TBKL_kiem_tra_Chi_bo_Suoi_Gieng.docx")
     builder.save(out_file)
     print(f"Đã xuất Báo cáo Thẩm định: {out_file}")
     return out_file
@@ -143,7 +150,7 @@ def generate_thong_bao_ket_luan_chuan_hoa():
     builder.build_body()
     builder.build_footer()
     
-    out_file = os.path.abspath(r"van_ban_du_thao\TBKL_kiem_tra_chi_bo_thon_Suoi_Gieng_chuan_hoa.docx")
+    out_file = str(BASE_DIR / "van_ban_du_thao" / "TBKL_kiem_tra_chi_bo_thon_Suoi_Gieng_chuan_hoa.docx")
     builder.save(out_file)
     print(f"Đã xuất Thông báo Kết luận chuẩn hóa: {out_file}")
     return out_file

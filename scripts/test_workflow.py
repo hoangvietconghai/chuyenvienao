@@ -9,16 +9,21 @@ Kiểm tra sinh tự động các thể loại văn bản Đảng theo HD 05-HD/
 
 import os
 import sys
+from pathlib import Path
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-# Thêm thư mục scripts vào sys.path
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.dirname(SCRIPT_DIR)
-sys.path.insert(0, SCRIPT_DIR)
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
-from export_docx import export_party_document
+try:
+    from scripts.export_docx import export_party_document, PartyDocumentBuilder
+    from scripts.generate_cong_van_lay_y_kien import generate_phieu_xin_y_kien
+except ImportError:
+    from export_docx import export_party_document, PartyDocumentBuilder
+    from generate_cong_van_lay_y_kien import generate_phieu_xin_y_kien
 
 
 def test_tc02_thong_bao_ket_luan():
@@ -302,6 +307,158 @@ def test_tc04_anti_hallucination():
         print("  -> TC-04 HOÀN TOÀN ĐẠT: Không có vi phạm nhầm lẫn địa giới 3 cấp.")
 
 
+def test_tc06_chi_thi_and_markdown_bold_italic():
+    print("[TEST TC-06] Đang kiểm thử sinh Chỉ thị (-CT/ĐU), Regex La Mã & Markdown ***vừa đậm vừa nghiêng***...")
+    ct_data = {
+        "doc_type": "CT",
+        "so_hieu": "Số 05-CT/ĐU",
+        "dia_danh_ngay": "Công Hải, ngày   tháng   năm 2026",
+        "trich_yeu": "Về tăng cường công tác phòng cháy, chữa cháy và cứu nạn, cứu hộ mùa khô năm 2026",
+        "can_cu": [
+            "Căn cứ Điều lệ Đảng Cộng sản Việt Nam;",
+            "Căn cứ Chỉ thị số 12-CT/TU ngày 15/02/2026 của Tỉnh uỷ Khánh Hoà về công tác phòng cháy, chữa cháy;"
+        ],
+        "noi_dung": [
+            "Trong thời gian qua, công tác phòng cháy, chữa cháy trên địa bàn xã đã có nhiều chuyển biến tích cực. Nhằm chủ động phòng ngừa, Ban Thường vụ Đảng uỷ yêu cầu:",
+            "I. MỤC ĐÍCH, YÊU CẦU",
+            "Nâng cao ý thức cảnh giác và tinh thần trách nhiệm của cả hệ thống chính trị trong phòng ngừa cháy nổ.",
+            "II. NHIỆM VỤ TRỌNG TÂM",
+            "1. **Uỷ ban nhân dân xã:** Tăng cường kiểm tra, rà soát các khu dân cư có nguy cơ cao; đây là nhiệm vụ ***đặc biệt quan trọng và cấp bách*** trong mùa khô.",
+            "2. **Công an xã:** Chuẩn bị đầy đủ lực lượng, phương tiện tại chỗ; chủ động phương án 4 tại chỗ.",
+            "- Tuyệt đối không để xảy ra bị động, bất ngờ."
+        ],
+        "noi_nhan": [
+            "- Thường trực Tỉnh uỷ (để b/c);",
+            "- UBND xã;",
+            "- Các chi bộ trực thuộc;",
+            "- Lưu VPĐU."
+        ],
+        "tham_quyen": "T/M BAN THƯỜNG VỤ",
+        "chuc_vu": "BÍ THƯ",
+        "nguoi_ky": "Vũ Thị Thuỳ Trang",
+        "output_path": os.path.join(str(BASE_DIR), "van_ban_du_thao", "2026", "Chi_thi", "TC06_Chi_thi_PCCC_2026.docx")
+    }
+    out_file = export_party_document(ct_data, ct_data["output_path"])
+    assert os.path.exists(out_file), "Không tạo được file TC-06 Chỉ thị"
+    
+    import docx
+    doc_ct = docx.Document(out_file)
+    
+    # 1. Kiểm tra tiêu đề văn bản là CHỈ THỊ
+    title_paras = [p for p in doc_ct.paragraphs if p.text.strip() == "CHỈ THỊ"]
+    assert len(title_paras) == 1, "Phải có tên loại CHỈ THỊ căn giữa"
+    assert title_paras[0].runs[0].bold is True
+    
+    # 2. Kiểm tra Regex La Mã đã nhận diện 'I. MỤC ĐÍCH, YÊU CẦU' và 'II. NHIỆM VỤ TRỌNG TÂM' là đề mục lớn (default_bold = True)
+    heading_p = [p for p in doc_ct.paragraphs if p.text.strip() == "I. MỤC ĐÍCH, YÊU CẦU"][0]
+    assert heading_p.runs[0].bold is True, "Đề mục La Mã I. phải được in đậm"
+    heading_p2 = [p for p in doc_ct.paragraphs if p.text.strip() == "II. NHIỆM VỤ TRỌNG TÂM"][0]
+    assert heading_p2.runs[0].bold is True, "Đề mục La Mã II. phải được in đậm"
+    
+    # 3. Kiểm tra markdown parser ***vừa đậm vừa nghiêng***
+    p_ub = [p for p in doc_ct.paragraphs if "đặc biệt quan trọng và cấp bách" in p.text][0]
+    bold_italic_runs = [r for r in p_ub.runs if "đặc biệt quan trọng và cấp bách" in r.text]
+    assert len(bold_italic_runs) == 1, "Phải tìm thấy run chứa nội dung bold+italic"
+    r_bi = bold_italic_runs[0]
+    assert r_bi.bold is True, "Run *** phải có bold == True"
+    assert r_bi.italic is True, "Run *** phải có italic == True"
+    
+    # 4. Kiểm tra ô chữ ký
+    paras_sign = doc_ct.tables[1].cell(0, 1).paragraphs
+    assert "T/M BAN THƯỜNG VỤ" in paras_sign[0].text
+    assert paras_sign[0].runs[0].bold is True
+    assert "BÍ THƯ" in paras_sign[1].text
+    assert paras_sign[1].runs[0].bold is False
+    assert paras_sign[7].text.strip() == "Vũ Thị Thuỳ Trang"
+    assert paras_sign[7].runs[0].bold is True
+    
+    print(f"  -> TC-06 HOÀN TOÀN ĐẠT: Chỉ thị chuẩn HD 05, Regex La Mã & Markdown Bold+Italic: {out_file}")
+
+
+def test_tc07_chuong_trinh_hanh_dong():
+    print("[TEST TC-07] Đang kiểm thử sinh Chương trình hành động (-CTr/ĐU)...")
+    ctr_data = {
+        "doc_type": "CTR",
+        "so_hieu": "Số 08-CTr/ĐU",
+        "dia_danh_ngay": "Công Hải, ngày   tháng   năm 2026",
+        "trich_yeu": "Thực hiện Nghị quyết Đại hội Đảng bộ tỉnh Khánh Hoà lần thứ XIX về chuyển đổi số",
+        "can_cu": [
+            "Căn cứ Điều lệ Đảng Cộng sản Việt Nam;",
+            "Căn cứ Nghị quyết Đại hội Đảng bộ tỉnh Khánh Hoà lần thứ XIX, nhiệm kỳ 2025 - 2030;"
+        ],
+        "noi_dung": [
+            "Thực hiện Nghị quyết Đại hội Đảng bộ tỉnh về chuyển đổi số toàn diện, Ban Chấp hành Đảng bộ xã Công Hải ban hành Chương trình hành động như sau:",
+            "I. MỤC TIÊU VÀ CHỈ TIÊU CỐT LÕI",
+            "1. **Mục tiêu tổng quát:** Phấn đấu đến năm 2030, xã Công Hải cơ bản hoàn thành chuyển đổi số trong các cơ quan đảng và hệ thống chính trị.",
+            "2. **Chỉ tiêu cụ thể:**",
+            "- 100% văn bản trao đổi giữa các cơ quan đảng được ký số điện tử.",
+            "- 100% cán bộ, công chức sử dụng thành thạo nền tảng số.",
+            "II. TỔ CHỨC THỰC HIỆN",
+            "1. **Ban Thường vụ Đảng uỷ:** Lãnh đạo, chỉ đạo toàn diện việc thực hiện Chương trình này.",
+            "2. **Văn phòng Đảng uỷ:** Đầu mối theo dõi, kiểm tra, tổng hợp báo cáo định kỳ."
+        ],
+        "noi_nhan": [
+            "- Thường trực Tỉnh uỷ (b/c);",
+            "- Các đồng chí Đảng uỷ viên;",
+            "- HĐND, UBND xã;",
+            "- Lưu VPĐU."
+        ],
+        "tham_quyen": "T/M ĐẢNG UỶ",
+        "chuc_vu": "BÍ THƯ",
+        "nguoi_ky": "Vũ Thị Thuỳ Trang",
+        "output_path": os.path.join(str(BASE_DIR), "van_ban_du_thao", "2026", "Chuong_trinh", "TC07_Chuong_trinh_Chuyen_doi_so.docx")
+    }
+    out_file = export_party_document(ctr_data, ctr_data["output_path"])
+    assert os.path.exists(out_file), "Không tạo được file TC-07 Chương trình"
+    
+    import docx
+    doc_ctr = docx.Document(out_file)
+    
+    # 1. Tên loại văn bản
+    title_paras = [p for p in doc_ctr.paragraphs if p.text.strip() == "CHƯƠNG TRÌNH"]
+    assert len(title_paras) == 1, "Phải có tên loại CHƯƠNG TRÌNH căn giữa"
+    
+    # 2. Ô chữ ký T/M ĐẢNG UỶ
+    paras_sign = doc_ctr.tables[1].cell(0, 1).paragraphs
+    assert "T/M ĐẢNG UỶ" in paras_sign[0].text
+    assert paras_sign[0].runs[0].bold is True
+    assert "BÍ THƯ" in paras_sign[1].text
+    assert paras_sign[1].runs[0].bold is False
+    assert paras_sign[7].text.strip() == "Vũ Thị Thuỳ Trang"
+    assert paras_sign[7].runs[0].bold is True
+    
+    print(f"  -> TC-07 HOÀN TOÀN ĐẠT: Chương trình hành động chuẩn HD 05: {out_file}")
+
+
+def test_tc08_phieu_xin_y_kien():
+    print("[TEST TC-08] Đang kiểm thử sinh Phiếu xin ý kiến Ủy viên Ban Thường vụ...")
+    out_file = generate_phieu_xin_y_kien()
+    assert os.path.exists(out_file), "Không tạo được file TC-08 Phiếu xin ý kiến"
+    
+    import docx
+    doc_p = docx.Document(out_file)
+    
+    # 1. Kiểm tra tiêu đề Phiếu
+    titles = [p for p in doc_p.paragraphs if "PHIẾU XIN Ý KIẾN" in p.text]
+    assert len(titles) >= 1, "Phiếu xin ý kiến phải có tiêu đề 'PHIẾU XIN Ý KIẾN'"
+    
+    # 2. Kiểm tra các phương án lấy ý kiến (Thống nhất hoàn toàn, Cơ bản thống nhất, Không thống nhất)
+    all_text = " ".join([p.text for p in doc_p.paragraphs])
+    assert "Thống nhất hoàn toàn" in all_text, "Phiếu phải có phương án Thống nhất hoàn toàn"
+    assert "Cơ bản thống nhất" in all_text, "Phiếu phải có phương án Cơ bản thống nhất"
+    assert "Không thống nhất" in all_text, "Phiếu phải có phương án Không thống nhất"
+    
+    # 3. Kiểm tra Header table 2 cột ẩn viền
+    assert len(doc_p.tables) >= 1, "Phiếu xin ý kiến phải có bảng Header"
+    
+    # 4. Kiểm tra khổ giấy A4
+    s = doc_p.sections[0]
+    assert abs(s.page_width.mm - 210) < 1, "Khổ giấy phải là A4 (width 210mm)"
+    assert abs(s.page_height.mm - 297) < 1, "Khổ giấy phải là A4 (height 297mm)"
+    
+    print(f"  -> TC-08 HOÀN TOÀN ĐẠT: Phiếu xin ý kiến BTV: {out_file}")
+
+
 if __name__ == "__main__":
     print("==============================================================================")
     print("     BẮT ĐẦU CHẠY BỘ KIỂM THỬ TÍCH HỢP NGHIỆP VỤ (TEST SUITE)")
@@ -310,6 +467,9 @@ if __name__ == "__main__":
     test_tc03_bao_cao_tham_dinh()
     test_tc05_indicator_bolding_universal()
     test_tc04_anti_hallucination()
+    test_tc06_chi_thi_and_markdown_bold_italic()
+    test_tc07_chuong_trinh_hanh_dong()
+    test_tc08_phieu_xin_y_kien()
     print("==============================================================================")
-    print("     TẤT CẢ CÁC BÀI TEST ĐỀU ĐẠT CHUẨN 100%!")
+    print("     TẤT CẢ 7/7 BÀI TEST ĐỀU ĐẠT CHUẨN 100%!")
     print("==============================================================================")

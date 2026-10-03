@@ -1,4 +1,4 @@
-﻿# setup.ps1
+# setup.ps1
 # Script khoi tao moi truong tu dong bang PowerShell
 # Ap dung cho: Chuyen vien ao Van phong Dang uy xa Cong Hai
 
@@ -47,7 +47,7 @@ Write-Host ""
 
 # 4. Tao thu muc dau ra
 Write-Host "[4/4] Khoi tao he thong thu muc luu tru van ban du thao nam 2026..." -ForegroundColor Yellow
-$folders = @("Cong_van", "Ke_hoach", "Nghi_quyet", "Quyet_dinh", "Thong_bao", "Ket_luan", "Bao_cao", "To_trinh")
+$folders = @("Cong_van", "Ke_hoach", "Nghi_quyet", "Quyet_dinh", "Thong_bao", "Ket_luan", "Bao_cao", "To_trinh", "Chi_thi", "Chuong_trinh")
 foreach ($f in $folders) {
     $path = Join-Path $PSScriptRoot "van_ban_du_thao\2026\$f"
     if (-not (Test-Path $path)) {

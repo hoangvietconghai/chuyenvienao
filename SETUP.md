@@ -96,13 +96,14 @@ Bao gồm:
 ## Cấu trúc thư mục hoàn chỉnh sau cài đặt
 
 ```text
-D:\Chuyên viên ảo\
+E:\Viet Design\Chuyên viên ảo\
 ├── AGENTS.md                              ← Quy tắc mặc định (auto-load)
 ├── README.md                              ← Tài liệu tổng quan dự án
 ├── requirements.txt                       ← Python dependencies
 ├── SETUP.md                               ← File này
+├── setup.bat / setup.ps1                  ← Script cài đặt tự động
 │
-├── .agents/                               ← Cấu hình Antigravity Skills
+├── .agents/                               ← Hệ thống Skills Antigravity (Canonical)
 │   └── skills/
 │       ├── quy-chuan-nen-tang/SKILL.md
 │       ├── cong-van-giao-viec/SKILL.md
@@ -111,23 +112,22 @@ D:\Chuyên viên ảo\
 │       ├── bao-cao-to-trinh/SKILL.md
 │       └── tham-dinh-van-ban/SKILL.md
 │
-├── skills/                                ← Nội dung chi tiết các Skills
-│   ├── Skill_Core_The_thuc_Chung.md
-│   ├── Skill_Cong_van_Giao_viec.md
-│   ├── Skill_Thong_bao_Ket_luan.md
-│   ├── Skill_Ke_hoach_Nghi_quyet.md
-│   ├── Skill_Bao_cao_To_trinh.md
-│   └── Skill_Tham_dinh_Van_ban.md
-│
 ├── references/                            ← Tài liệu tra cứu
 │   ├── Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md
 │   ├── tong_quan_xa_cong_hai.md
 │   ├── Mẫu văn bản thông dụng/           (18 file mẫu)
 │   └── Thông tin thông dụng/
 │
-├── scripts/                               ← Công cụ tự động hoá
-│   ├── export_docx.py
-│   └── generate_kh83_documents.py
+├── scripts/                               ← Bộ công cụ tự động hoá văn thư
+│   ├── __init__.py                        ← Package init
+│   ├── export_docx.py                     ← Engine tạo file Word chuẩn HD 05
+│   ├── generate_batch_tham_dinh.py        ← Sinh chùm văn bản thẩm định & TBKL
+│   ├── generate_tham_dinh_outputs.py      ← Sinh báo cáo thẩm định & TBKL
+│   ├── generate_cong_van_lay_y_kien.py    ← Sinh CV lấy ý kiến & Phiếu xin ý kiến
+│   ├── generate_cv_lay_y_kien_3tbkl.py    ← Sinh CV lấy ý kiến chùm TBKL
+│   ├── test_workflow.py                   ← Bộ kiểm thử tự động hóa (Integration Tests)
+│   ├── verify_outputs.py                  ← Kiểm tra thuộc tính văn bản đã sinh
+│   └── debug/                             ← Công cụ kiểm tra & ad-hoc
 │
 ├── van_ban_den/2026/                      ← Kho văn bản đến
 └── van_ban_du_thao/2026/                  ← Kho văn bản soạn thảo
@@ -138,7 +138,9 @@ D:\Chuyên viên ảo\
     ├── Ket_luan/
     ├── Thong_bao/
     ├── Bao_cao/
-    └── To_trinh/
+    ├── To_trinh/
+    ├── Chi_thi/
+    └── Chuong_trinh/
 ```
 
 ---

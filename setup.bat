@@ -65,6 +65,8 @@ if not exist "van_ban_du_thao\2026\Thong_bao" mkdir "van_ban_du_thao\2026\Thong_
 if not exist "van_ban_du_thao\2026\Ket_luan" mkdir "van_ban_du_thao\2026\Ket_luan"
 if not exist "van_ban_du_thao\2026\Bao_cao" mkdir "van_ban_du_thao\2026\Bao_cao"
 if not exist "van_ban_du_thao\2026\To_trinh" mkdir "van_ban_du_thao\2026\To_trinh"
+if not exist "van_ban_du_thao\2026\Chi_thi" mkdir "van_ban_du_thao\2026\Chi_thi"
+if not exist "van_ban_du_thao\2026\Chuong_trinh" mkdir "van_ban_du_thao\2026\Chuong_trinh"
 echo     -> Đã sẵn sàng các thư mục tại van_ban_du_thao\2026\...
 echo.
 

@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
-import os, sys
+import os
+import sys
+from pathlib import Path
+
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 import docx
 
@@ -29,5 +34,11 @@ def check_doc(path):
             linesp = p.paragraph_format.line_spacing
             print(f"  P{i:02d}: '{p.text[:45]}...' Indent={indent} Bef={bef}pt Aft={aft}pt Sp={linesp} [R0: '{fr_text}' b={fr_b}]")
 
-check_doc(r"van_ban_du_thao\BC_tham_dinh_du_thao_TBKL_kiem_tra_Chi_bo_Suoi_Gieng.docx")
-check_doc(r"van_ban_du_thao\TBKL_kiem_tra_chi_bo_thon_Suoi_Gieng_chuan_hoa.docx")
+if __name__ == "__main__":
+    doc1 = str(BASE_DIR / "van_ban_du_thao" / "BC_tham_dinh_du_thao_TBKL_kiem_tra_Chi_bo_Suoi_Gieng.docx")
+    doc2 = str(BASE_DIR / "van_ban_du_thao" / "TBKL_kiem_tra_chi_bo_thon_Suoi_Gieng_chuan_hoa.docx")
+    if os.path.exists(doc1):
+        check_doc(doc1)
+    if os.path.exists(doc2):
+        check_doc(doc2)
+

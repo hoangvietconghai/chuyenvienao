@@ -8,31 +8,31 @@ Hệ thống được thiết kế theo **Mô hình Hạt nhân & Kỹ năng Chu
 ## 📂 SƠ ĐỒ CẤU TRÚC THƯ MỤC HỆ THỐNG
 
 ```text
-d:\Chuyên viên ảo\
+e:\Viet Design\Chuyên viên ảo\
 │
 ├── 📜 AGENTS.md                             # QUY TẮC VẬN HÀNH MẶC ĐỊNH (auto-load khi mở workspace)
 ├── 📖 SETUP.md                              # HƯỚNG DẪN CÀI ĐẶT & TRIỂN KHAI TRÊN MÁY TÍNH MỚI
+├── ⚙️ setup.bat / setup.ps1                 # SCRIPT TỰ ĐỘNG THIẾT LẬP MÔI TRƯỜNG & THƯ MỤC
 │
-├── 🔌 .agents/                              # CẤU HÌNH ANTIGRAVITY SKILLS (auto-discovery)
+├── 🔌 .agents/                              # HỆ THỐNG SKILLS ANTIGRAVITY (auto-discovery)
 │   └── skills/
-│       ├── quy-chuan-nen-tang/SKILL.md      # Quy chuẩn nền tảng thể thức văn bản Đảng
-│       ├── cong-van-giao-viec/SKILL.md      # Kỹ năng soạn Công văn giao việc, chỉ đạo
+│       ├── quy-chuan-nen-tang/SKILL.md      # Quy chuẩn nền tảng thể thức văn bản Đảng toàn diện
+│       ├── cong-van-giao-viec/SKILL.md      # Kỹ năng soạn Công văn giao việc, chỉ đạo, đôn đốc
 │       ├── thong-bao-ket-luan/SKILL.md      # Kỹ năng Thông báo kết luận & Lấy ý kiến BTV
-│       ├── ke-hoach-nghi-quyet/SKILL.md     # Kỹ năng Kế hoạch, Nghị quyết, Quyết định
-│       ├── bao-cao-to-trinh/SKILL.md        # Kỹ năng Báo cáo định kỳ & Tờ trình
+│       ├── ke-hoach-nghi-quyet/SKILL.md     # Kỹ năng Kế hoạch, Nghị quyết, Quyết định, Chỉ thị, CTr
+│       ├── bao-cao-to-trinh/SKILL.md        # Kỹ năng Báo cáo định kỳ & Tờ trình các cấp
 │       └── tham-dinh-van-ban/SKILL.md       # Kỹ năng Thẩm định văn bản & Đối soát tiếp thu
 │
-├── 🧠 skills/                               # BỘ NÃO NGHIỆP VỤ & KỸ NĂNG THAM MƯU TOÀN DIỆN
-│   ├── Skill_Core_The_thuc_Chung.md         # Quy chuẩn khung: Lề 30-15-20-20, bảng 2 cột ẩn, font, dấu uỷ/oà, thẩm quyền ký
-│   ├── Skill_Tham_dinh_Van_ban.md           # "Gác cổng" thẩm định 2 tầng & đối soát tiếp thu kết luận cuộc họp
-│   ├── Skill_Thong_bao_Ket_luan.md          # Kết luận BCH (-KL/ĐU), TBKL Ban Thường vụ, Thường trực, lấy ý kiến BTV
-│   ├── Skill_Cong_van_Giao_viec.md          # Chuyên sâu Công văn (giao việc, đôn đốc - Kính gửi căn giữa, trích yếu dưới số hiệu)
-│   ├── Skill_Ke_hoach_Nghi_quyet.md         # Chuyên sâu Kế hoạch, Nghị quyết BCH/BTV, Quyết định cán bộ, Chỉ thị công tác
-│   └── Skill_Bao_cao_To_trinh.md            # Chuyên sâu Báo cáo định kỳ Tỉnh uỷ, Tờ trình cấp Tỉnh & Tờ trình cơ quan chuyên môn
-│
-├── ⚙️ scripts/                              # CÔNG CỤ TỰ ĐỘNG HÓA KỸ THUẬT
-│   ├── export_docx.py                       # Trình sinh tệp Word (.docx) chuẩn hóa tự động lưu vào đúng thể loại
-│   └── generate_kh83_documents.py           # Sinh trọn bộ văn bản triển khai KH83 Tỉnh uỷ
+├── ⚙️ scripts/                              # BỘ CÔNG CỤ TỰ ĐỘNG HÓA VĂN THƯ & KIỂM THỬ
+│   ├── __init__.py                          # Package initialization
+│   ├── export_docx.py                       # Engine sinh tệp Word (.docx) chuẩn hóa tự động HD 05
+│   ├── generate_batch_tham_dinh.py          # Sinh trọn bộ chùm văn bản thẩm định & 03 TBKL kiểm tra
+│   ├── generate_tham_dinh_outputs.py        # Sinh Báo cáo thẩm định & TBKL Chi bộ thôn Suối Giếng
+│   ├── generate_cong_van_lay_y_kien.py      # Sinh Công văn lấy ý kiến BTV kèm Phiếu xin ý kiến
+│   ├── generate_cv_lay_y_kien_3tbkl.py      # Sinh Công văn lấy ý kiến BTV cho chùm 03 TBKL
+│   ├── test_workflow.py                     # Kịch bản kiểm thử tích hợp (Integration Tests) tự động
+│   ├── verify_outputs.py                    # Script kiểm tra chi tiết cấu trúc XML run-level của file Word
+│   └── debug/                               # Thư mục chứa các công cụ debug & ad-hoc
 │
 ├── 📥 van_ban_den/                          # KHO TIẾP NHẬN TÀI LIỆU ĐẦU VÀO
 │   └── 2026/                                # Văn bản chỉ đạo cấp trên (Tỉnh uỷ, Trung ương) theo năm
@@ -40,18 +40,20 @@ d:\Chuyên viên ảo\
 ├── 📤 van_ban_du_thao/                      # KHO LƯU TRỮ VĂN BẢN SOẠN THẢO ĐẦU RA
 │   └── 2026/                                # Quản lý theo năm công tác
 │       ├── Cong_van/                        # Lưu trữ toàn bộ Công văn đi (-CV/ĐU)
-│       ├── Ke_hoach/                        # Lưu trữ Kế hoạch (-KH/ĐU), Chương trình hành động (-CTr/ĐU)
+│       ├── Ke_hoach/                        # Lưu trữ Kế hoạch (-KH/ĐU)
+│       ├── Chuong_trinh/                    # Lưu trữ Chương trình hành động, CTr công tác (-CTr/ĐU)
 │       ├── Nghi_quyet/                      # Lưu trữ Nghị quyết chuyên đề, Nghị quyết năm (-NQ/ĐU)
 │       ├── Quyet_dinh/                      # Lưu trữ Quyết định cán bộ, kết nạp đảng viên (-QĐ/ĐU)
+│       ├── Chi_thi/                         # Lưu trữ Chỉ thị công tác (-CT/ĐU)
 │       ├── Ket_luan/                        # Lưu trữ Kết luận Hội nghị Ban Chấp hành (-KL/ĐU)
-│       ├── Thong_bao/                       # Lưu trữ Thông báo Kết luận họp Thường trực, Ban Thường vụ (-TB/ĐU)
+│       ├── Thong_bao/                       # Lưu trữ Thông báo Kết luận họp Thường trực, BTV (-TB/ĐU)
 │       ├── Bao_cao/                         # Lưu trữ Báo cáo định kỳ, chuyên đề gửi Tỉnh uỷ (-BC/ĐU)
 │       └── To_trinh/                        # Lưu trữ Tờ trình xin chủ trương, nhân sự (-TTr/ĐU, -TTr/...)
 │
 └── 📚 references/                           # TÀI LIỆU TRA CỨU & QUY PHẠM ĐỊA PHƯƠNG
-    ├── Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md # Cẩm nang tra cứu thẩm quyền, SLA, phân vai 5 cơ quan, xử lý đơn thư & đôn đốc
+    ├── Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md # Cẩm nang tra cứu thẩm quyền, SLA, phân vai 5 cơ quan
     ├── Mẫu văn bản thông dụng/              # Kho mẫu thực tế (-KL/ĐU, -TB/ĐU, họp BTV, họp Thường trực...)
-    ├── Thông tin thông dụng/                # Quy chế làm việc 01-QC/ĐU và Quy định chức năng nhiệm vụ 4 ban ngành
+    ├── Thông tin thông dụng/                # Quy chế làm việc 01-QC/ĐU và Quy định chức năng nhiệm vụ
     └── tong_quan_xa_cong_hai.md             # Thông tin tổng quan địa bàn xã Công Hải
 ```
 
