@@ -69,8 +69,8 @@ def remove_table_borders(table):
     table._tbl.tblPr.append(tblBorders)
 
 
-def add_horizontal_line(paragraph, width_pt=186, weight_pt=0.75):
-    """Thêm đường kẻ liền ngang màu đen dưới tiêu ngữ Đảng (kéo dài toàn bộ dòng chữ ĐCSVN, độ dày 3/4pt)."""
+def add_horizontal_line(paragraph, width_pt=192, weight_pt=0.75):
+    """Thêm đường kẻ liền ngang màu đen dưới tiêu ngữ Đảng (kéo dài toàn bộ dòng chữ ĐCSVN - 192pt, độ dày 3/4pt)."""
     vml_xml = f'''<w:r xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:v="urn:schemas-microsoft-com:vml">
         <w:pict>
             <v:line from="0,0" to="{width_pt}pt,0" strokecolor="#000000" strokeweight="{weight_pt}pt"/>
@@ -222,7 +222,7 @@ class PartyDocumentBuilder:
         p_cq_tren.paragraph_format.space_after = Pt(1)
         r = p_cq_tren.add_run(co_quan_tren)
         r.font.name = "Times New Roman"
-        r.font.size = Pt(13)
+        r.font.size = Pt(14)
 
         # 2. Cơ quan ban hành
         p_cq_bh = cell_left.add_paragraph()
@@ -233,7 +233,7 @@ class PartyDocumentBuilder:
         p_cq_bh.paragraph_format.space_after = Pt(1)
         r = p_cq_bh.add_run(co_quan_bh)
         r.font.name = "Times New Roman"
-        r.font.size = Pt(13)
+        r.font.size = Pt(14)
         r.font.bold = True
 
         # 3. Dấu sao (*)
@@ -245,7 +245,7 @@ class PartyDocumentBuilder:
         p_sao.paragraph_format.space_after = Pt(2)
         r = p_sao.add_run("*")
         r.font.name = "Times New Roman"
-        r.font.size = Pt(12)
+        r.font.size = Pt(14)
         r.font.bold = True
 
         # 4. Số hiệu
@@ -257,7 +257,7 @@ class PartyDocumentBuilder:
         p_so.paragraph_format.space_after = Pt(3)
         r = p_so.add_run(so_hieu)
         r.font.name = "Times New Roman"
-        r.font.size = Pt(13.5)
+        r.font.size = Pt(14)
 
         # 5. Nếu là CÔNG VĂN: Trích yếu nằm dưới số hiệu tại cột 1
         if self.doc_type == "CV":
@@ -293,7 +293,7 @@ class PartyDocumentBuilder:
         p_line.paragraph_format.line_spacing = 1.0
         p_line.paragraph_format.space_before = Pt(0)
         p_line.paragraph_format.space_after = Pt(4)
-        add_horizontal_line(p_line, width_pt=186, weight_pt=0.75)
+        add_horizontal_line(p_line, width_pt=192, weight_pt=0.75)
 
         # Ngày tháng năm
         dia_danh_ngay = self.data.get("dia_danh_ngay", "Công Hải, ngày   tháng   năm 2026")
@@ -305,7 +305,7 @@ class PartyDocumentBuilder:
         p_ngay.paragraph_format.space_after = Pt(0)
         r = p_ngay.add_run(dia_danh_ngay)
         r.font.name = "Times New Roman"
-        r.font.size = Pt(13.5)
+        r.font.size = Pt(14)
         r.font.italic = True
 
     def build_title_section(self):

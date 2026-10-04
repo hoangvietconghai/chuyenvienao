@@ -1,0 +1,167 @@
+{
+  "thong_tin_he_thong": {
+    "ten_so": "Sổ Kế hoạch và Chỉ đạo Nhiệm vụ cấp Tỉnh - cấp Xã",
+    "co_quan_quan_ly": "Văn phòng Đảng uỷ xã Công Hải",
+    "mo_ta": "Cơ sở dữ liệu quản lý các Kế hoạch, Chương trình hành động, Nghị quyết chuyên đề và Công văn giao việc phát sinh từ Tỉnh uỷ Khánh Hoà và Đảng uỷ xã Công Hải. Dùng để đối soát thẩm định và tra cứu triển khai nhiệm vụ.",
+    "ngay_cap_nhat": "04/10/2026",
+    "phien_ban": "1.0.0"
+  },
+  "danh_sach_ke_hoach": [
+    {
+      "id": "KH-TU-2026-030-CTR",
+      "so_hieu": "30-CTr/TU",
+      "the_loai": "CHƯƠNG TRÌNH",
+      "cap_van_ban": "tinh",
+      "co_quan_ban_hanh": "Tỉnh uỷ Khánh Hoà",
+      "ngay_ban_hanh": "28/08/2026",
+      "trich_yeu": "Chương trình hành động của Tỉnh uỷ về thực hiện Nghị quyết số 19-NQ/TW của Ban Chấp hành Trung ương Đảng khóa XIV và Chương trình hành động số 33-CTr/TW, ngày 28/7/2026 của Bộ Chính trị về đổi mới mô hình phát triển Việt Nam",
+      "linh_vuc": "Kinh tế - Xã hội, Đổi mới mô hình phát triển",
+      "van_ban_can_cu": [
+        "Nghị quyết số 19-NQ/TW của Ban Chấp hành Trung ương Đảng khóa XIV",
+        "Chương trình hành động số 33-CTr/TW ngày 28/7/2026 của Bộ Chính trị",
+        "Nghị quyết số 217/NQ-CP ngày 06/8/2026 của Chính phủ"
+      ],
+      "muc_tieu_nhiem_vu_chinh": [
+        "Chuyển đổi mạnh mẽ mô hình phát triển tự cường, sáng tạo, xanh, số, nhân văn, bền vững và hội nhập.",
+        "Lấy khoa học, công nghệ, đổi mới sáng tạo, chuyển đổi số và trí tuệ nhân tạo làm động lực chính.",
+        "Thực hiện mục tiêu tăng trưởng kinh tế '2 con số', xây dựng Khánh Hòa trở thành thành phố trực thuộc Trung ương.",
+        "Chỉ đạo các cấp uỷ, tổ chức đảng cấp dưới ban hành Kế hoạch cụ thể hoá triển khai trên địa bàn."
+      ],
+      "chi_tieu_cu_the": {
+        "tang_truong_kinh_te": "Tăng trưởng 2 con số",
+        "khoa_hoc_cong_nghe": "Lấy KHCN, đổi mới sáng tạo, chuyển đổi số làm động lực chính"
+      },
+      "yeu_cau_cap_xa": "Đảng uỷ các xã, phường ban hành Kế hoạch thực hiện cụ thể hoá phù hợp với đặc thù địa phương theo nguyên tắc 6 rõ (rõ người, rõ việc, rõ thời gian, rõ trách nhiệm, rõ sản phẩm, rõ thẩm quyền).",
+      "trang_thai": "dang_thuc_hien"
+    },
+    {
+      "id": "CV-DU-2026-817-CV",
+      "so_hieu": "817-CV/ĐU",
+      "the_loai": "CÔNG VĂN",
+      "cap_van_ban": "xa",
+      "co_quan_ban_hanh": "Đảng uỷ xã Công Hải",
+      "ngay_ban_hanh": "17/09/2026",
+      "trich_yeu": "Về việc tham mưu triển khai thực hiện Nghị quyết, chương trình hành động, kế hoạch của Tỉnh uỷ",
+      "linh_vuc": "Chỉ đạo điều hành, Giao nhiệm vụ tham mưu",
+      "van_ban_can_cu": [
+        "Chương trình hành động số 30-CTr/TU ngày 28/8/2026 của Tỉnh uỷ Khánh Hoà"
+      ],
+      "muc_tieu_nhiem_vu_chinh": [
+        "Giao Uỷ ban nhân dân xã chủ trì, phối hợp với các cơ quan, đơn vị liên quan nghiên cứu, xây dựng dự thảo Kế hoạch của Ban Thường vụ Đảng uỷ xã thực hiện Nghị quyết số 19-NQ/TW của BCH Trung ương Đảng khoá XIV và Chương trình hành động số 30-CTr/TU của Tỉnh uỷ.",
+        "Xây dựng Tờ trình kèm dự thảo Kế hoạch gửi Ban Thường vụ Đảng uỷ (qua Văn phòng Đảng uỷ thẩm định) trong tháng 9/2026."
+      ],
+      "don_vi_chu_tri": "Uỷ ban nhân dân xã",
+      "don_vi_tham_dinh": "Văn phòng Đảng uỷ",
+      "tham_quyen_ban_hanh_ke_hoach": "Ban Thường vụ Đảng uỷ xã Công Hải",
+      "ghi_chu_tham_dinh": "Xác nhận UBND xã là cơ quan tham mưu soạn thảo dự thảo hợp lệ theo đúng phân công tại Công văn số 817-CV/ĐU; việc UBND xã trình Tờ trình xin BTV Đảng uỷ ban hành Kế hoạch là đúng trình tự, không có mâu thuẫn thẩm quyền.",
+      "trang_thai": "dang_thuc_hien"
+    },
+    {
+      "id": "CTR-DU-2025-023-CTR",
+      "so_hieu": "23-CTr/ĐU",
+      "the_loai": "CHƯƠNG TRÌNH",
+      "cap_van_ban": "xa",
+      "co_quan_ban_hanh": "Ban Chấp hành Đảng bộ xã Công Hải",
+      "ngay_ban_hanh": "13/11/2025",
+      "trich_yeu": "Chương trình hành động của Ban Chấp hành Đảng bộ xã thực hiện Nghị quyết Đại hội đại biểu Đảng bộ xã lần thứ I, nhiệm kỳ 2025 - 2030",
+      "linh_vuc": "Tổng thể Kinh tế - Xã hội, Quốc phòng - An ninh, Xây dựng Đảng",
+      "van_ban_can_cu": [
+        "Nghị quyết số 01-NQ/ĐH ngày 11/08/2025 của Đại hội Đảng bộ xã lần thứ I"
+      ],
+      "muc_tieu_nhiem_vu_chinh": [
+        "Cụ thể hoá toàn diện 20 chỉ tiêu và 3 khâu đột phá của Nghị quyết Đại hội I.",
+        "Phân công rõ trách nhiệm theo tinh thần 6 rõ (rõ người, rõ việc, rõ thời gian, rõ trách nhiệm, rõ sản phẩm, rõ thẩm quyền).",
+        "Định hướng ban hành các Nghị quyết chuyên đề và Kế hoạch chuyên đề giai đoạn 2025 - 2030."
+      ],
+      "trang_thai": "dang_thuc_hien"
+    },
+    {
+      "id": "KH-DU-2025-011-KH",
+      "so_hieu": "11-KH/ĐU",
+      "the_loai": "KẾ HOẠCH",
+      "cap_van_ban": "xa",
+      "co_quan_ban_hanh": "Ban Thường vụ Đảng uỷ xã Công Hải",
+      "ngay_ban_hanh": "11/09/2025",
+      "trich_yeu": "Kế hoạch thực hiện Nghị quyết số 01-NQ/TU ngày 14/7/2025 của Ban Chấp hành Đảng bộ tỉnh về tăng trưởng kinh tế hai con số, giai đoạn 2025 - 2030",
+      "linh_vuc": "Kinh tế - Ngân sách",
+      "van_ban_can_cu": [
+        "Nghị quyết số 01-NQ/TU ngày 14/7/2025 của Tỉnh uỷ Khánh Hoà"
+      ],
+      "muc_tieu_nhiem_vu_chinh": [
+        "Phấn đấu tốc độ tăng trưởng kinh tế xã bình quân đạt 11 - 12%/năm.",
+        "Tăng thu ngân sách nhà nước bình quân 12%/năm.",
+        "Huy động vốn đầu tư toàn xã hội tăng 20%/năm."
+      ],
+      "trang_thai": "dang_thuc_hien"
+    },
+    {
+      "id": "NQ-DU-2025-002-NQ",
+      "so_hieu": "02-NQ/ĐU",
+      "the_loai": "NGHỊ QUYẾT",
+      "cap_van_ban": "xa",
+      "co_quan_ban_hanh": "Ban Thường vụ Đảng uỷ xã Công Hải",
+      "ngay_ban_hanh": "31/08/2025",
+      "trich_yeu": "Nghị quyết về thực hiện Nghị quyết số 57-NQ/TW của Bộ Chính trị về đột phá phát triển khoa học công nghệ, đổi mới sáng tạo và chuyển đổi số quốc gia",
+      "linh_vuc": "Khoa học công nghệ & Chuyển đổi số",
+      "van_ban_can_cu": [
+        "Nghị quyết số 57-NQ/TW của Bộ Chính trị"
+      ],
+      "muc_tieu_nhiem_vu_chinh": [
+        "100% cán bộ công chức sử dụng ký số điện tử và E-Office.",
+        "Ứng dụng Sổ tay đảng viên điện tử tại 100% chi bộ trực thuộc.",
+        "Tỷ lệ sử dụng dịch vụ công trực tuyến trên 85%."
+      ],
+      "trang_thai": "dang_thuc_hien"
+    },
+    {
+      "id": "KH-DU-2025-006-KH",
+      "so_hieu": "06-KH/ĐU",
+      "the_loai": "KẾ HOẠCH",
+      "cap_van_ban": "xa",
+      "co_quan_ban_hanh": "Ban Thường vụ Đảng uỷ xã Công Hải",
+      "ngay_ban_hanh": "21/05/2025",
+      "trich_yeu": "Kế hoạch thực hiện Kết luận số 156-KL/TW ngày 21/5/2025 của Bộ Chính trị về tiếp tục thực hiện Nghị quyết số 33-NQ/TW về xây dựng và phát triển văn hóa, con người Việt Nam đáp ứng yêu cầu phát triển bền vững đất nước",
+      "linh_vuc": "Văn hoá - Xã hội",
+      "van_ban_can_cu": [
+        "Kết luận số 156-KL/TW của Bộ Chính trị",
+        "Nghị quyết số 33-NQ/TW của Ban Chấp hành Trung ương Đảng khoá XI"
+      ],
+      "muc_tieu_nhiem_vu_chinh": [
+        "Bảo tồn và phát huy bản sắc văn hoá Raglai.",
+        "Gắn văn hoá với phát triển du lịch sinh thái cộng đồng.",
+        "Xây dựng đời sống văn hoá nông thôn mới nâng cao."
+      ],
+      "trang_thai": "dang_thuc_hien"
+    },
+    {
+      "id": "DA-DU-2026-002-DA",
+      "so_hieu": "02-ĐA/ĐU",
+      "the_loai": "ĐỀ ÁN",
+      "cap_van_ban": "xa",
+      "co_quan_ban_hanh": "Đảng uỷ xã Công Hải",
+      "ngay_ban_hanh": "27/03/2026",
+      "trich_yeu": "Đề án đổi mới, nâng cao chất lượng hiệu quả hoạt động của xã Công Hải giai đoạn 2026 - 2030",
+      "linh_vuc": "Xây dựng Đảng & Cải cách hành chính",
+      "muc_tieu_nhiem_vu_chinh": [
+        "Thiết lập 4 nhóm thước đo hiệu quả công vụ (Sự hài lòng của người dân; Năng lực thực thi; Sự phát triển; Sức mạnh hệ thống chính trị cơ sở).",
+        "Áp dụng nguyên tắc đánh giá cán bộ 6 rõ."
+      ],
+      "trang_thai": "dang_thuc_hien"
+    },
+    {
+      "id": "DA-DU-2026-006-DA",
+      "so_hieu": "06-ĐA/ĐU",
+      "the_loai": "ĐỀ ÁN",
+      "cap_van_ban": "xa",
+      "co_quan_ban_hanh": "Ban Chấp hành Đảng bộ xã Công Hải",
+      "ngay_ban_hanh": "30/09/2026",
+      "trich_yeu": "Đề án kết thúc hoạt động của Đảng bộ các cơ quan đảng, Đảng bộ UBND xã; thành lập, sắp xếp các tổ chức đảng trực thuộc Đảng bộ xã Công Hải",
+      "linh_vuc": "Tổ chức - Cán bộ",
+      "muc_tieu_nhiem_vu_chinh": [
+        "Kết thúc 02 Đảng bộ bộ phận.",
+        "Thành lập 23 chi bộ trực thuộc Đảng uỷ xã gồm: 04 chi bộ khối Đảng - Mặt trận, 06 chi bộ chính quyền, 02 chi bộ vũ trang, 03 chi bộ trường học, 08 chi bộ thôn."
+      ],
+      "trang_thai": "dang_thuc_hien"
+    }
+  ]
+}

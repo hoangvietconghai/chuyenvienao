@@ -61,9 +61,9 @@ def test_tc02_thong_bao_ket_luan():
     import docx
     doc_tb = docx.Document(out_file)
     
-    # 1. Đường kẻ dưới ĐẢNG CỘNG SẢN VIỆT NAM (186pt, 0.75pt)
+    # 1. Đường kẻ dưới ĐẢNG CỘNG SẢN VIỆT NAM (192pt, 0.75pt)
     header_r_xml = doc_tb.tables[0].cell(0, 1)._tc.xml
-    assert 'to="186pt,0"' in header_r_xml, "Đường kẻ dưới ĐCSVN ở Thông báo phải dài 186pt"
+    assert 'to="192pt,0"' in header_r_xml, "Đường kẻ dưới ĐCSVN ở Thông báo phải dài 192pt"
     assert 'strokeweight="0.75pt"' in header_r_xml, "Độ dày đường kẻ ở Thông báo phải là 3/4pt"
     
     # 2. Ô chữ ký Thông báo Thừa lệnh:
@@ -161,10 +161,10 @@ def test_tc03_bao_cao_tham_dinh():
     assert paras[7].text.strip() == "Ngô Hoàng Việt", "Dòng cuối cùng phải là tên người ký"
     assert paras[7].runs[0].bold is True, "Họ tên người ký phải in đậm"
     
-    # 4. Kiểm tra đường kẻ ngang dưới ĐẢNG CỘNG SẢN VIỆT NAM (dài 186pt, dày 0.75pt)
+    # 4. Kiểm tra đường kẻ ngang dưới ĐẢNG CỘNG SẢN VIỆT NAM (dài 192pt, dày 0.75pt)
     cell_header_r = doc.tables[0].cell(0, 1)
     header_xml = cell_header_r._tc.xml
-    assert 'to="186pt,0"' in header_xml, "Đường kẻ dưới ĐCSVN phải dài 186pt (kéo dài toàn bộ dòng chữ)"
+    assert 'to="192pt,0"' in header_xml, "Đường kẻ dưới ĐCSVN phải dài 192pt (kéo dài toàn bộ dòng chữ)"
     assert 'strokeweight="0.75pt"' in header_xml, "Độ dày đường kẻ phải là 3/4pt (0.75pt)"
 
     # 5. Kiểm tra Header Cột 1 của Báo cáo thẩm định do Văn phòng ban hành: ĐẢNG UỶ XÃ CÔNG HẢI / VĂN PHÒNG

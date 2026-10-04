@@ -7,6 +7,8 @@ __pycache__/
 env/
 venv/
 .venv/
+.env
+.env.local
 
 # Microsoft Office temporary files
 ~$*.docx
@@ -23,3 +25,9 @@ desktop.ini
 .vscode/
 *.swp
 *.swo
+
+# Văn bản nội bộ & Văn bản đi đã ban hành (không đưa lên Git)
+references/Văn bản đi đã ban hành/
+references/van_ban_so_hoa_toan_van_backup/
+Văn bản đi đã ban hành/
+

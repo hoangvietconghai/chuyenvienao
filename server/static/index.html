@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chuyên viên ảo — Văn phòng Đảng uỷ xã Công Hải</title>
+  <meta name="description" content="Trợ lý AI tham mưu tổng hợp của Văn phòng Đảng uỷ xã Công Hải: giao việc, tổng hợp báo cáo, thông báo kết luận, thẩm định dự thảo.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">★</div>
+      <div>
+        <div class="brand-title">Chuyên viên ảo</div>
+        <div class="brand-sub">Văn phòng Đảng uỷ xã Công Hải</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <!-- Selector chọn mô hình AI -->
+      <div class="model-picker-wrap">
+        <button class="model-picker-btn" id="btnModelPicker" title="Chọn mô hình AI (Local / Cloud)">
+          <span class="model-icon" id="currentModelIcon">🟢</span>
+          <span class="model-name" id="currentModelName">Qwen 2.5 (3B)</span>
+          <svg class="chevron" viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+        </button>
+        <div class="model-menu" id="modelMenu">
+          <div class="model-menu-header">
+            <span>Mô hình AI vận hành</span>
+            <span class="local-badge" id="ollamaIndicator">Ollama Local</span>
+          </div>
+          <div class="model-list" id="modelList"></div>
+        </div>
+      </div>
+
+      <span class="ai-status" id="aiStatus"><span class="dot"></span><span id="aiStatusText">Đang kết nối...</span></span>
+      <button class="btn-new" id="btnNewChat" title="Bắt đầu cuộc trò chuyện mới">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+        <span>Trò chuyện mới</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="chat-scroll" id="chatScroll">
+    <section class="welcome" id="welcome">
+      <h1 class="greet">
+        <span class="greet-gradient">Xin chào đồng chí,</span><br>
+        <span class="greet-sub">hôm nay cần tham mưu việc gì?</span>
+      </h1>
+      <div class="suggestions">
+        <button class="suggest" data-prompt="Tham mưu công văn giao việc từ văn bản của Tỉnh uỷ">
+          <span class="suggest-text">Tham mưu <b>công văn giao việc</b> từ văn bản của Tỉnh uỷ</span>
+          <span class="suggest-icon">📥</span>
+        </button>
+        <button class="suggest" data-prompt="Tổng hợp báo cáo tuần từ các báo cáo của các cơ quan">
+          <span class="suggest-text"><b>Tổng hợp báo cáo tuần</b> từ báo cáo của các cơ quan</span>
+          <span class="suggest-icon">📊</span>
+        </button>
+        <button class="suggest" data-prompt="Soạn thông báo kết luận cuộc họp Thường trực Đảng uỷ">
+          <span class="suggest-text">Soạn <b>thông báo kết luận</b> cuộc họp Thường trực</span>
+          <span class="suggest-icon">📋</span>
+        </button>
+        <button class="suggest" data-prompt="Thẩm định dự thảo kế hoạch của UBND xã">
+          <span class="suggest-text"><b>Thẩm định dự thảo</b> do cơ quan chuyên môn gửi</span>
+          <span class="suggest-icon">🔍</span>
+        </button>
+      </div>
+      <p class="welcome-hint">Bấm 📎 để đính kèm tệp PDF / Word, rồi gõ lệnh như khi giao việc cho chuyên viên.</p>
+    </section>
+
+    <div class="messages" id="messages"></div>
+  </main>
+
+  <footer class="composer-wrap">
+    <div class="composer" id="composer">
+      <div class="attach-list" id="attachList"></div>
+      <div class="composer-row">
+        <button class="icon-btn" id="btnAttach" title="Đính kèm tệp (PDF, Word, TXT)">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16.5 6v11.5a4 4 0 0 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 0 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 0 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6z"/></svg>
+        </button>
+        <textarea id="input" rows="1" placeholder="Nhập lệnh cho Chuyên viên ảo..."></textarea>
+        <button class="send-btn" id="btnSend" title="Gửi (Enter)" disabled>
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3.4 20.4 21.85 12 3.4 3.6 3.39 10.2 16.5 12 3.39 13.8z"/></svg>
+        </button>
+      </div>
+      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.md" hidden>
+    </div>
+    <div class="disclaimer">AI hỗ trợ — Con người quyết định. Không nhập thông tin thuộc Bí mật Nhà nước.</div>
+    <div class="drop-overlay" id="dropOverlay">Thả tệp vào đây để đính kèm</div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

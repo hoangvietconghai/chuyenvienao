@@ -1,0 +1,325 @@
+# -*- coding: utf-8 -*-
+"""
+Tạo cơ sở dữ liệu các chỉ tiêu Nghị quyết Đại hội Đảng bộ xã Công Hải lần thứ I, nhiệm kỳ 2025 - 2030
+Nguồn căn cứ:
+- Nghị quyết số 01-NQ/ĐH ngày 11/08/2025
+- Chương trình hành động số 23-CTr/ĐU ngày 13/11/2025
+"""
+
+import json
+from pathlib import Path
+
+REGISTRY = {
+    "thong_tin_chung": {
+        "co_quan_ban_hanh": "Đại hội đại biểu Đảng bộ xã Công Hải lần thứ I",
+        "nhiem_ky": "2025 - 2030",
+        "so_ky_hieu": "01-NQ/ĐH",
+        "ngay_ban_hanh": "11/08/2025",
+        "trich_yeu": "Nghị quyết Đại hội đại biểu Đảng bộ xã Công Hải lần thứ I, nhiệm kỳ 2025 - 2030",
+        "chuong_trinh_trien_khai": "Chương trình hành động số 23-CTr/ĐU ngày 13/11/2025 của Ban Chấp hành Đảng bộ xã",
+        "tong_so_chi_tieu": 20,
+        "so_khau_dot_pha": 3,
+        "nguyen_tac_tham_dinh": "Đây là hệ thống chỉ tiêu pháp lệnh của Đại hội Đảng bộ xã. Bất kỳ văn bản cấp uỷ hoặc chuyên môn nào viện dẫn chỉ tiêu thấp hơn, sai khác, hoặc nghi vấn tính khả thi của các chỉ tiêu này đều bị coi là sai sót chính trị/chuyên môn. Khi thẩm định, bắt buộc phải bảo vệ và đối chiếu chặt chẽ với hệ thống chỉ tiêu này."
+    },
+    "danh_sach_chi_tieu": [
+        # (1) Về xây dựng Đảng: 6 chỉ tiêu
+        {
+            "ma_chi_tieu": "XDD_01",
+            "nhom": "Xây dựng Đảng",
+            "ten_chi_tieu": "Xếp loại chất lượng Đảng bộ hằng năm",
+            "gia_tri_chuan": "Hoàn thành tốt nhiệm vụ trở lên",
+            "don_vi": "xếp loại chất lượng",
+            "kieu_so_sanh": "toi_thieu",
+            "muc_tieu_so": None,
+            "trich_dan_nguyen_van": "Đảng bộ xếp loại chất lượng hằng năm “Hoàn thành tốt nhiệm vụ” trở lên.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(1))",
+            "co_quan_chu_tri": "Ban Xây dựng Đảng",
+            "tu_khoa": ["xếp loại Đảng bộ", "hoàn thành tốt nhiệm vụ", "chất lượng Đảng bộ"]
+        },
+        {
+            "ma_chi_tieu": "XDD_02",
+            "nhom": "Xây dựng Đảng",
+            "ten_chi_tieu": "Tổ chức đảng và đảng viên hoàn thành tốt nhiệm vụ trở lên",
+            "gia_tri_chuan": "> 90%",
+            "don_vi": "%",
+            "kieu_so_sanh": "tren",
+            "muc_tieu_so": 90.0,
+            "trich_dan_nguyen_van": "Hằng năm có trên 90% tổ chức đảng và đảng viên được đánh giá, xếp loại từ hoàn thành tốt nhiệm vụ trở lên.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(1))",
+            "co_quan_chu_tri": "Ban Xây dựng Đảng",
+            "tu_khoa": ["tổ chức đảng hoàn thành tốt", "đảng viên hoàn thành tốt", "90%"]
+        },
+        {
+            "ma_chi_tieu": "XDD_03",
+            "nhom": "Xây dựng Đảng",
+            "ten_chi_tieu": "Tỷ lệ kết nạp đảng viên mới hằng năm",
+            "gia_tri_chuan": "≥ 3% tổng số đảng viên",
+            "don_vi": "%",
+            "kieu_so_sanh": "toi_thieu",
+            "muc_tieu_so": 3.0,
+            "trich_dan_nguyen_van": "Tỷ lệ kết nạp đảng viên mới hàng năm đạt từ 3% tổng số đảng viên trở lên.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(1))",
+            "co_quan_chu_tri": "Ban Xây dựng Đảng",
+            "tu_khoa": ["kết nạp đảng viên", "3%", "phát triển đảng viên"]
+        },
+        {
+            "ma_chi_tieu": "XDD_04",
+            "nhom": "Xây dựng Đảng",
+            "ten_chi_tieu": "Chất lượng sinh hoạt chi bộ đạt tốt (Chi bộ bốn tốt)",
+            "gia_tri_chuan": "> 90% chi bộ đạt tốt",
+            "don_vi": "%",
+            "kieu_so_sanh": "tren",
+            "muc_tieu_so": 90.0,
+            "trich_dan_nguyen_van": "Chất lượng sinh hoạt chi bộ: có trên 90% chi bộ đạt tốt.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(1))",
+            "co_quan_chu_tri": "Ban Xây dựng Đảng",
+            "tu_khoa": ["sinh hoạt chi bộ", "chi bộ bốn tốt", "90% chi bộ đạt tốt"]
+        },
+        {
+            "ma_chi_tieu": "XDD_05",
+            "nhom": "Xây dựng Đảng",
+            "ten_chi_tieu": "Tỷ lệ đảng viên học tập, quán triệt nghị quyết, chỉ thị",
+            "gia_tri_chuan": "100%",
+            "don_vi": "%",
+            "kieu_so_sanh": "tuyet_doi",
+            "muc_tieu_so": 100.0,
+            "trich_dan_nguyen_van": "Tỷ lệ đảng viên học tập, quán triệt nghị quyết, chỉ thị, quy định... của Đảng đạt 100%.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(1))",
+            "co_quan_chu_tri": "Ban Xây dựng Đảng",
+            "tu_khoa": ["học tập nghị quyết", "quán triệt nghị quyết", "100%"]
+        },
+        {
+            "ma_chi_tieu": "XDD_06",
+            "nhom": "Xây dựng Đảng",
+            "ten_chi_tieu": "Mô hình hiệu quả học tập và làm theo tư tưởng Hồ Chí Minh",
+            "gia_tri_chuan": "≥ 01 mô hình hiệu quả/năm",
+            "don_vi": "mô hình/năm",
+            "kieu_so_sanh": "toi_thieu",
+            "muc_tieu_so": 1.0,
+            "trich_dan_nguyen_van": "Hàng năm có ít nhất 01 mô hình hiệu quả trong học tập và làm theo tư tưởng, đạo đức, phong cách Hồ Chí Minh.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(1))",
+            "co_quan_chu_tri": "Ban Xây dựng Đảng",
+            "tu_khoa": ["học tập và làm theo Bác", "học tập Bác", "01 mô hình"]
+        },
+
+        # (2) Chỉ tiêu kinh tế: 6 chỉ tiêu
+        {
+            "ma_chi_tieu": "KT_01",
+            "nhom": "Kinh tế",
+            "ten_chi_tieu": "Tốc độ tăng tổng giá trị sản phẩm bình quân hằng năm",
+            "gia_tri_chuan": "11 - 12%/năm",
+            "don_vi": "%/năm",
+            "kieu_so_sanh": "khoang",
+            "muc_tieu_so": [11.0, 12.0],
+            "trich_dan_nguyen_van": "Tốc độ tăng tổng giá trị sản phẩm trên địa bàn bình quân hàng năm đạt 11 - 12%.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(2))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["tổng giá trị sản phẩm", "tốc độ tăng trưởng", "tăng trưởng kinh tế", "11 - 12%", "11-12%"]
+        },
+        {
+            "ma_chi_tieu": "KT_02",
+            "nhom": "Kinh tế",
+            "ten_chi_tieu": "Tốc độ tăng tổng thu ngân sách nhà nước bình quân hằng năm",
+            "gia_tri_chuan": "12%/năm",
+            "don_vi": "%/năm",
+            "kieu_so_sanh": "toi_thieu",
+            "muc_tieu_so": 12.0,
+            "trich_dan_nguyen_van": "Tốc độ tăng tổng thu ngân sách nhà nước trên địa bàn tăng bình quân hàng năm đạt 12%.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(2))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["thu ngân sách", "ngân sách nhà nước", "12%"]
+        },
+        {
+            "ma_chi_tieu": "KT_03",
+            "nhom": "Kinh tế",
+            "ten_chi_tieu": "Tỷ trọng công nghiệp, xây dựng và dịch vụ đến năm 2030",
+            "gia_tri_chuan": "77 - 78%",
+            "don_vi": "%",
+            "kieu_so_sanh": "khoang",
+            "muc_tieu_so": [77.0, 78.0],
+            "trich_dan_nguyen_van": "Đến năm 2030, tỷ trọng công nghiệp, xây dựng và dịch vụ trong tổng giá trị sản phẩm trên địa bàn đạt 77 - 78%.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(2))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["tỷ trọng công nghiệp", "xây dựng và dịch vụ", "cơ cấu kinh tế", "77 - 78%", "77-78%"]
+        },
+        {
+            "ma_chi_tieu": "KT_04",
+            "nhom": "Kinh tế",
+            "ten_chi_tieu": "Tốc độ tăng tổng vốn đầu tư toàn xã hội bình quân hằng năm",
+            "gia_tri_chuan": "20%/năm",
+            "don_vi": "%/năm",
+            "kieu_so_sanh": "toi_thieu",
+            "muc_tieu_so": 20.0,
+            "trich_dan_nguyen_van": "Tổng vốn đầu tư toàn xã hội trên địa bàn tăng bình quân hàng năm 20%.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(2))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["vốn đầu tư toàn xã hội", "đầu tư toàn xã hội", "20%"]
+        },
+        {
+            "ma_chi_tieu": "KT_05",
+            "nhom": "Kinh tế",
+            "ten_chi_tieu": "Tốc độ tăng thu nhập bình quân đầu người hằng năm",
+            "gia_tri_chuan": "11%/năm",
+            "don_vi": "%/năm",
+            "kieu_so_sanh": "toi_thieu",
+            "muc_tieu_so": 11.0,
+            "trich_dan_nguyen_van": "Thu nhập bình quân đầu người trên địa bàn hàng năm tăng 11%.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(2))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["thu nhập bình quân đầu người", "thu nhập bình quân", "11%"]
+        },
+        {
+            "ma_chi_tieu": "KT_06",
+            "nhom": "Kinh tế",
+            "ten_chi_tieu": "Tỷ lệ giải ngân vốn đầu tư công hằng năm",
+            "gia_tri_chuan": "100% kế hoạch vốn được giao",
+            "don_vi": "%",
+            "kieu_so_sanh": "tuyet_doi",
+            "muc_tieu_so": 100.0,
+            "trich_dan_nguyen_van": "Tỷ lệ giải ngân vốn đầu tư công hàng năm đạt 100% KH vốn được giao.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(2))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["giải ngân vốn đầu tư công", "đầu tư công", "100% KH vốn", "100%"]
+        },
+
+        # (3) Chỉ tiêu xã hội: 4 chỉ tiêu
+        {
+            "ma_chi_tieu": "XH_01",
+            "nhom": "Xã hội",
+            "ten_chi_tieu": "Mục tiêu giảm nghèo đến năm 2030",
+            "gia_tri_chuan": "Đến năm 2030, xã không còn hộ nghèo",
+            "don_vi": "hộ nghèo",
+            "kieu_so_sanh": "tuyet_doi",
+            "muc_tieu_so": 0,
+            "trich_dan_nguyen_van": "Đến năm 2030, xã không còn hộ nghèo theo chuẩn nghèo đa chiều, giai đoạn 2021 - 2025.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(3))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["không còn hộ nghèo", "giảm nghèo", "chuẩn nghèo đa chiều", "xóa nghèo"]
+        },
+        {
+            "ma_chi_tieu": "XH_02",
+            "nhom": "Xã hội",
+            "ten_chi_tieu": "Tỷ lệ thất nghiệp hằng năm",
+            "gia_tri_chuan": "< 3%",
+            "don_vi": "%",
+            "kieu_so_sanh": "duoi",
+            "muc_tieu_so": 3.0,
+            "trich_dan_nguyen_van": "Tỷ lệ thất nghiệp hàng năm dưới 3%.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(3))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["tỷ lệ thất nghiệp", "thất nghiệp dưới 3%", "dưới 3%"]
+        },
+        {
+            "ma_chi_tieu": "XH_03",
+            "nhom": "Xã hội",
+            "ten_chi_tieu": "Tỷ lệ sử dụng dịch vụ công trực tuyến của người dân và doanh nghiệp",
+            "gia_tri_chuan": "> 85%",
+            "don_vi": "%",
+            "kieu_so_sanh": "tren",
+            "muc_tieu_so": 85.0,
+            "trich_dan_nguyen_van": "Tỷ lệ sử dụng dịch vụ công trực tuyến của người dân và doanh nghiệp đạt trên 85%.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(3))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["dịch vụ công trực tuyến", "DVC trực tuyến", "85%"]
+        },
+        {
+            "ma_chi_tieu": "XH_04",
+            "nhom": "Xã hội",
+            "ten_chi_tieu": "Mức độ hài lòng của người dân và doanh nghiệp đối với chính quyền",
+            "gia_tri_chuan": "Tăng 5% so với đầu nhiệm kỳ",
+            "don_vi": "% tăng thêm",
+            "kieu_so_sanh": "tang_them",
+            "muc_tieu_so": 5.0,
+            "trich_dan_nguyen_van": "Mức độ hài lòng của người dân và doanh nghiệp đối với chính quyền tăng 5% so với đầu nhiệm kỳ.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(3))",
+            "co_quan_chu_tri": "Uỷ ban nhân dân xã",
+            "tu_khoa": ["mức độ hài lòng", "hài lòng đối với chính quyền", "tăng 5%"],
+            "ghi_chu_dac_biet": "LƯU Ý QUAN TRỌNG: Chỉ tiêu này là TĂNG 5% SO VỚI ĐẦU NHIỆM KỲ. Bất kỳ văn bản nào viết là 'đạt 100%' hoặc '100% hài lòng' là vi phạm thể chế mục tiêu của Nghị quyết Đại hội và phải được yêu cầu chỉnh sửa lại cho đúng nguyên văn Nghị quyết."
+        },
+
+        # (4) Chỉ tiêu quốc phòng, an ninh: 4 chỉ tiêu
+        {
+            "ma_chi_tieu": "QPAN_01",
+            "nhom": "Quốc phòng - An ninh",
+            "ten_chi_tieu": "Tỷ lệ thanh niên nhập ngũ hằng năm",
+            "gia_tri_chuan": "100% chỉ tiêu được giao",
+            "don_vi": "%",
+            "kieu_so_sanh": "tuyet_doi",
+            "muc_tieu_so": 100.0,
+            "trich_dan_nguyen_van": "Tỷ lệ thanh niên nhập ngũ đạt 100% chỉ tiêu được giao hàng năm.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(4))",
+            "co_quan_chu_tri": "Ban Chỉ huy Quân sự xã",
+            "tu_khoa": ["nhập ngũ", "tuyển quân", "giao quân", "100% chỉ tiêu"]
+        },
+        {
+            "ma_chi_tieu": "QPAN_02",
+            "nhom": "Quốc phòng - An ninh",
+            "ten_chi_tieu": "Xây dựng lực lượng dân quân tự vệ",
+            "gia_tri_chuan": "Đảm bảo đạt tỷ lệ theo quy định",
+            "don_vi": "tỷ lệ quy định",
+            "kieu_so_sanh": "theo_quy_dinh",
+            "muc_tieu_so": None,
+            "trich_dan_nguyen_van": "Xây dựng lực lượng dân quân tự vệ đảm bảo đạt tỷ lệ theo quy định.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(4))",
+            "co_quan_chu_tri": "Ban Chỉ huy Quân sự xã",
+            "tu_khoa": ["dân quân tự vệ", "lực lượng dân quân"]
+        },
+        {
+            "ma_chi_tieu": "QPAN_03",
+            "nhom": "Quốc phòng - An ninh",
+            "ten_chi_tieu": "Tỷ lệ giải quyết tố giác, tin báo về tội phạm, kiến nghị khởi tố",
+            "gia_tri_chuan": "> 90%",
+            "don_vi": "%",
+            "kieu_so_sanh": "tren",
+            "muc_tieu_so": 90.0,
+            "trich_dan_nguyen_van": "Tỷ lệ giải quyết tố giác, tin báo về tội phạm, kiến nghị khởi tố đạt trên 90%.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(4))",
+            "co_quan_chu_tri": "Công an xã",
+            "tu_khoa": ["tố giác", "tin báo về tội phạm", "khởi tố", "90%"]
+        },
+        {
+            "ma_chi_tieu": "QPAN_04",
+            "nhom": "Quốc phòng - An ninh",
+            "ten_chi_tieu": "Tiêu chuẩn An toàn về an ninh, trật tự của xã",
+            "gia_tri_chuan": "Đạt tiêu chuẩn “An toàn về an ninh, trật tự”",
+            "don_vi": "tiêu chuẩn",
+            "kieu_so_sanh": "theo_quy_dinh",
+            "muc_tieu_so": None,
+            "trich_dan_nguyen_van": "Xã đạt tiêu chuẩn “An toàn về an ninh, trật tự”.",
+            "nguon": "Nghị quyết số 01-NQ/ĐH (Mục 2.2.(4))",
+            "co_quan_chu_tri": "Công an xã",
+            "tu_khoa": ["an toàn về an ninh trật tự", "an toàn về ANTT", "ANTT"]
+        }
+    ],
+    "cac_khau_dot_pha": [
+        {
+            "ma_dot_pha": "DP_01",
+            "ten_dot_pha": "Cải cách hành chính, khoa học công nghệ và chuyển đổi số",
+            "noi_dung_nguyen_van": "Đẩy mạnh công tác cải cách hành chính, tăng cường ứng dụng về khoa học, công nghệ, đổi mới sáng tạo và chuyển đổi số thực hiện nhiệm vụ trong giai đoạn phát triển mới.",
+            "nhiem_vu_trong_tam": "100% cán bộ, công chức sử dụng E-Office, ký số điện tử; đưa Sổ tay đảng viên điện tử vào 100% chi bộ; dịch vụ công trực tuyến trên 85%."
+        },
+        {
+            "ma_dot_pha": "DP_02",
+            "ten_dot_pha": "Du lịch cộng đồng gắn với bảo tồn văn hoá dân tộc Raglai",
+            "noi_dung_nguyen_van": "Khai thác tiềm năng văn hoá Raglai và cảnh quan sinh thái để phát triển du lịch cộng đồng, du lịch sinh thái gắn với bảo tồn văn hoá dân tộc Raglai.",
+            "nhiem_vu_trong_tam": "Bảo tồn văn hoá cồng chiêng, mã la, lễ hội truyền thống; phát triển các điểm du lịch sinh thái rừng - thác - biển."
+        },
+        {
+            "ma_dot_pha": "DP_03",
+            "ten_dot_pha": "Phát triển nguồn nhân lực và đổi mới công tác cán bộ",
+            "noi_dung_nguyen_van": "Chú trọng phát triển nguồn nhân lực; đổi mới, sáng tạo trong đánh giá, quy hoạch, đào tạo, bồi dưỡng, sử dụng cán bộ, xây dựng đội ngũ cán bộ đoàn kết, mẫu mực, trách nhiệm, hoàn thành xuất sắc nhiệm vụ.",
+            "nhiem_vu_trong_tam": "Đánh giá cán bộ theo nguyên tắc 6 rõ và 4 nhóm thước đo hiệu quả (Đề án số 02-ĐA/ĐU); nâng cao năng lực thực thi công vụ cho 72 biên chế của xã."
+        }
+    ]
+}
+
+def main():
+    out_path = Path(r"e:\Viet Design\Chuyên viên ảo\references\chi_tieu_nhiem_ky.json")
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(REGISTRY, f, ensure_ascii=False, indent=2)
+    import sys
+    sys.stdout.reconfigure(encoding='utf-8')
+    print(f"Đã tạo thành công {out_path} với {len(REGISTRY['danh_sach_chi_tieu'])} chỉ tiêu và {len(REGISTRY['cac_khau_dot_pha'])} khâu đột phá.")
+
+if __name__ == "__main__":
+    main()

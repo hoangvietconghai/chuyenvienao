@@ -65,7 +65,7 @@ Chuyên viên ảo chủ động chỉnh sửa, chuẩn hóa trực tiếp vào 
    * [ ] 2. Tiêu đề, số hiệu, trích yếu có chuẩn Hướng dẫn 05 không?
    * [ ] 3. Chuỗi văn bản căn cứ đã chuẩn hóa và cập nhật văn bản mới nhất chưa?
    * [ ] 4. Bố cục có đủ 3 phần chuẩn (Căn cứ/Đánh giá $\rightarrow$ Chỉ tiêu/Nhiệm vụ $\rightarrow$ Tổ chức thực hiện)?
-   * [ ] 5. Đã loại trừ hoàn toàn thông tin cấp huyện cũ chưa?
+   * [ ] 5. Đã loại trừ cấp huyện chưa? (Lưu ý: Nếu còn sót cấp huyện do lỗi đánh máy sao chép từ văn bản cũ, khi thẩm định chỉ cần ghi ngắn gọn là "không còn cấp huyện nữa", không giải thích dài dòng; trừ trường hợp viện dẫn bối cảnh lịch sử huyện cũ, tỉnh cũ, xã cũ).
    * [ ] 6. Thẩm quyền ký ở Footer đúng chức danh (Bí thư Vũ Thị Thuỳ Trang / Phó Bí thư) chưa?
    * [ ] 7. Nơi nhận đã đủ các cơ quan liên quan và Lưu VPĐU chưa?
    * [ ] 8. Văn phong có giữ đúng thể thức chính luận Đảng không?
@@ -113,7 +113,7 @@ Chuyên viên ảo chủ động chỉnh sửa, chuẩn hóa trực tiếp vào 
     II. KẾT QUẢ THẨM ĐỊNH
     1. Thể thức văn bản:
     Văn phòng Đảng uỷ đã rà soát, chỉnh sửa trực tiếp trên dự thảo văn bản các lỗi chính tả, chỉnh sửa thể thức văn bản theo đúng Hướng dẫn số 05-HD/VPTW ngày 12/01/2026 của Văn phòng Trung ương Đảng
-    *(Trường hợp phát hiện sai sót nghiêm trọng hoặc sai nhiều thì bổ sung: Riêng đối với một số nội dung sai sót lớn, đề nghị cơ quan tham mưu rút kinh nghiệm: [nêu rõ lỗi sai thẩm quyền đề ký, áp dụng sai thể loại hoặc viện dẫn cơ quan cấp huyện cũ...]).*
+    *(Trường hợp phát hiện sai sót nghiêm trọng hoặc sai nhiều thì bổ sung: Riêng đối với một số nội dung sai sót lớn, đề nghị cơ quan tham mưu rút kinh nghiệm: [nêu rõ lỗi sai thẩm quyền đề ký, áp dụng sai thể loại; nếu còn sót cấp huyện do lỗi đánh máy copy-paste thì chỉ cần ghi ngắn gọn: "không còn cấp huyện nữa", không giải thích dài dòng]).*
 
     2. Nội dung và số liệu chuyên môn:
     - Về sự phù hợp với chủ trương của Đảng uỷ: Dự thảo cơ bản bám sát Nghị quyết Đại hội Đảng bộ xã và các chỉ đạo trọng tâm của Ban Thường vụ Tỉnh uỷ...

@@ -126,7 +126,7 @@ def generate_phieu_xin_y_kien():
     p1.paragraph_format.space_after = Pt(1)
     r = p1.add_run("ĐẢNG BỘ TỈNH KHÁNH HOÀ")
     r.font.name = "Times New Roman"
-    r.font.size = Pt(13)
+    r.font.size = Pt(14)
 
     p2 = cell_l.add_paragraph()
     p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -136,7 +136,7 @@ def generate_phieu_xin_y_kien():
     p2.paragraph_format.space_after = Pt(1)
     r = p2.add_run("ĐẢNG UỶ XÃ CÔNG HẢI")
     r.font.name = "Times New Roman"
-    r.font.size = Pt(13)
+    r.font.size = Pt(14)
     r.font.bold = True
 
     p3 = cell_l.add_paragraph()
@@ -147,7 +147,7 @@ def generate_phieu_xin_y_kien():
     p3.paragraph_format.space_after = Pt(2)
     r = p3.add_run("*")
     r.font.name = "Times New Roman"
-    r.font.size = Pt(12)
+    r.font.size = Pt(14)
     r.font.bold = True
 
     # Right cell
@@ -168,7 +168,7 @@ def generate_phieu_xin_y_kien():
     p_line.paragraph_format.line_spacing = 1.0
     p_line.paragraph_format.space_before = Pt(0)
     p_line.paragraph_format.space_after = Pt(4)
-    add_horizontal_line(p_line, width_pt=186, weight_pt=0.75)
+    add_horizontal_line(p_line, width_pt=192, weight_pt=0.75)
 
     p_ngay = cell_r.add_paragraph()
     p_ngay.alignment = WD_ALIGN_PARAGRAPH.RIGHT
@@ -178,7 +178,7 @@ def generate_phieu_xin_y_kien():
     p_ngay.paragraph_format.space_after = Pt(0)
     r = p_ngay.add_run("Công Hải, ngày   tháng   năm 2026")
     r.font.name = "Times New Roman"
-    r.font.size = Pt(13.5)
+    r.font.size = Pt(14)
     r.font.italic = True
 
     # Khoảng cách
