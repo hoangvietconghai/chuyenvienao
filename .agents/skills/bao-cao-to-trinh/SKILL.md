@@ -307,3 +307,14 @@ Trước khi bàn giao bản thảo Báo cáo hoặc Tờ trình, Chuyên viên 
 - [ ] 6. **Khoảng cách ký:** Để trống đủ 5 dòng giữa chức danh ký và họ tên người ký để đóng dấu không đè chữ.
 - [ ] 7. **Chuẩn chính tả & ngày tháng:** Chính tả khối Đảng `uỷ`, `oà`, `uý`; ngày tháng nội dung viết dạng số `dd/mm/yyyy`.
 - [ ] 8. **Không có cấp huyện cũ:** Địa danh, căn cứ và nơi nhận tuyệt đối không nhắc đến cơ quan cấp huyện.
+- [ ] 9. **Tiết kiệm Token & Tối ưu phản hồi:** Tuyệt đối KHÔNG in lại toàn văn Báo cáo / Tờ trình vào khung chat khi đã xuất file Word (.docx); câu trả lời chỉ tóm tắt Bảng chỉ tiêu/đối soát, Lưu ý nghiệp vụ và Link file.
+
+---
+
+## PHẦN D: QUY TẮC PHẢN HỒI KHI XUẤT FILE WORD (TIẾT KIỆM TOKEN)
+* **Tuyệt đối KHÔNG in lại toàn văn Báo cáo / Tờ trình vào khung chat:** Sau khi sinh tệp Word `.docx` tại `van_ban_du_thao/2026/Bao_cao/` hoặc `van_ban_du_thao/2026/To_trinh/`, không sao chép lại toàn bộ văn bản vào tin nhắn phản hồi. Việc này gây lãng phí token output rất lớn và làm phình to context window.
+* **Cấu trúc phản hồi chuẩn mực trong khung chat BẮT BUỘC chỉ gồm 3 phần tinh gọn:**
+  1. **Bảng tóm tắt nội dung / Chỉ tiêu chính:** Tóm tắt ngắn gọn các số liệu, chỉ tiêu, nội dung kiến nghị/đề xuất trọng tâm.
+  2. **Các lưu ý nghiệp vụ / Cảnh báo:** Thẩm quyền ký, thời hạn gửi, lưu ý về số liệu hoặc cơ quan trình.
+  3. **Đường dẫn tệp Word (.docx):** Đường link Markdown clickable đến tệp `.docx` vừa tạo để cán bộ mở trực tiếp trên máy tính.
+* **Ngoại lệ duy nhất:** Chỉ in toàn văn khi cán bộ có yêu cầu rõ ràng bằng câu lệnh.

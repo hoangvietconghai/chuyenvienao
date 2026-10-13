@@ -322,3 +322,14 @@ Thường trực Đảng uỷ giao Uỷ ban kiểm tra Đảng uỷ chủ trì, 
 │                                          │                        Nguyễn Xuân Hoàng │
 └──────────────────────────────────────────┴──────────────────────────────────────────┘
 ```
+
+
+---
+
+## V. QUY TẮC PHẢN HỒI KHI XUẤT FILE WORD (TIẾT KIỆM TOKEN)
+* **Tuyệt đối KHÔNG in lại toàn văn Công văn vào khung chat:** Sau khi gọi `export_party_document` sinh tệp Word `.docx` tại `van_ban_du_thao/2026/Cong_van/`, không sao chép lại toàn bộ văn bản vào tin nhắn phản hồi. Việc này gây lãng phí token output rất lớn, làm phình to context window (lịch sử hội thoại) của các lượt tiếp theo và làm chậm thời gian phản hồi.
+* **Cấu trúc phản hồi chuẩn mực trong khung chat BẮT BUỘC chỉ gồm 3 phần tinh gọn:**
+  1. **Bảng phân công & Đối soát nhanh:** Bảng Markdown tóm tắt: Cơ quan chủ trì/phối hợp, Nhiệm vụ cụ thể, Mốc thời hạn hoàn thành (`dd/mm/yyyy`).
+  2. **Các lưu ý nghiệp vụ / Cảnh báo:** Thẩm quyền ký (`Nguyễn Xuân Hoàng` hoặc `Vũ Thị Thuỳ Trang`), thời hạn báo cáo, điểm mới cần lưu ý.
+  3. **Đường dẫn tệp Word (.docx):** Đường link Markdown clickable đến tệp `.docx` vừa tạo để cán bộ mở trực tiếp trên máy tính.
+* **Ngoại lệ duy nhất:** Chỉ in toàn văn khi cán bộ có yêu cầu rõ ràng bằng câu lệnh (ví dụ: *"in toàn văn lên màn hình"*, *"hiển thị toàn bộ nội dung trong khung chat"*).

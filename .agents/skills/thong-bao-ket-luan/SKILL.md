@@ -423,3 +423,13 @@ Thực hiện Quy chế làm việc số 01-QC/ĐU của Ban Chấp hành Đản
 ```
 
 
+
+---
+
+# PHẦN F: QUY TẮC PHẢN HỒI KHI XUẤT FILE WORD (TIẾT KIỆM TOKEN)
+* **Tuyệt đối KHÔNG in lại toàn văn Thông báo Kết luận / Kết luận / Công văn lấy ý kiến vào khung chat:** Sau khi gọi `export_party_document` sinh tệp Word `.docx` tại `van_ban_du_thao/2026/Thong_bao/` hoặc `van_ban_du_thao/2026/Ket_luan/`, không sao chép lại toàn bộ văn bản vào tin nhắn phản hồi. Việc này gây lãng phí token output rất lớn và làm phình to context window.
+* **Cấu trúc phản hồi chuẩn mực trong khung chat BẮT BUỘC chỉ gồm 3 phần tinh gọn:**
+  1. **Bảng phân công 5 RÕ / Đối soát nhanh:** Tóm tắt ngắn gọn: Ai chủ trì/phối hợp? Nhiệm vụ gì? Thời hạn hoàn thành (`dd/mm/yyyy`)?
+  2. **Các lưu ý nghiệp vụ / Cảnh báo:** Thẩm quyền ký, thời hạn báo cáo, các chỉ đạo trọng tâm của chủ trì cuộc họp.
+  3. **Đường dẫn tệp Word (.docx):** Đường link Markdown clickable đến tệp `.docx` vừa tạo để cán bộ mở trực tiếp trên máy tính.
+* **Ngoại lệ duy nhất:** Chỉ in toàn văn khi cán bộ có yêu cầu rõ ràng bằng câu lệnh.

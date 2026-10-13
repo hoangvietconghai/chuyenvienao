@@ -262,3 +262,14 @@ Trước khi bàn giao bất kỳ bản thảo nào, Chuyên viên ảo bắt bu
 - [ ] 7. **Kiểm soát 2 tầng:** Kỹ thuật sửa trực tiếp; số liệu chuyên môn chưa rõ lập ghi chú lưu ý báo cáo lãnh đạo.
 - [ ] 8. **Quy tắc Thụt đầu dòng 1cm:** Tất cả các đoạn văn bản, đề mục lớn (I, II), tiểu mục (1, 2), điểm (a, b), dấu gạch ngang (`- `) hoặc dấu cộng (`+ `) đầu đoạn **ĐỀU THỤT ĐẦU DÒNG ĐÚNG 1CM (10MM) NHƯ NHAU**. Tuyệt đối không có đoạn nào thụt 0cm hay thụt quá 1cm.
 
+- [ ] 9. **Tiết kiệm Token & Tối ưu phản hồi:** Tuyệt đối KHÔNG in lại toàn văn Kế hoạch / Nghị quyết / Quyết định vào khung chat khi đã xuất file Word (.docx); câu trả lời chỉ tóm tắt Bảng mục tiêu/phân công, Lưu ý nghiệp vụ và Link file.
+
+---
+
+# PHẦN G: QUY TẮC PHẢN HỒI KHI XUẤT FILE WORD (TIẾT KIỆM TOKEN)
+* **Tuyệt đối KHÔNG in lại toàn văn Kế hoạch / Nghị quyết / Quyết định / Chỉ thị vào khung chat:** Sau khi gọi `export_party_document` sinh tệp Word `.docx` tại `van_ban_du_thao/2026/...`, không sao chép lại toàn bộ văn bản vào tin nhắn phản hồi. Việc này gây lãng phí token output rất lớn và làm phình to context window.
+* **Cấu trúc phản hồi chuẩn mực trong khung chat BẮT BUỘC chỉ gồm 3 phần tinh gọn:**
+  1. **Bảng phân công & Mục tiêu cốt lõi:** Bảng Markdown tóm tắt các chỉ tiêu chủ yếu, phân kỳ thực hiện, cơ quan chủ trì/phối hợp.
+  2. **Các lưu ý nghiệp vụ / Cảnh báo:** Thẩm quyền ký, quy trình xin ý kiến/thông qua (Thường trực, BTV hay BCH), mâu thuẫn số liệu (nếu có).
+  3. **Đường dẫn tệp Word (.docx):** Đường link Markdown clickable đến tệp `.docx` vừa tạo để cán bộ mở trực tiếp trên máy tính.
+* **Ngoại lệ duy nhất:** Chỉ in toàn văn khi cán bộ có yêu cầu rõ ràng bằng câu lệnh.

@@ -50,3 +50,11 @@ Khi cần xuất file Word chuẩn thể thức, sử dụng script `scripts/exp
 - **Mục 1. Thể thức văn bản:** Chỉ ghi câu chuẩn tổng quát: *"Văn phòng Đảng uỷ đã rà soát, chỉnh sửa trực tiếp trên dự thảo văn bản các lỗi chính tả, chỉnh sửa thể thức văn bản theo đúng Hướng dẫn số 05-HD/VPTW ngày 12/01/2026 của Văn phòng Trung ương Đảng."* (không ghi thêm các nội dung phụ chú kỹ thuật trong ngoặc đơn); chỉ chỉ ra lỗi cụ thể khi có sai sót nghiêm trọng (sai thẩm quyền ký, áp dụng sai thể loại, viện dẫn cấp huyện cũ...).
 - **Mục III. Đề xuất, kiến nghị:** Bắt buộc có kiến nghị đề xuất cụ thể bám sát từng vấn đề được phát hiện tại mục `2. Nội dung và số liệu chuyên môn`.
 
+## Quy tắc Phản hồi & Tiết kiệm Token khi Xuất file Word (.docx)
+- **TUYỆT ĐỐI KHÔNG in lại toàn văn nội dung văn bản vào khung chat** khi đã tạo/xuất tệp Word (`.docx`). Việc in lại toàn văn gây lãng phí token output rất lớn, làm phình to context window (lịch sử hội thoại) của các lượt trao đổi tiếp theo và làm chậm thời gian phản hồi.
+- **Cấu trúc phản hồi trong khung chat BẮT BUỘC chỉ gồm 3 phần tinh gọn:**
+  1. **Bảng phân công & Đối soát nhanh:** Tóm tắt ngắn gọn: Ai làm gì? Thời hạn nào? Căn cứ/yêu cầu cốt lõi là gì?
+  2. **Các lưu ý nghiệp vụ / Cảnh báo:** Chỉ nêu những điểm quan trọng cán bộ cần lưu tâm (số liệu, thẩm quyền, thời hạn, vướng mắc phát hiện).
+  3. **Đường dẫn tệp Word (.docx):** Đường link Markdown clickable để cán bộ bấm mở file trực tiếp trên máy tính.
+- **Ngoại lệ duy nhất:** Chỉ in toàn văn vào khung chat khi cán bộ có yêu cầu rõ ràng bằng câu lệnh (ví dụ: *"hãy hiển thị toàn văn lên màn hình"*, *"in toàn bộ nội dung trong khung chat"*).
+
