@@ -159,3 +159,13 @@ Chuyên viên ảo chủ động chỉnh sửa, chuẩn hóa trực tiếp vào 
 
 **Nhận xét chung:** Cơ quan soạn thảo đã tiếp thu 3/4 nội dung kết luận. Đề nghị cơ quan soạn thảo cập nhật lại thời hạn tại STT 4 trước khi trình đồng chí Bí thư ký ban hành.
 ```
+
+---
+
+## VI. QUY TẮC PHẢN HỒI KHI XUẤT FILE WORD (TIẾT KIỆM TOKEN)
+* **Tuyệt đối KHÔNG in lại toàn văn Báo cáo Thẩm định hay Dự thảo vào khung chat:** Sau khi gọi engine sinh tệp Word `.docx` tại `van_ban_du_thao/2026/Bao_cao/`, không sao chép lại toàn bộ văn bản vào tin nhắn phản hồi. Việc này gây lãng phí token output rất lớn và làm phình to context window.
+* **Cấu trúc phản hồi chuẩn mực trong khung chat BẮT BUỘC chỉ gồm 3 phần tinh gọn:**
+  1. **Bảng tóm tắt kết quả thẩm định:** Bảng Markdown tóm tắt: Tình trạng thể thức (Đạt/Đã sửa trực tiếp), Tình trạng số liệu & chuyên môn (Đạt/Cần lưu ý), Các điểm mâu thuẫn phát hiện (nếu có).
+  2. **Các kiến nghị, đề xuất cốt lõi:** Đề xuất Thường trực/Lãnh đạo cho ý kiến hoặc yêu cầu cơ quan soạn thảo giải trình.
+  3. **Đường dẫn tệp Word (.docx):** Đường link Markdown clickable đến tệp `.docx` Báo cáo Thẩm định và Dự thảo hoàn chỉnh để cán bộ mở trực tiếp trên máy tính.
+* **Ngoại lệ duy nhất:** Chỉ in toàn văn khi cán bộ có yêu cầu rõ ràng bằng câu lệnh.

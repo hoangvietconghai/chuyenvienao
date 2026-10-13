@@ -37,8 +37,9 @@ scratch/
 scripts/debug/
 *.log
 
-# File văn bản kiểm thử tự động
-van_ban_den/**/tmp*
-van_ban_du_thao/**/TC*.docx
-van_ban_du_thao/test_*.docx
-van_ban_du_thao/Phieu_xin_y_kien*.docx
+# File văn bản dự thảo & ảnh (không đưa lên Git)
+van_ban_du_thao/**/*.docx
+van_ban_du_thao/*.docx
+van_ban_den/**/*.docx
+van_ban_den/*.docx
+*.png

@@ -473,6 +473,15 @@ Trước khi bàn giao file cho cán bộ, AI Agent phải tự đối chiếu c
 - [x] Thẩm quyền ký & họ tên: `Vũ Thị Thuỳ Trang` (Bí thư), `Nguyễn Xuân Hoàng` (Phó Bí thư); 14pt đậm.
 - [x] Mô hình 3 cấp (từ 01/7/2025): Tuyệt đối không viện dẫn hoặc liên quan đến cấp huyện cũ (Huyện uỷ, UBND huyện Thuận Bắc).
 - [x] An toàn hệ thống: Tuyệt đối KHÔNG đụng đến mật khẩu; KHÔNG tự ý ban hành/ký số trên hệ thống khi chưa có lệnh cán bộ.
+- [x] Tiết kiệm Token & Tối ưu phản hồi: Tuyệt đối KHÔNG in lại toàn văn văn bản vào khung chat khi đã xuất file Word (.docx); câu trả lời chỉ tóm tắt Bảng phân công/đối soát, Lưu ý nghiệp vụ và Link file.
+
+### Quy tắc Tiết kiệm Token & Cấu trúc Phản hồi khi Xuất Tệp Word (.docx)
+* **TUYỆT ĐỐI KHÔNG in lại toàn văn nội dung văn bản vào khung chat:** Khi đã chạy engine sinh file Word (`export_docx.py`) và lưu vào kho `van_ban_du_thao/`, AI Agent không được sao chép toàn văn văn bản vào câu trả lời chat. Việc này gây lãng phí nghiêm trọng token đầu ra (output token), làm phình to context window (lịch sử hội thoại) của các lượt sau và làm chậm thời gian chờ đợi của cán bộ.
+* **Cấu trúc phản hồi chuẩn mực trong khung chat BẮT BUỘC chỉ gồm 3 phần tinh gọn:**
+  1. **Bảng phân công & Đối soát nhanh (Task Matrix / Assignment Table):** Tóm tắt trực quan các nội dung cốt lõi: Chủ thể thực hiện, Nhiệm vụ được giao, Mốc thời hạn hoàn thành (`dd/mm/yyyy`).
+  2. **Các lưu ý nghiệp vụ / Cảnh báo (Professional Highlights & Warnings):** Các vấn đề quan trọng cần Thường trực/lãnh đạo lưu tâm (thẩm quyền ký, mâu thuẫn số liệu, điểm mới về quy trình hoặc vướng mắc cần xin ý kiến).
+  3. **Đường dẫn mở tệp Word (.docx):** Đường link Markdown clickable trỏ trực tiếp đến file Word đã sinh để cán bộ click mở trên máy tính.
+* **Ngoại lệ duy nhất:** Chỉ in toàn văn vào khung chat khi cán bộ có yêu cầu tường minh (ví dụ: *"in toàn văn lên màn hình"*, *"hiển thị toàn bộ nội dung trong khung chat"*).
 
 ---
 
