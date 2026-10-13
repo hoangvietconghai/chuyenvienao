@@ -26,8 +26,19 @@ desktop.ini
 *.swp
 *.swo
 
-# Văn bản nội bộ & Văn bản đi đã ban hành (không đưa lên Git)
+# Văn bản nội bộ & Dữ liệu không đưa lên Git
 references/Văn bản đi đã ban hành/
+references/van_ban_so_hoa_toan_van/
 references/van_ban_so_hoa_toan_van_backup/
 Văn bản đi đã ban hành/
 
+# Thư mục nháp & kiểm thử tạm thời
+scratch/
+scripts/debug/
+*.log
+
+# File văn bản kiểm thử tự động
+van_ban_den/**/tmp*
+van_ban_du_thao/**/TC*.docx
+van_ban_du_thao/test_*.docx
+van_ban_du_thao/Phieu_xin_y_kien*.docx
