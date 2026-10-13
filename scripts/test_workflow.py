@@ -280,12 +280,8 @@ def test_tc04_anti_hallucination():
     print("[TEST TC-04] Đang kiểm tra phòng chống nhầm lẫn địa giới hành chính (Anti-Hallucination)...")
     forbidden_terms = ["huyện thuận bắc", "huyện uỷ thuận bắc", "ubnd huyện"]
     
-    test_files = [
-        os.path.join(BASE_DIR, "AGENTS.md"),
-        os.path.join(BASE_DIR, ".agents", "skills", "quy-chuan-nen-tang", "SKILL.md"),
-        os.path.join(BASE_DIR, ".agents", "skills", "cong-van-giao-viec", "SKILL.md"),
-        os.path.join(BASE_DIR, ".agents", "skills", "ke-hoach-nghi-quyet", "SKILL.md")
-    ]
+    import glob
+    test_files = [os.path.join(BASE_DIR, "AGENTS.md")] + glob.glob(os.path.join(BASE_DIR, ".agents", "skills", "*", "SKILL.md"))
     
     found_violations = []
     for file_path in test_files:

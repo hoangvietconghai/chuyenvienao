@@ -17,22 +17,27 @@ e:\Viet Design\Chuyên viên ảo\
 ├── 🔌 .agents/                              # HỆ THỐNG SKILLS ANTIGRAVITY (auto-discovery)
 │   └── skills/
 │       ├── quy-chuan-nen-tang/SKILL.md      # Quy chuẩn nền tảng thể thức văn bản Đảng toàn diện
-│       ├── cong-van-giao-viec/SKILL.md      # Kỹ năng soạn Công văn giao việc, chỉ đạo, đôn đốc
-│       ├── thong-bao-ket-luan/SKILL.md      # Kỹ năng Thông báo kết luận & Lấy ý kiến BTV
-│       ├── ke-hoach-nghi-quyet/SKILL.md     # Kỹ năng Kế hoạch, Nghị quyết, Quyết định, Chỉ thị, CTr
-│       ├── bao-cao-to-trinh/SKILL.md        # Kỹ năng Báo cáo định kỳ & Tờ trình các cấp
+│       ├── bao-cao/SKILL.md                 # Kỹ năng soạn Báo cáo của cấp uỷ (-BC/ĐU)
+│       ├── to-trinh/SKILL.md                # Kỹ năng soạn Tờ trình xin chủ trương & trình duyệt (-TTr)
+│       ├── ke-hoach/SKILL.md                # Kỹ năng soạn Kế hoạch cấp uỷ (-KH/ĐU) theo nguyên tắc "5 Rõ"
+│       ├── nghi-quyet/SKILL.md              # Kỹ năng soạn Nghị quyết (-NQ/ĐU) (tuyệt đối không chia Điều)
+│       ├── quyet-dinh/SKILL.md              # Kỹ năng soạn Quyết định (-QĐ/ĐU) (bắt buộc chia Điều)
+│       ├── chi-thi/SKILL.md                 # Kỹ năng soạn Chỉ thị (-CT/ĐU) & Chương trình hành động (-CTr)
+│       ├── thong-bao/SKILL.md               # Kỹ năng soạn Thông báo Kết luận họp BTV & Thường trực (-TB/ĐU)
+│       ├── ket-luan/SKILL.md                # Kỹ năng soạn Kết luận Hội nghị Ban Chấp hành (-KL/ĐU)
+│       ├── cong-van/SKILL.md                # Kỹ năng soạn Công văn giao việc/chỉ đạo & Lấy ý kiến BTV (-CV/ĐU)
 │       └── tham-dinh-van-ban/SKILL.md       # Kỹ năng Thẩm định văn bản & Đối soát tiếp thu
 │
 ├── ⚙️ scripts/                              # BỘ CÔNG CỤ TỰ ĐỘNG HÓA VĂN THƯ & KIỂM THỬ
 │   ├── __init__.py                          # Package initialization
 │   ├── export_docx.py                       # Engine sinh tệp Word (.docx) chuẩn hóa tự động HD 05
-│   ├── generate_batch_tham_dinh.py          # Sinh trọn bộ chùm văn bản thẩm định & 03 TBKL kiểm tra
-│   ├── generate_tham_dinh_outputs.py        # Sinh Báo cáo thẩm định & TBKL Chi bộ thôn Suối Giếng
+│   ├── doc_reader.py                        # Trích xuất và đọc văn bản Office (.docx, .doc, .pdf)
+│   ├── build_indicator_registry.py          # Xây dựng sổ đăng ký chỉ tiêu nhiệm kỳ
+│   ├── build_plan_registry.py               # Xây dựng sổ kế hoạch chỉ đạo
 │   ├── generate_cong_van_lay_y_kien.py      # Sinh Công văn lấy ý kiến BTV kèm Phiếu xin ý kiến
-│   ├── generate_cv_lay_y_kien_3tbkl.py      # Sinh Công văn lấy ý kiến BTV cho chùm 03 TBKL
-│   ├── test_workflow.py                     # Kịch bản kiểm thử tích hợp (Integration Tests) tự động
-│   ├── verify_outputs.py                    # Script kiểm tra chi tiết cấu trúc XML run-level của file Word
-│   └── debug/                               # Thư mục chứa các công cụ debug & ad-hoc
+│   ├── test_doc_reader.py                   # Bộ kiểm thử bộ đọc văn bản
+│   ├── test_system_integration.py           # Bộ kiểm thử tích hợp hệ thống
+│   └── test_workflow.py                     # Kịch bản kiểm thử tích hợp (Integration Tests) tự động
 │
 ├── 📥 van_ban_den/                          # KHO TIẾP NHẬN TÀI LIỆU ĐẦU VÀO
 │   └── 2026/                                # Văn bản chỉ đạo cấp trên (Tỉnh uỷ, Trung ương) theo năm

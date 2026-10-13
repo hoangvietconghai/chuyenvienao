@@ -490,3 +490,20 @@ Trước khi bàn giao file cho cán bộ, AI Agent phải tự đối chiếu c
 * **Chu trình 3 (Kế hoạch / CTHĐ thực hiện văn bản Tỉnh uỷ):** Thường trực duyệt chủ trương $\rightarrow$ VPĐU phát hành Công văn kèm Phiếu lấy ý kiến Ủy viên Ban Thường vụ $\rightarrow$ Tổng hợp tiếp thu $\rightarrow$ Trình Bí thư (hoặc Phó Bí thư) ký ban hành.
 * **Chu trình 4 (Họp Tuần & Công tác Thường xuyên Thường trực):** Họp tuần nghe báo cáo $\rightarrow$ VPĐU tham mưu ban hành Thông báo Kết luận họp Thường trực trong vòng 24h, ấn định deadline rõ ràng cho từng ngành.
 
+---
+
+## PHẦN IX: HỆ THỐNG CÁC KỸ NĂNG NHÁNH ĐỘC LẬP THEO THỂ LOẠI VĂN BẢN
+
+Toàn bộ các quy chuẩn chung tại Skill nền tảng này được kế thừa và vận hành chi tiết tại 10 Kỹ năng nhánh độc lập theo từng thể loại văn bản và nghiệp vụ chuyên biệt:
+
+1. [bao-cao](../bao-cao/SKILL.md): Soạn thảo Báo cáo của cấp uỷ (`-BC/ĐU`) định kỳ, chuyên đề, sơ kết, tổng kết.
+2. [to-trinh](../to-trinh/SKILL.md): Soạn thảo Tờ trình xin chủ trương của cấp uỷ (`-TTr/ĐU`) và Tờ trình của cơ quan chuyên môn (`-TTr/...`).
+3. [ke-hoach](../ke-hoach/SKILL.md): Soạn thảo Kế hoạch của cấp uỷ (`-KH/ĐU`) theo nguyên tắc "5 Rõ" và hệ thống mục tiêu đa tầng.
+4. [nghi-quyet](../nghi-quyet/SKILL.md): Soạn thảo Nghị quyết chuyên đề và Nghị quyết năm (`-NQ/ĐU`) (tuyệt đối không chia Điều).
+5. [quyet-dinh](../quyet-dinh/SKILL.md): Soạn thảo Quyết định cán bộ, kết nạp đảng viên, thành lập ban chỉ đạo (`-QĐ/ĐU`) (bắt buộc chia Điều).
+6. [chi-thi](../chi-thi/SKILL.md): Soạn thảo Chỉ thị (`-CT/ĐU`) và Chương trình hành động (`-CTr/ĐU`) giải quyết nhiệm vụ cấp bách, trọng tâm.
+7. [thong-bao](../thong-bao/SKILL.md): Soạn thảo Thông báo Kết luận cuộc họp Ban Thường vụ và Thường trực Đảng uỷ (`-TB/ĐU`).
+8. [ket-luan](../ket-luan/SKILL.md): Soạn thảo Kết luận Hội nghị Ban Chấp hành Đảng bộ xã (`-KL/ĐU`) (bắt buộc có Lời kêu gọi chính trị).
+9. [cong-van](../cong-van/SKILL.md): Soạn thảo Công văn giao việc/chỉ đạo/đôn đốc và Công văn lấy ý kiến Ủy viên BTV (`-CV/ĐU`).
+10. [tham-dinh-van-ban](../tham-dinh-van-ban/SKILL.md): Thẩm định toàn diện dự thảo văn bản của cơ quan chuyên môn và đối soát tiếp thu kết luận.
+

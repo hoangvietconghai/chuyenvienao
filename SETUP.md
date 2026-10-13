@@ -72,7 +72,7 @@ về hành động 100 ngày giải quyết điểm nghẽn chuyển đổi số
 ```
 
 **Kết quả mong đợi:**
-- Agent tự đọc skill `quy-chuan-nen-tang` và `cong-van-giao-viec`
+- Agent tự đọc skill `quy-chuan-nen-tang` và `cong-van`
 - Xuất file .docx đúng thể thức HD 05-HD/VPTW
 - File lưu tại `van_ban_du_thao/2026/Cong_van/`
 
@@ -106,28 +106,36 @@ E:\Viet Design\Chuyên viên ảo\
 ├── .agents/                               ← Hệ thống Skills Antigravity (Canonical)
 │   └── skills/
 │       ├── quy-chuan-nen-tang/SKILL.md
-│       ├── cong-van-giao-viec/SKILL.md
-│       ├── thong-bao-ket-luan/SKILL.md
-│       ├── ke-hoach-nghi-quyet/SKILL.md
-│       ├── bao-cao-to-trinh/SKILL.md
+│       ├── bao-cao/SKILL.md
+│       ├── to-trinh/SKILL.md
+│       ├── ke-hoach/SKILL.md
+│       ├── nghi-quyet/SKILL.md
+│       ├── quyet-dinh/SKILL.md
+│       ├── chi-thi/SKILL.md
+│       ├── thong-bao/SKILL.md
+│       ├── ket-luan/SKILL.md
+│       ├── cong-van/SKILL.md
 │       └── tham-dinh-van-ban/SKILL.md
 │
 ├── references/                            ← Tài liệu tra cứu
 │   ├── Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md
 │   ├── tong_quan_xa_cong_hai.md
+│   ├── chi_tieu_nhiem_ky.json
+│   ├── so_ke_hoach_chi_dao.json
+│   ├── tong_hop_van_de_va_noi_dung_trong_tam.md
 │   ├── Mẫu văn bản thông dụng/           (18 file mẫu)
 │   └── Thông tin thông dụng/
 │
-├── scripts/                               ← Bộ công cụ tự động hoá văn thư
+├── scripts/                               ← Bộ công cụ tự động hoá văn thư & kiểm thử
 │   ├── __init__.py                        ← Package init
 │   ├── export_docx.py                     ← Engine tạo file Word chuẩn HD 05
-│   ├── generate_batch_tham_dinh.py        ← Sinh chùm văn bản thẩm định & TBKL
-│   ├── generate_tham_dinh_outputs.py      ← Sinh báo cáo thẩm định & TBKL
+│   ├── doc_reader.py                      ← Đọc văn bản Word, PDF, DOCX
+│   ├── build_indicator_registry.py        ← Build registry chỉ tiêu
+│   ├── build_plan_registry.py             ← Build registry sổ kế hoạch
 │   ├── generate_cong_van_lay_y_kien.py    ← Sinh CV lấy ý kiến & Phiếu xin ý kiến
-│   ├── generate_cv_lay_y_kien_3tbkl.py    ← Sinh CV lấy ý kiến chùm TBKL
-│   ├── test_workflow.py                   ← Bộ kiểm thử tự động hóa (Integration Tests)
-│   ├── verify_outputs.py                  ← Kiểm tra thuộc tính văn bản đã sinh
-│   └── debug/                             ← Công cụ kiểm tra & ad-hoc
+│   ├── test_doc_reader.py                 ← Kiểm thử bộ đọc văn bản
+│   ├── test_system_integration.py         ← Kiểm thử tích hợp hệ thống
+│   └── test_workflow.py                   ← Bộ kiểm thử tự động hóa (Integration Tests)
 │
 ├── van_ban_den/2026/                      ← Kho văn bản đến
 └── van_ban_du_thao/2026/                  ← Kho văn bản soạn thảo

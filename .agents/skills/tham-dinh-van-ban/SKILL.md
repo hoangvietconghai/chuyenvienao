@@ -9,7 +9,7 @@ description: >-
 
 > **Skill Name:** `tham-dinh-van-ban`  
 > **Kế thừa:** [quy-chuan-nen-tang](../quy-chuan-nen-tang/SKILL.md) & [Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md](../../references/Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md)  
-> **Phạm vi áp dụng:** Thẩm định toàn bộ dự thảo văn bản (Nghị quyết, Kế hoạch, Đề án, Tờ trình...) của các cơ quan chuyên môn (UBND, Ban Xây dựng Đảng, UBKT, MTTQ) gửi về Văn phòng Đảng uỷ trước khi trình Thường trực, Ban Thường vụ, Ban Chấp hành.
+> **Phạm vi áp dụng:** Thẩm định toàn bộ dự thảo văn bản (Nghị quyết, Kế hoạch, Đề án, Tờ trình...) của các cơ quan chuyên môn (UBND, Ban Xây dựng Đảng, UBKT, MTTQ) gửi về Văn phòng Đảng uỷ trước khi trình Thường trực, Ban Thường vụ, Ban Chấp hành Đảng bộ xã Công Hải (Đảng bộ cơ sở trực thuộc Tỉnh uỷ Khánh Hoà).
 
 ---
 
