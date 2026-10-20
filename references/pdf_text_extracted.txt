@@ -1,0 +1,336 @@
+=== PAGE 1 ===
+ĐẢNG BỘ TỈNH KHÁNH HÒA    ĐẢNG CỘNG SẢN VIỆT NAM
+ĐẢNG ỦY XÃ CÔNG HẢI
+*Công Hải, ngày      tháng 10 năm 2026
+Số          -KH/ĐU
+KẾ HOẠCH
+triển khai rà soát, làm sạch, chuẩn hóa, đối soát dữ liệu tổ chức đảng, 
+đảng viên trong Đảng bộ xã Công Hải
+-----
+Thực hiện Công văn số 1859-CV/TU ngày 29/9/2026 của Ban Thường vụ 
+Tỉnh ủy về việc rà soát, làm sạch, chuẩn hóa, đối soát dữ liệu tổ chức đảng, đảng 
+viên và Công văn số 2222-CV/BTCTU ngày 30/9/2026 của Ban Tổ chức Tỉnh ủy về 
+việc hướng dẫn quy trình thực hiện Kế hoạch số 57-KH/BTCTW; Công văn số 2295-
+CV/BTCTU ngày 13/10/2026 của Ban Tổ chức Tỉnh ủy về việc triển khai làm sạch, 
+dữ liệu tổ chức đảng, đảng viên;; Ban Thường vụ Đảng ủy xã ban hành Kế hoạch 
+triển khai thực hiện trong toàn Đảng bộ xã, cụ thể như sau:
+I. MỤC ĐÍCH, YÊU CẦU 
+1. Mục đích
+- Rà soát, thu nhận, cập nhật, đối soát, làm sạch và chuẩn hóa toàn bộ dữ liệu 
+tổ chức đảng, đảng viên thuộc Đảng bộ xã Công Hải trên Phần mềm Cơ sở dữ liệu 
+đảng viên và Ứng dụng Sổ tay đảng viên điện tử, bảo đảm dữ liệu chính xác, đầy 
+đủ, thống nhất, kịp thời, đáp ứng yêu cầu “đúng - đủ - sạch - sống - thống nhất - 
+dùng chung”.
+- Chuẩn hóa dữ liệu tổ chức đảng trong Đảng bộ xã, bảo đảm đúng tên gọi, 
+loại hình, phân loại, mã định danh, quan hệ trực thuộc, tình trạng hoạt động và phù 
+hợp với mô hình tổ chức đảng theo quy định hiện hành.
+- Chuẩn hóa dữ liệu đảng viên gắn với hồ sơ đảng viên, phiếu đảng viên và 
+các tài liệu liên quan; khắc phục tình trạng dữ liệu thiếu, sai, trùng lặp, không thống 
+nhất hoặc chưa đủ điều kiện đồng bộ, khai thác.
+- Hướng dẫn, tạo điều kiện để đảng viên trực tiếp cập nhật, bổ sung thông tin 
+cá nhân trên Ứng dụng Sổ tay đảng viên điện tử; đồng thời có phương án hỗ trợ đối 
+với đảng viên cao tuổi, sức khỏe yếu, được miễn công tác và sinh hoạt đảng hoặc 
+không có điều kiện sử dụng thiết bị số.
+- Nâng cao trách nhiệm của cấp ủy, tổ chức đảng, cán bộ được giao nhiệm vụ 
+và từng đảng viên trong quản lý, cập nhật, kiểm tra, phê duyệt, khai thác và sử dụng 
+dữ liệu trên môi trường số.
+2. Yêu cầu
+- Triển khai đồng bộ, thống nhất, khẩn trương trong toàn Đảng bộ xã; hoàn 
+thành việc rà soát, làm sạch, chuẩn hóa, đối soát, đồng bộ dữ liệu đảm bảo hoàn 
+
+=== PAGE 2 ===
+2
+thành chỉ tiêu tối thiểu 98% dữ liệu tổ chức đảng, đảng viên được làm sạch, chuẩn 
+hóa, đối soát, đồng bộ trước ngày 20/11/2026.
+- Thực hiện theo nguyên tắc “rõ người, rõ việc, rõ trách nhiệm, rõ thời gian, 
+rõ kết quả”; mỗi nhiệm vụ xác định tổ chức, cá nhân chịu trách nhiệm trực tiếp.
+- Ưu tiên rà soát, chuẩn hóa dữ liệu tổ chức đảng trước, làm cơ sở để chuẩn 
+hóa, đối soát và đồng bộ dữ liệu đảng viên; không vì dữ liệu tổ chức đảng chưa 
+hoàn thành mà dừng việc thu nhận, cập nhật dữ liệu đảng viên.
+- Việc cập nhật, điều chỉnh dữ liệu phải căn cứ hồ sơ, tài liệu có thẩm quyền; 
+không tự ý sửa đổi thông tin không có căn cứ.
+- Bảo đảm an ninh, an toàn, bảo mật thông tin; khai thác, sử dụng dữ liệu đúng 
+thẩm quyền, đúng quy định.
+II. PHẠM VI, ĐỐI TƯỢNG 
+1. Phạm vi
+Thực hiện đối với toàn bộ dữ liệu tổ chức đảng, đảng viên thuộc Đảng bộ xã 
+Công Hải trên Phần mềm Cơ sở dữ liệu đảng viên và Ứng dụng Sổ tay đảng viên 
+điện tử.
+2. Đối tượng
+- Hệ thống tổ chức đảng thuộc Đảng bộ xã Công Hải.
+- Toàn thể đảng viên thuộc phạm vi quản lý của Đảng bộ xã, được phân nhóm 
+để thực hiện phù hợp với từng đối tượng.
+- Cấp ủy, tổ chức đảng, cán bộ làm công tác tổ chức xây dựng Đảng và cán 
+bộ được phân công quản trị, cập nhật, kiểm tra, phê duyệt dữ liệu.
+III. NỘI DUNG VÀ PHƯƠNG THỨC THỰC HIỆN 
+1. Các chi bộ trực thuộc Đảng ủy (trừ Công an, Quân sự)
+- Quán triệt và thực hiện nghiêm túc Kế hoạch số 57-KH/BTCTW ngày 
+09/9/2026 của Ban Tổ chức Trung ương và nội dung Kế hoạch này đến đảng viên. 
+- Phân công đồng chí bí thư chi bộ trực tiếp lãnh đạo, chỉ đạo việc triển khai Kế hoạch 
+số 57-KH/BTCTW; thường xuyên theo dõi, chỉ đạo, kiểm tra, đôn đốc, kịp thời tháo gỡ 
+khó khăn trong tổ chức thực hiện.
+2. Rà soát, chuẩn hóa dữ liệu tổ chức đảng
+- Rà soát cây tổ chức; chuẩn hóa tên gọi, loại hình, phân loại, mã định danh 
+và quan hệ tổ chức theo Quy định số 208-QĐ/TW trên phần mềm Cơ sở dữ liệu đảng 
+viên 4.0.
+- Nền dữ liệu tổ chức được làm sạch; chuẩn hóa theo mô hình mới; hoàn thành 
+trước ngày 15/10/2026 (Đã thực hiện xong).
+3. Phân nhóm đảng viên
+Ban Xây dựng Đảng phối hợp các chi bộ phân nhóm đảng viên trên hệ thống 
+
+=== PAGE 3 ===
+3
+trước khi triển khai cập nhật, chuẩn hóa, gồm:
+- Nhóm 1: Đảng viên đang công tác, sinh hoạt bình thường, có khả năng sử 
+dụng thiết bị số.
+- Nhóm 2: Đảng viên cao tuổi, sức khỏe yếu.
+- Nhóm 3: Đảng viên được miễn công tác và sinh hoạt đảng.
+- Nhóm 4: Đảng viên không có điều kiện sử dụng thiết bị số.
+- Nhóm 5: Đảng viên mới kết nạp, chưa có dữ liệu trên Phần mềm Cơ sở dữ 
+liệu đảng viên.
+4. Đảng viên trực tiếp kê khai, cập nhật thông tin 
+- Tự kiểm tra thông tin cá nhân trên Sổ tay đảng viên điện tử; bổ sung các 
+trường thông tin còn thiếu; chỉnh sửa thông tin chưa chính xác.
+- Bảo đảm thông tin kê khai đầy đủ, trung thực, chính xác và hoàn thành theo 
+thời hạn do cấp ủy quản lý trực tiếp quy định.
+- Đảng viên chịu trách nhiệm về tính trung thực, chính xác của thông tin đã 
+kê khai, bổ sung, cập nhật.
+(Kèm theo tài liệu hướng dẫn trên Web và App Sổ tây đảng viên điện tử)
+5. Hỗ trợ cập nhật đối với đảng viên đặc thù
+- Đối với đảng viên cao tuổi, sức khỏe yếu, được miễn công tác và sinh hoạt 
+Đảng hoặc không có điều kiện sử dụng thiết bị số: chi ủy, chi bộ phân công 01 cấp 
+ủy viên hoặc 01 đảng viên có khả năng sử dụng thiết bị số trực tiếp để hỗ trợ từng 
+trường hợp. Người được phân công có trách nhiệm hướng dẫn, hỗ trợ thao tác kê 
+khai, cập nhật trên Sổ tay đảng viên điện tử trên cơ sở thông tin do đảng viên cung 
+cấp; sau khi hoàn thành phải thực hiện đối chiếu cùng đảng viên, để đảng viên 
+kiểm tra, xác nhận thông tin.
+- Trường hợp đảng viên không thể đến địa điểm hỗ trợ của chi bộ (do tuổi 
+cao, sức khỏe yếu hoặc điều kiện khách quan), chi bộ chủ động bố trí người đến hỗ 
+trợ tại nơi cư trú hoặc địa điểm phù hợp, bảo đảm thuận tiện, an toàn và bảo mật 
+thông tin. Trường hợp chi bộ không đủ nhân lực hoặc phát sinh khó khăn vượt khả 
+năng xử lý, báo cáo ngay đảng ủy cấp trên để điều động cán bộ, đảng viên, lực 
+lượng quân đội, công an hoặc có thể trưng tập đoàn viên thanh niên,… hỗ trợ 
+theo cụm chi bộ hoặc tổ chức tổ hỗ trợ lưu động, không để tồn đọng do thiếu người 
+hỗ trợ.
+- Yêu cầu lực lượng hỗ trợ cập nhật thông tin đảng viên phải bảo đảm đúng 
+thông tin do đảng viên cung cấp, không tự ý thay đổi nội dung và không để lộ, lọt 
+thông tin cá nhân.
+6. Đối với đảng viên mới kết nạp chưa có dữ liệu
+Ban Xây dựng Đảng thực hiện kê khai thông tin lần đầu trên Phần mềm Cơ 
+sở dữ liệu đảng viên bằng chức năng thêm mới hồ sơ, căn cứ hồ sơ kết nạp Đảng và 
+
+=== PAGE 4 ===
+4
+tài liệu có liên quan; không để phát sinh tình trạng đảng viên đã được kết nạp nhưng 
+chưa có dữ liệu trên hệ thống.
+7. Đối với đảng viên thuộc diện đặc thù về quản lý, bảo mật
+- Thực hiện rà soát, cập nhật, bổ sung thông tin theo thẩm quyền; không đưa 
+thông tin mật lên các trường thông tin không được phép; thực hiện đúng quy định 
+về bảo mật, an toàn thông tin.
+- Đối với những đối tượng không thực hiện kê khai trực tiếp trên Sổ tay đảng 
+viên điện tử theo quy định của Kế hoạch số 57-KH/BTCTW, gồm: Đảng viên thuộc 
+chi bộ Quân sự xã, chi bộ Công an xã. Bí thư chi bộ chỉ đạo đảng viên của chi bộ 
+mình bổ sung lý lịch 2C (Mẫu SYLL-2c/TW-2026 ban hành kèm theo Quy định 211-
+QĐ/TW ngày 07/8/2026 của Ban Bí thư); đồng thời chi ủy, chi bộ phân công 01 
+cấp ủy viên hoặc 01 đảng viên có khả năng sử dụng thiết bị số, tổng hợp tất cả lý 
+lịch đảng viên của đơn vị đến Ban Xây dựng Đảng trực tiếp thực hiện rà soát, cập 
+nhật, bổ sung thông tin từng trường hợp, để bảo đảm yêu cầu bảo mật.
+8. Kiểm tra, đối chiếu và xác nhận tại chi bộ
+Sau khi đảng viên cập nhật thông tin, chi bộ quản lý trực tiếp kiểm tra trên Sổ 
+tay đảng viên điện tử; đối chiếu với hồ sơ đảng viên, phiếu đảng viên và tài liệu liên 
+quan; xác định thông tin thiếu, sai, chưa thống nhất; yêu cầu bổ sung, điều chỉnh khi 
+cần thiết; xác nhận dữ liệu trên hệ thống để chuyển lên Đảng ủy xã. Bí thư chi bộ 
+chịu trách nhiệm về kết quả kiểm tra, xác nhận dữ liệu đảng viên thuộc chi bộ.
+9. Thẩm định, phê duyệt và cập nhật vào Phần mềm Cơ sở dữ liệu đảng 
+viên
+Ban Xây dựng Đảng tiếp nhận thông tin do chi bộ xác nhận; kiểm tra, thẩm 
+định với hồ sơ gốc; xử lý sai lệch; thực hiện phê duyệt hoặc ký số theo chức năng 
+được phân quyền; cập nhật chính thức trên hệ thống và chịu trách nhiệm tham mưu 
+bảo đảm tính chính xác, đầy đủ của dữ liệu được phê duyệt.
+IV. ĐỐI SOÁT, LÀM SẠCH, CHUẨN HÓA DỮ LIỆU
+1. Nội dung đối soát  
+- Dữ liệu còn thiếu.
+- Dữ liệu sai.
+- Dữ liệu trùng.
+- Dữ liệu không thống nhất giữa hồ sơ và phần mềm.
+- Dữ liệu chưa đủ điều kiện đồng bộ.
+- Các trường thông tin chưa được chuẩn hóa theo yêu cầu.
+2. Phương thức xử lý
+- Thực hiện theo nguyên tắc: Phát hiện → xác minh → điều chỉnh/bổ sung → 
+kiểm tra → xác nhận → phê duyệt → đồng bộ.
+- Đối với trường hợp không xác định được nguyên nhân sai lệch hoặc vượt 
+
+=== PAGE 5 ===
+5
+thẩm quyền xử lý, Ban Xây dựng Đảng tổng hợp, tham mưu Đảng ủy xã báo cáo 
+Ban Tổ chức Tỉnh uỷ để được hướng dẫn hoặc báo cáo cấp có thẩm quyền.
+3. Kiểm tra chéo
+Đảng ủy xã tổ chức kiểm tra, đối soát dữ liệu theo từng chi bộ; ưu tiên các chi 
+bộ có tỷ lệ dữ liệu thiếu, sai, trùng hoặc chưa đồng bộ cao. Không chỉ kiểm tra tỷ lệ 
+hoàn thành cập nhật mà phải kiểm tra chất lượng dữ liệu sau cập nhật.
+V. TIẾN ĐỘ THỰC HIỆN
+STT Nội dung công việc thực hiện
+Cơ quan, 
+đơn vị phụ 
+trách
+Tiến độ 
+hoàn thành Ghi chú
+I DỮ LIỆU TỔ CHỨC ĐẢNG
+1
+Rà soát cây tổ chức; chuẩn hóa tên 
+gọi, loại hình, phân loại, mã định 
+danh và quan hệ tổ chức theo Quy 
+định số 208-QĐ/TW trên phần 
+mềm Cơ sở dữ liệu đảng viên 4.0
+Ban Xây 
+dựng Đảng Trước ngày 
+15/10/2026
+Nền dữ liệu tổ 
+chức đã được 
+làm sạch; 
+chuẩn hóa theo 
+mô hình mới.
+II DỮ LIỆU ĐẢNG VIÊN
+2
+Đảng viên kê khai, bổ sung, cập 
+nhật đầy đủ thông tin trên Sổ tay 
+đảng viên điện tử.
+Đảng viên 20/10/2026
+Gửi kèm Tài 
+liệu hướng dẫn 
+trên Web và 
+App
+3
+Chi bộ hướng dẫn, kiểm tra; đối 
+chiếu thông tin với hồ sơ đảng viên 
+và xác nhận dữ liệu.
+Các 
+chi bộ 30/10/2026
+4
+Thẩm định thông tin đảng viên và 
+phê duyệt (hoặc ký số) dữ liệu 
+đảng viên.
+Bí thư 
+chi bộ 10/11/2026
+Chịu trách 
+nhiệm về tính 
+chính xác, đầy 
+đủ, thống nhất 
+của dữ liệu.
+5 Kiểm tra, hoàn thiện Ban Xây 
+dựng Đảng 12/11/2026
+II RÀ SOÁT, ĐỐI SOÁT, HOÀN THIỆN VÀ ĐỒNG BỘ DỮ LIỆU TỔ CHỨC 
+ĐẢNG, ĐẢNG VIÊN
+6
+Đối chiếu dữ liệu với hồ sơ; bổ 
+sung, điều chỉnh các trường thông 
+tin thiếu, sai, trùng, không thống 
+nhất.
+Đảng viên; 
+chi bộ; Ban 
+xây dựng 
+Đảng
+15/11/2026
+Bảo đảm dữ 
+liệu đúng, đủ, 
+sạch, sống.
+7
+- Kiểm tra, phê duyệt và đồng bộ 
+dữ liệu sau rà soát, đối soát. 
+- Hoàn thành rà soát, làm sạch, 
+chuẩn hóa, đối soát, phê duyệt và 
+đồng bộ dữ liệu tổ chức đảng, đảng 
+viên trong toàn Đảng bộ tỉnh.
+Ban xây 
+dựng Đảng 20/11/2026
+Chỉ xác nhận 
+hoàn thành khi 
+dữ liệu được 
+rà soát, đối 
+soát, đồng bộ 
+và khai thác 
+được.
+VI. PHÂN CÔNG TRÁCH NHIỆM 
+1. Ban Xây dựng Đảng
+
+=== PAGE 6 ===
+6
+- Chủ trì tham mưu Ban Thường vụ Đảng ủy tổ chức triển khai Kế hoạch; 
+hướng dẫn nghiệp vụ và theo dõi tiến độ.
+- Rà soát, chuẩn hóa dữ liệu tổ chức đảng; phối hợp phân nhóm đảng viên; 
+tổng hợp các trường hợp sai lệch, thiếu, trùng hoặc chưa thống nhất để xử lý.
+- Tham mưu kiểm tra, thẩm định, phê duyệt dữ liệu theo phân quyền; theo dõi 
+tỷ lệ hoàn thành của từng chi bộ.
+- Tổng hợp khó khăn, vướng mắc, lỗi kỹ thuật, báo cáo Đảng ủy xã và Ban Tổ 
+chức Tỉnh uỷ theo quy định.
+- Định kỳ tổng hợp kết quả, tham mưu Ban Thường vụ Đảng ủy báo cáo cấp 
+trên.
+2. Văn phòng Đảng ủy
+- Phối hợp bảo đảm điều kiện về hạ tầng, đường truyền, an toàn, an ninh thông 
+tin thuộc phạm vi quản lý.
+- Phối hợp phục vụ các hội nghị, tập huấn, kiểm tra và xử lý các vấn đề kỹ 
+thuật theo chức năng, nhiệm vụ.
+3. Các chi bộ trực thuộc
+- Bí thư chi bộ chịu trách nhiệm trực tiếp phổ biến, hướng dẫn đảng viên thực 
+hiện; lập danh sách nhóm đảng viên trên hệ thống trước khi triển khai cập nhật, 
+chuẩn hóa và đảng viên chưa cập nhật.
+- Phân công cấp ủy viên hoặc đảng viên hỗ trợ các trường hợp cần trợ giúp; 
+kiểm tra, đối chiếu thông tin với hồ sơ đảng viên.
+- Xác nhận dữ liệu trên hệ thống; đôn đốc 100% đảng viên đủ điều kiện hoàn 
+thành cập nhật thông tin.
+- Báo cáo Đảng ủy xã các trường hợp không thể cập nhật hoặc có sai lệch cần 
+xử lý.
+4. Đảng viên
+- Chủ động đăng nhập Ứng dụng Sổ tay đảng viên điện tử, kiểm tra toàn bộ 
+thông tin cá nhân tại mục chức năng: “Thông tin đảng viên”.
+- Bổ sung, cập nhật đầy đủ các trường thông tin được yêu cầu; chịu trách 
+nhiệm về tính trung thực, chính xác của thông tin đã kê khai.
+- Phối hợp với chi bộ khi có yêu cầu kiểm tra, đối chiếu.
+VII. CHẾ ĐỘ THEO DÕI, BÁO CÁO VÀ KIỂM TRA 
+1. Theo dõi tiến độ
+Ban Xây dựng Đảng thiết lập bảng theo dõi tiến độ theo từng chi bộ, tối thiểu 
+gồm: tổng số tổ chức đảng; số tổ chức đảng đã rà soát, chuẩn hóa; tổng số đảng viên; 
+số đảng viên đã cập nhật; số đảng viên đã được chi bộ xác nhận; số đảng viên đã 
+được thẩm định, phê duyệt; số dữ liệu đã đồng bộ; số dữ liệu còn thiếu, sai, trùng; 
+số trường hợp chưa thực hiện và nguyên nhân.
+
+=== PAGE 7 ===
+7
+2. Chế độ báo cáo
+Các chi bộ báo cáo tiến độ định kỳ về Ban Xây dựng Đảng trước 15 giờ 00 
+thứ Tư hằng tuần trong tháng 10 và tháng 11/2026, hoặc đột xuất khi có yêu cầu. 
+Báo cáo phải thể hiện cụ thể kết quả theo từng nhóm đối tượng, không chỉ báo cáo 
+tỷ lệ chung.
+3. Kiểm tra
+Ban Thường vụ Đảng ủy giao Ban Xây dựng Đảng chủ trì tham mưu kiểm tra 
+tiến độ và chất lượng dữ liệu tại các chi bộ có tỷ lệ hoàn thành thấp hoặc phát sinh 
+nhiều sai lệch. Kết quả kiểm tra là căn cứ xem xét trách nhiệm của cấp ủy, người 
+đứng đầu và cán bộ được giao trực tiếp thực hiện nhiệm vụ.
+VIII. TỔ CHỨC THỰC HIỆN
+1. Ban Thường vụ Đảng ủy yêu cầu các chi bộ, cơ quan, đơn vị và cá nhân có 
+liên quan căn cứ Kế hoạch này khẩn trương tổ chức triển khai thực hiện. Bí thư cấp 
+ủy, bí thư chi bộ chịu trách nhiệm trực tiếp về tiến độ và chất lượng dữ liệu thuộc 
+phạm vi quản lý.
+2. Các đồng chí Đảng uỷ viên phụ trách địa bàn theo dõi, đôn đốc, kiểm tra 
+việc thực hiện tại các chi bộ, kịp thời tháo gỡ khó khăn trong tổ chức thực hiện. Đồng 
+thời, chịu trách nhiệm về tiến độ thực hiện của các chi bộ được giao phụ trách.
+3. Trong quá trình thực hiện, nếu phát sinh khó khăn, vướng mắc về nghiệp 
+vụ, các chi bộ tổng hợp, báo cáo Ban Xây dựng Đảng để tham mưu Đảng ủy xã 
+hướng dẫn hoặc báo cáo cấp có thẩm quyền. Ban Xây dựng Đảng chủ trì theo dõi, 
+đôn đốc, kiểm tra, tổng hợp kết quả; kịp thời tham mưu Ban Thường vụ Đảng ủy chỉ 
+đạo các đơn vị thực hiện chưa nghiêm, chưa đạt yêu cầu.
+Trên đây là Kế hoạch của Ban Thường vụ Đảng ủy xã Công Hải về triển khai 
+rà soát, làm sạch, chuẩn hóa, đối soát dữ liệu tổ chức đảng, đảng viên trong Đảng bộ 
+xã. Yêu cầu các cơ quan, đơn vị, tổ chức đảng và cá nhân có liên quan nghiêm túc 
+triển khai thực hiện, bảo đảm đúng tiến độ, chất lượng, an toàn và hiệu quả.
+Nơi nhận:
+- Ban Tổ chức Tỉnh uỷ (b/c);
+- Ban Thường vụ Đảng ủy;
+-Ủy viên BCH Đảng bộ xã;
+- Các cơ quan tham mưu, giúp việc Đảng ủy;
+- Các Chi bộ trực thuộc Đảng ủy;
+-Lưu Văn phòng Đảng ủy.
+T/M BAN THƯỜNG VỤ
+PHÓ BÍ THƯ
+Nguyễn Xuân Hoàng
+
