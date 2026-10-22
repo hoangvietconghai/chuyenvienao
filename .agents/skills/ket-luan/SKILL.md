@@ -112,3 +112,4 @@ Trước khi xuất file hoặc bàn giao dự thảo Kết luận BCH, Chuyên 
 - [ ] 6. **Giãn dòng & Thụt lề:** Before 6pt, After 6pt, Exactly 18pt; **thụt đầu dòng 1cm cho 100% các đoạn**.
 - [ ] 7. **In đậm chỉ mục:** Tiêu đề chỉ mục trước dấu hai chấm in đậm đồng bộ với số chỉ mục.
 - [ ] 8. **Đảng bộ cơ sở:** Không còn cấp huyện; cấp trên trực tiếp là Tỉnh uỷ Khánh Hoà.
+- [ ] 9. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `KL [Hội nghị/Nội dung] [Cơ quan: ĐU].docx` (Ví dụ: `KL Hội nghị BCH lần 2 ĐU.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**).

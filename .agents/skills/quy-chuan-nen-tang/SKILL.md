@@ -433,12 +433,26 @@ Khi gặp các từ khóa có thể thuộc nhiều cơ quan phụ trách, AI Ag
 ---
 
 ### 6. Quy ước Đặt tên Tệp Word Đầu ra (Output Naming Convention)
-Tên tệp tin Word (.docx) xuất ra phải ngắn gọn, gợi nhớ, phản ánh đúng thẩm quyền và nội dung:
-* Công văn: `van_ban_du_thao/[Năm]/Cong_van/CV_giao_tham_muu_[The_loai]_[Noi_dung_trich_yeu_ngan_gon].docx`  
-* Kế hoạch: `van_ban_du_thao/[Năm]/Ke_hoach/KH_thuc_hien_[The_loai]_[Noi_dung_ngan_gon].docx`  
-* Báo cáo: `van_ban_du_thao/[Năm]/Bao_cao/BC_[noi_dung_ngan_gon].docx`  
-* Tờ trình: `van_ban_du_thao/[Năm]/To_trinh/TTr_[noi_dung_ngan_gon].docx`  
-* Nghị quyết: `van_ban_du_thao/[Năm]/Nghi_quyet/NQ_[noi_dung_ngan_gon].docx`  
+Tên tệp tin Word (.docx) xuất ra vào kho `van_ban_du_thao/[Năm]/[Thư_mục_thể_loại]/` BẮT BUỘC áp dụng quy tắc đặt tên tiếng Việt rút gọn súc tích, phản ánh đúng thẩm quyền và nội dung:
+
+* **Cấu trúc chuẩn:** `[Mã loại] [Hành động/Trích yếu rút gọn] [Số hiệu/Cơ quan] [Đối tượng/Thời gian].docx`
+* **Quy tắc viết tắt bắt buộc:**
+  - **Tỉnh uỷ:** BẮT BUỘC ghi là **`TU`** (ví dụ: `NQ 19 TU`, `KH 05 TU`, `CT 02 TU`...).
+  - **Đảng uỷ xã:** BẮT BUỘC ghi là **`ĐU`** (ví dụ: `KH 144 ĐU`, `TB 42 ĐU`, `NQ 01 ĐU`...).
+  - **Mã thể loại:** `CV` (Công văn), `KH` (Kế hoạch), `BC` (Báo cáo), `TB` (Thông báo), `QĐ` (Quyết định), `NQ` (Nghị quyết), `TTr` (Tờ trình), `CT` (Chỉ thị), `CTr` (Chương trình), `KL` (Kết luận).
+  - **Thuật ngữ chuyên môn viết tắt chuẩn:** `ĐV` (Đảng viên), `CB` (Chi bộ), `VPĐU` (Văn phòng Đảng uỷ), `BTV` (Ban Thường vụ), `BCH` (Ban Chấp hành), `UBND` (Uỷ ban nhân dân), `UBKT` (Uỷ ban Kiểm tra), `CĐS` (Chuyển đổi số), `CNTT` (Công nghệ thông tin).
+* **Đường dẫn & Ví dụ mẫu cho các thể loại:**
+  - Công văn: `van_ban_du_thao/[Năm]/Cong_van/CV triển khai KH 144 ĐU chuẩn hoá dữ liệu ĐV.docx`
+  - Công văn (cấp tỉnh): `van_ban_du_thao/[Năm]/Cong_van/CV triển khai NQ 19 TU về CĐS.docx`
+  - Kế hoạch: `van_ban_du_thao/[Năm]/Ke_hoach/KH thực hiện NQ 19 TU về CĐS.docx`
+  - Báo cáo: `van_ban_du_thao/[Năm]/Bao_cao/BC tuần 42 VPĐU.docx`
+  - Báo cáo thẩm định: `van_ban_du_thao/[Năm]/Bao_cao/BC thẩm định KH CĐS ĐU.docx`
+  - Thông báo: `van_ban_du_thao/[Năm]/Thong_bao/TB kết luận giao ban tuần 42 ĐU.docx`
+  - Quyết định: `van_ban_du_thao/[Năm]/Quyet_dinh/QĐ kiện toàn Tổ CĐS xã Công Hải.docx`
+  - Nghị quyết: `van_ban_du_thao/[Năm]/Nghi_quyet/NQ nhiệm vụ năm 2026 ĐU.docx`
+  - Tờ trình: `van_ban_du_thao/[Năm]/To_trinh/TTr xin chủ trương kinh phí ĐH Đảng ĐU.docx`
+  - Chỉ thị: `van_ban_du_thao/[Năm]/Chi_thi/CT tăng cường PCCC mùa khô ĐU.docx`
+  - Kết luận: `van_ban_du_thao/[Năm]/Ket_luan/KL Hội nghị BCH lần 2 ĐU.docx`
 
 ---
 
@@ -473,6 +487,7 @@ Trước khi bàn giao file cho cán bộ, AI Agent phải tự đối chiếu c
 - [x] Thẩm quyền ký & họ tên: `Vũ Thị Thuỳ Trang` (Bí thư), `Nguyễn Xuân Hoàng` (Phó Bí thư); 14pt đậm.
 - [x] Mô hình 3 cấp (từ 01/7/2025): Tuyệt đối không viện dẫn hoặc liên quan đến cấp huyện cũ (Huyện uỷ, UBND huyện Thuận Bắc).
 - [x] An toàn hệ thống: Tuyệt đối KHÔNG đụng đến mật khẩu; KHÔNG tự ý ban hành/ký số trên hệ thống khi chưa có lệnh cán bộ.
+- [x] Quy chuẩn đặt tên file Word (.docx): BẮT BUỘC đặt tên tiếng Việt rút gọn súc tích theo cú pháp `[Mã loại] [Trích yếu rút gọn] [Số hiệu/Cơ quan: TU/ĐU] [Đối tượng/Thời gian].docx` (Lưu ý: Tỉnh uỷ ghi TU, Đảng uỷ ghi ĐU, Đảng viên ghi ĐV, Văn phòng ghi VPĐU).
 - [x] Tiết kiệm Token & Tối ưu phản hồi: Tuyệt đối KHÔNG in lại toàn văn văn bản vào khung chat khi đã xuất file Word (.docx); câu trả lời chỉ tóm tắt Bảng phân công/đối soát, Lưu ý nghiệp vụ và Link file.
 
 ### Quy tắc Tiết kiệm Token & Cấu trúc Phản hồi khi Xuất Tệp Word (.docx)
@@ -503,7 +518,7 @@ Trước khi bàn giao file cho cán bộ, AI Agent phải tự đối chiếu c
 
 ## PHẦN IX: HỆ THỐNG CÁC KỸ NĂNG NHÁNH ĐỘC LẬP THEO THỂ LOẠI VĂN BẢN
 
-Toàn bộ các quy chuẩn chung tại Skill nền tảng này được kế thừa và vận hành chi tiết tại 10 Kỹ năng nhánh độc lập theo từng thể loại văn bản và nghiệp vụ chuyên biệt:
+Toàn bộ các quy chuẩn chung tại Skill nền tảng này được kế thừa và vận hành chi tiết tại 11 Kỹ năng nhánh độc lập theo từng thể loại văn bản và nghiệp vụ chuyên biệt:
 
 1. [bao-cao](../bao-cao/SKILL.md): Soạn thảo Báo cáo của cấp uỷ (`-BC/ĐU`) định kỳ, chuyên đề, sơ kết, tổng kết.
 2. [to-trinh](../to-trinh/SKILL.md): Soạn thảo Tờ trình xin chủ trương của cấp uỷ (`-TTr/ĐU`) và Tờ trình của cơ quan chuyên môn (`-TTr/...`).
@@ -515,4 +530,5 @@ Toàn bộ các quy chuẩn chung tại Skill nền tảng này được kế th
 8. [ket-luan](../ket-luan/SKILL.md): Soạn thảo Kết luận Hội nghị Ban Chấp hành Đảng bộ xã (`-KL/ĐU`) (bắt buộc có Lời kêu gọi chính trị).
 9. [cong-van](../cong-van/SKILL.md): Soạn thảo Công văn giao việc/chỉ đạo/đôn đốc và Công văn lấy ý kiến Ủy viên BTV (`-CV/ĐU`).
 10. [tham-dinh-van-ban](../tham-dinh-van-ban/SKILL.md): Thẩm định toàn diện dự thảo văn bản của cơ quan chuyên môn và đối soát tiếp thu kết luận.
+11. [tham-muu-chuyen-doi-so](../tham-muu-chuyen-doi-so/SKILL.md): Tham mưu toàn diện Chuyển đổi số, Đề án 06 và Ban Chỉ đạo 57 (soạn Báo cáo -BC/ĐU, -BC/BCĐ, Kế hoạch, Công văn, thẩm định CĐS; tích hợp quy tắc 'Hỏi lại khi chưa rõ — Nắm vững rồi mới viết' và tra cứu thực chứng Báo cáo BCĐ 57 để chống ảo giác số liệu).
 

@@ -161,3 +161,4 @@ Trước khi xuất file hoặc bàn giao dự thảo Tờ trình, Chuyên viên
 - [ ] 6. **Giãn dòng & Thụt lề:** Before 6pt, After 6pt, Exactly 18pt; **thụt đầu dòng 1cm cho 100% các đoạn**.
 - [ ] 7. **Kết cấu 3 phần chặt chẽ:** I. Sự cần thiết & Căn cứ $\rightarrow$ II. Nội dung đề xuất $\rightarrow$ III. Đề xuất kiến nghị & Hồ sơ gửi kèm.
 - [ ] 8. **Tuyệt đối không có cấp huyện:** Cấp trên trực tiếp là Tỉnh uỷ Khánh Hoà; Đảng bộ xã là Đảng bộ cơ sở.
+- [ ] 9. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `TTr [Nội dung xin chủ trương] [Cơ quan: ĐU/UBND].docx` (Ví dụ: `TTr xin chủ trương kinh phí ĐH Đảng ĐU.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**).

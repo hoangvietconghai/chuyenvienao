@@ -109,3 +109,4 @@ Trước khi xuất file hoặc bàn giao dự thảo Thông báo, Chuyên viên
 - [ ] 6. **Giãn dòng & Thụt lề:** Before 6pt, After 6pt, Exactly 18pt; **thụt đầu dòng 1cm cho 100% các đoạn**.
 - [ ] 7. **In đậm chỉ mục:** Tiêu đề chỉ mục trước dấu hai chấm in đậm đồng bộ với số chỉ mục.
 - [ ] 8. **Đảng bộ cơ sở:** Không còn cấp huyện; Đảng bộ xã là Đảng bộ cơ sở trực thuộc Tỉnh uỷ Khánh Hoà.
+- [ ] 9. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `TB [Kết luận/Nội dung] [Kỳ họp/Số hiệu] [Cơ quan: TU/ĐU].docx` (Ví dụ: `TB kết luận giao ban tuần 42 ĐU.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**).

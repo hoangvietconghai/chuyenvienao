@@ -174,3 +174,4 @@ Trước khi xuất file hoặc bàn giao dự thảo Kế hoạch, Chuyên viê
 - [ ] 6. **Giãn dòng & Thụt lề:** Before 6pt, After 6pt, Exactly 18pt; **thụt đầu dòng 1cm cho 100% các đoạn**.
 - [ ] 7. **In đậm chỉ mục:** Tiêu đề chỉ mục trước dấu hai chấm in đậm đồng bộ với số chỉ mục.
 - [ ] 8. **Thẩm quyền ký chuẩn:** `T/M BAN THƯỜNG VỤ` / `BÍ THƯ` / `Vũ Thị Thuỳ Trang`. Không còn cấp huyện cũ; Đảng bộ xã là Đảng bộ cơ sở.
+- [ ] 11. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `KH [Hành động/Nội dung rút gọn] [Số hiệu/Cơ quan: TU/ĐU] [Thời gian].docx` (Ví dụ: `KH thực hiện NQ 19 TU về CĐS.docx`, `KH kiểm tra giám sát 2026 ĐU.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**).

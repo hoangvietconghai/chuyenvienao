@@ -169,3 +169,12 @@ Chuyên viên ảo chủ động chỉnh sửa, chuẩn hóa trực tiếp vào 
   2. **Các kiến nghị, đề xuất cốt lõi:** Đề xuất Thường trực/Lãnh đạo cho ý kiến hoặc yêu cầu cơ quan soạn thảo giải trình.
   3. **Đường dẫn tệp Word (.docx):** Đường link Markdown clickable đến tệp `.docx` Báo cáo Thẩm định và Dự thảo hoàn chỉnh để cán bộ mở trực tiếp trên máy tính.
 * **Ngoại lệ duy nhất:** Chỉ in toàn văn khi cán bộ có yêu cầu rõ ràng bằng câu lệnh.
+
+## VII. QUY CHUẨN ĐẶT TÊN FILE BÁO CÁO THẨM ĐỊNH (.DOCX)
+Tên tệp Word Báo cáo Thẩm định xuất ra thư mục `van_ban_du_thao/[Năm]/Bao_cao/` BẮT BUỘC áp dụng quy tắc đặt tên tiếng Việt rút gọn súc tích:
+- **Cấu trúc:** `BC thẩm định [Tên văn bản rút gọn] [Cơ quan: ĐU].docx`
+- **Ví dụ mẫu:**
+  * `BC thẩm định KH CĐS ĐU.docx` (Báo cáo thẩm định Kế hoạch chuyển đổi số Đảng uỷ)
+  * `BC thẩm định Đề án sắp xếp cán bộ ĐU.docx`
+  * `BC thẩm định NQ phát triển KTXH 2026 ĐU.docx`
+- **Lưu ý bắt buộc:** Cấp Tỉnh uỷ ghi **`TU`**, cấp Đảng uỷ xã ghi **`ĐU`**, Văn phòng ghi **`VPĐU`**.

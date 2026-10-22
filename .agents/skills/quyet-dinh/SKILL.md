@@ -114,3 +114,4 @@ Trước khi xuất file hoặc bàn giao dự thảo Quyết định, Chuyên v
 - [ ] 6. **Giãn dòng & Thụt lề:** Before 6pt, After 6pt, Exactly 18pt; **thụt đầu dòng 1cm cho 100% các đoạn**.
 - [ ] 7. **Thời gian & Chính tả:** Định dạng ngày tháng số `dd/mm/yyyy`, chính tả khối Đảng `uỷ`, `oà`, `uý`.
 - [ ] 8. **Đảng bộ cơ sở:** Không còn cấp huyện; cấp trên trực tiếp là Tỉnh uỷ Khánh Hoà.
+- [ ] 9. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `QĐ [Nội dung rút gọn] [Cơ quan/Địa bàn: ĐU/TU].docx` (Ví dụ: `QĐ kiện toàn Tổ CĐS xã Công Hải.docx`, `QĐ phân công BTV ĐU.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**).

@@ -656,6 +656,39 @@ class PartyDocumentBuilder:
         r_ten.font.size = Pt(14)
         r_ten.font.bold = True
 
+    def generate_standard_filename(self) -> str:
+        """Tạo tên tệp chuẩn tiếng Việt rút gọn súc tích: [Mã loại] [Trích yếu rút gọn] [Cơ quan: TU/ĐU].docx"""
+        prefix = self.doc_type
+        raw_text = self.data.get("trich_yeu") or self.data.get("tieu_de") or self.data.get("doc_title") or ""
+        clean_text = raw_text.replace("\n", " ").strip()
+        if clean_text.lower().startswith("v/v "):
+            clean_text = clean_text[4:].strip()
+
+        # Chuẩn hoá các cụm từ viết tắt khối Đảng (TU: Tỉnh uỷ, ĐU: Đảng uỷ)
+        clean_text = re.sub(r'kế hoạch', 'KH', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'nghị quyết', 'NQ', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'chỉ thị', 'CT', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'quyết định', 'QĐ', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'thông báo', 'TB', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'báo cáo', 'BC', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'tỉnh uỷ', 'TU', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'đảng uỷ', 'ĐU', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'đảng viên', 'ĐV', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'văn phòng đảng uỷ', 'VPĐU', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'chuyển đổi số', 'CĐS', clean_text, flags=re.IGNORECASE)
+
+        # Cắt lọc các ký tự không hợp lệ trong tên file Windows
+        clean_text = re.sub(r'[\\/*?:"<>|]', '', clean_text)
+        words = clean_text.split()
+        if len(words) > 8:
+            clean_text = " ".join(words[:8])
+
+        if clean_text:
+            return f"{prefix} {clean_text}.docx"
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            return f"{prefix} dự thảo {timestamp}.docx"
+
     def save(self, target_path: str = None) -> str:
         """Lưu tệp .docx vào đường dẫn chỉ định hoặc tự điều hướng theo thể loại."""
         if not target_path:
@@ -665,9 +698,8 @@ class PartyDocumentBuilder:
             out_dir = os.path.join(base_dir, "van_ban_du_thao", year_str, folder_name)
             os.makedirs(out_dir, exist_ok=True)
             
-            prefix = self.doc_type
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            target_path = os.path.join(out_dir, f"{prefix}_du_thao_{timestamp}.docx")
+            filename = self.generate_standard_filename()
+            target_path = os.path.join(out_dir, filename)
         else:
             parent_dir = os.path.dirname(os.path.abspath(target_path))
             os.makedirs(parent_dir, exist_ok=True)

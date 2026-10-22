@@ -208,3 +208,4 @@ Trước khi xuất file hoặc bàn giao dự thảo Công văn, Chuyên viên 
 - [ ] 6. **In đậm chỉ mục:** Tiêu đề chỉ mục trước dấu hai chấm in đậm đồng bộ với số chỉ mục.
 - [ ] 7. **Dòng đính kèm:** Bắt buộc có dòng ngoặc đơn in nghiêng ở cuối bài `*(Đính kèm...)./.*`.
 - [ ] 8. **Đảng bộ cơ sở:** Cấp uỷ xã là Đảng bộ cơ sở; hoàn toàn không còn cấp huyện.
+- [ ] 9. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `CV [Trích yếu rút gọn] [Số hiệu/Cơ quan: TU/ĐU] [Đối tượng/Thời gian].docx` (Ví dụ: `CV triển khai KH 144 ĐU chuẩn hoá dữ liệu ĐV.docx`, `CV triển khai NQ 19 TU về CĐS.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**, Đảng viên ghi **ĐV**).

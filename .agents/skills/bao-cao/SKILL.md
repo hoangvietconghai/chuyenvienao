@@ -43,6 +43,9 @@ Trong mô hình chính quyền 03 cấp (Trung ương $\rightarrow$ Tỉnh $\rig
 * **Báo cáo sơ kết/tổng kết các văn bản lớn của Đảng:** Sơ kết 05 năm thực hiện Chỉ thị 05-CT/TW, Kết luận 01-KL/TW; Sơ kết thực hiện Nghị quyết chuyên đề về chuyển đổi số; Tổng kết công tác kiểm tra, giám sát hằng năm...
 * **Báo cáo chuyên đề đột xuất:** Tình hình an ninh trật tự nông thôn - ven biển, công tác giải phóng mặt bằng các dự án trọng điểm, công tác tôn giáo - dân tộc vùng đồng bào dân tộc thiểu số Raglai, công tác phòng chống thiên tai bão lũ.
 
+> [!TIP]
+> Đối với các **Báo cáo chuyên đề về Chuyển đổi số**, triển khai Nghị quyết 57-NQ/TW, Kế hoạch 284-KH/TU của Tỉnh uỷ và Báo cáo của Ban Chỉ đạo 57 xã (-BC/ĐU, -BC/BCĐ), hãy kích hoạt chuyên sâu skill **[tham-muu-chuyen-doi-so](../tham-muu-chuyen-doi-so/SKILL.md)** để khai thác đúng hệ chỉ tiêu kỹ thuật, số liệu thực chứng và các điểm nghẽn đặc thù của xã Công Hải.
+
 ---
 
 ## II. QUY TRÌNH TỔNG HỢP BÁO CÁO — 3 KỊCH BẢN VẬN HÀNH
@@ -295,3 +298,4 @@ Trước khi xuất file hoặc bàn giao dự thảo Báo cáo, Chuyên viên �
 - [ ] 8. **Số liệu & Cấp uỷ:** Số liệu khớp với Nghị quyết Đại hội I Đảng bộ xã (tăng trưởng 11-12%, ngân sách tăng 12%, 72 biên chế...); Đảng bộ xã là Đảng bộ cơ sở; hoàn toàn không còn cấp huyện.
 - [ ] 9. **Tôn trọng dữ liệu gốc:** Không tự ý thay đổi số liệu của cơ quan, đơn vị; nghi vấn đã được hỏi lại người dùng.
 - [ ] 10. **Đầy đủ nội dung:** Tất cả các mục trong đề cương (nếu có) hoặc kết cấu chuẩn đều đã có thông tin; các mục thiếu đã được thông báo cho người dùng.
+- [ ] 11. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `BC [Nội dung rút gọn] [Cơ quan: TU/ĐU/VPĐU] [Thời gian/Phiên bản].docx` (Ví dụ: `BC tuần 42 VPĐU.docx`, `BC thẩm định KH CĐS ĐU.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**).

@@ -160,3 +160,4 @@ Trước khi xuất file hoặc bàn giao dự thảo Nghị quyết, Chuyên vi
 - [ ] 6. **Giãn dòng & Thụt lề:** Before 6pt, After 6pt, Exactly 18pt; **thụt đầu dòng 1cm cho 100% các đoạn**.
 - [ ] 7. **In đậm chỉ mục:** Tiêu đề chỉ mục trước dấu hai chấm in đậm đồng bộ với số chỉ mục.
 - [ ] 8. **Đảng bộ cơ sở:** Khẳng định Đảng bộ xã là Đảng bộ cơ sở; hoàn toàn không còn cấp huyện.
+- [ ] 9. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `NQ [Nội dung rút gọn] [Năm/Số hiệu] [Cơ quan: TU/ĐU].docx` (Ví dụ: `NQ nhiệm vụ năm 2026 ĐU.docx`, `NQ nâng cao chất lượng chi bộ ĐU.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**).

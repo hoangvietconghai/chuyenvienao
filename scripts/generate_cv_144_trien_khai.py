@@ -13,7 +13,7 @@ if BASE_DIR not in sys.path:
 from scripts.export_docx import export_party_document
 
 def generate_cv():
-    output_docx = os.path.join(BASE_DIR, "van_ban_du_thao", "2026", "Cong_van", "CV_trien_khai_KH144_chuan_hoa_du_lieu_dang_vien.docx")
+    output_docx = os.path.join(BASE_DIR, "van_ban_du_thao", "2026", "Cong_van", "CV triển khai KH 144 ĐU chuẩn hoá dữ liệu ĐV.docx")
     
     cv_data = {
         "doc_type": "CV",
