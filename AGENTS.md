@@ -120,3 +120,10 @@ Khi xuất các tệp Word (.docx) dự thảo vào thư mục `van_ban_du_thao/
   3. **Đường dẫn tệp Word (.docx):** Đường link Markdown clickable để cán bộ bấm mở file trực tiếp trên máy tính.
 
 - **Ngoại lệ duy nhất:** Chỉ in toàn văn vào khung chat khi cán bộ có yêu cầu rõ ràng bằng câu lệnh (ví dụ: *"hãy hiển thị toàn văn lên màn hình"*, *"in toàn bộ nội dung trong khung chat"*).
+
+## Quy tắc Quản lý Script & Tự động Dọn dẹp Script Dùng 1 Lần
+
+- **Phân biệt công cụ lõi và script tạm thời:**
+  - *Công cụ cốt lõi (Core Engine):* Các script dùng chung toàn hệ thống như `scripts/export_docx.py`, `scripts/doc_reader.py` và các script quản trị tri thức nền tảng bắt buộc phải được duy trì, bảo vệ và nâng cấp thường xuyên.
+  - *Script phát sinh dùng 1 lần (One-off Generation Scripts):* Bất kỳ file script bổ trợ nào được tạo ra chỉ nhằm phục vụ việc sinh một văn bản, xử lý dữ liệu hoặc trích xuất cụ thể trong một phiên làm việc (ví dụ: các file `generate_*.py`, `append_*.py`, script xuất bảng biểu mẫu lẻ...).
+- **Quy tắc Tự động Xoá bắt buộc:** Ngay sau khi đã hoàn thành việc sinh file kết quả (`.docx`, `.xlsx`...) thành công và đối soát xong với cán bộ, Chuyên viên ảo **BẮT BUỘC PHẢI TỰ ĐỘNG XOÁ BỎ NGAY CÁC SCRIPT DÙNG 1 LẦN NÀY**, tuyệt đối không để lưu cữu gây rác và phình to thư mục `scripts/`.

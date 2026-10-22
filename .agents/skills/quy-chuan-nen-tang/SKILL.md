@@ -532,3 +532,19 @@ Toàn bộ các quy chuẩn chung tại Skill nền tảng này được kế th
 10. [tham-dinh-van-ban](../tham-dinh-van-ban/SKILL.md): Thẩm định toàn diện dự thảo văn bản của cơ quan chuyên môn và đối soát tiếp thu kết luận.
 11. [tham-muu-chuyen-doi-so](../tham-muu-chuyen-doi-so/SKILL.md): Tham mưu toàn diện Chuyển đổi số, Đề án 06 và Ban Chỉ đạo 57 (soạn Báo cáo -BC/ĐU, -BC/BCĐ, Kế hoạch, Công văn, thẩm định CĐS; tích hợp quy tắc 'Hỏi lại khi chưa rõ — Nắm vững rồi mới viết' và tra cứu thực chứng Báo cáo BCĐ 57 để chống ảo giác số liệu).
 
+---
+
+## PHẦN X: QUY TẮC QUẢN LÝ SCRIPT & TỰ ĐỘNG DỌN DẸP SCRIPT DÙNG 1 LẦN
+
+1. **Phân biệt rạch ròi 02 nhóm Script:**
+   * **Nhóm 1 - Động cơ & Công cụ cốt lõi (Core Engine):** Bắt buộc duy trì và bảo vệ tuyệt đối:
+     - `scripts/export_docx.py`: Bộ dựng văn bản Word chuẩn thể thức Hướng dẫn số 05-HD/VPTW.
+     - `scripts/doc_reader.py`: Thư viện đọc và trích xuất dữ liệu đa định dạng (.docx, .doc, .pdf).
+     - Các script quản trị tri thức, bóc tách cơ sở dữ liệu nền tảng.
+   * **Nhóm 2 - Script phát sinh dùng 1 lần (One-off Generation Scripts):** Các tệp python tạm thời được tạo ra chỉ để thực hiện việc xuất một văn bản Word/Excel cụ thể, nối phụ lục hoặc xử lý dữ liệu cho riêng một yêu cầu trong phiên làm việc (tiền tố `generate_*.py`, `append_*.py`...).
+
+2. **Quy tắc Tự động Dọn dẹp Bắt buộc (Auto-Cleanup Rule):**
+   * Ngay sau khi đã hoàn thành việc tạo/xuất tệp văn bản kết quả (`.docx`, `.xlsx`...) thành công và người dùng đã xác nhận hoặc đối soát xong, **AI Agent BẮT BUỘC PHẢI TỰ ĐỘNG XOÁ BỎ NGAY CÁC SCRIPT DÙNG 1 LẦN NÀY**.
+   * Tuyệt đối không để lưu cữu các script dùng một lần trong thư mục `scripts/` làm rác hệ thống và gây nhầm lẫn trong quá trình quản lý mã nguồn.
+
+
