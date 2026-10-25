@@ -36,6 +36,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Thanh cuộn tinh tế kiểu Dark Theme */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
 button { font-family: inherit; cursor: pointer; }
 
 /* ---------------- TOP BAR ---------------- */
@@ -93,6 +99,12 @@ button { font-family: inherit; cursor: pointer; }
   cursor: pointer; transition: all .2s;
 }
 .model-picker-btn:hover { background: var(--surface-2); border-color: rgba(255,255,255,.2); }
+.model-picker-btn .model-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .model-picker-btn .chevron { transition: transform .2s; opacity: .7; }
 .model-picker-wrap.open .chevron { transform: rotate(180deg); }
 
@@ -310,7 +322,12 @@ button { font-family: inherit; cursor: pointer; }
 .content h3:has(+ p) { color: var(--gold); }
 
 /* ---------------- COMPOSER ---------------- */
-.composer-wrap { flex-shrink: 0; padding: 0 20px 14px; position: relative; }
+.composer-wrap {
+  flex-shrink: 0;
+  padding: 0 20px 14px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
+  position: relative;
+}
 
 .composer {
   max-width: var(--col); margin: 0 auto;
@@ -374,9 +391,157 @@ button { font-family: inherit; cursor: pointer; }
 @keyframes blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(242, 184, 75, .5); } 50% { box-shadow: 0 0 0 8px rgba(242, 184, 75, 0); } }
 
-/* ---------------- RESPONSIVE ---------------- */
-@media (max-width: 860px) {
-  .suggestions { grid-template-columns: repeat(2, 1fr); }
-  .greet { font-size: 32px; }
-  .brand-sub, .btn-new span { display: none; }
+/* ---------------- RESPONSIVE DESIGN SYSTEM ---------------- */
+
+/* 1. Màn hình máy tính bảng lớn & màn hình trung bình (< 992px) */
+@media (max-width: 992px) {
+  .suggestions { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .suggest { min-height: 130px; }
+  .greet { font-size: 36px; }
 }
+
+/* 2. Màn hình máy tính bảng nhỏ & điện thoại ngang (< 768px) */
+@media (max-width: 768px) {
+  .topbar { height: 58px; padding: 0 14px; }
+  .brand-sub { display: none; }
+  .btn-new span { display: none; }
+  .btn-new { padding: 8px 10px; }
+  .model-picker-btn { padding: 5px 10px; font-size: 12.5px; }
+  .model-picker-btn .model-name { max-width: 110px; }
+  .model-menu { width: min(340px, calc(100vw - 24px)); right: 0; }
+  .chat-scroll { padding: 8px 14px 20px; }
+  .welcome { margin: 5vh auto 0; }
+  .greet { font-size: 30px; }
+  .msg-user { max-width: 85%; }
+  .composer-wrap { padding: 0 14px 12px; padding-bottom: max(12px, env(safe-area-inset-bottom, 12px)); }
+}
+
+/* 3. Màn hình điện thoại chuẩn (< 560px) */
+@media (max-width: 560px) {
+  .topbar { height: 54px; padding: 0 10px; }
+  .brand { gap: 8px; }
+  .brand-logo { width: 32px; height: 32px; font-size: 15px; }
+  .brand-title { font-size: 15px; }
+  .top-actions { gap: 6px; }
+  
+  .model-picker-btn { padding: 5px 8px; font-size: 12px; gap: 4px; }
+  .model-picker-btn .model-name { max-width: 82px; }
+  .model-menu {
+    position: fixed;
+    top: 56px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: none;
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .8);
+  }
+  
+  .ai-status { padding: 5px 8px; }
+  .ai-status #aiStatusText { display: none; }
+  .ai-status .dot { margin: 0; width: 9px; height: 9px; }
+  
+  .btn-new {
+    width: 34px; height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+  }
+  .btn-new svg { width: 16px; height: 16px; }
+  
+  .chat-scroll { padding: 6px 10px 16px; }
+  .welcome { margin: 3vh auto 0; }
+  .greet { font-size: clamp(23px, 6.5vw, 28px); line-height: 1.25; }
+  .suggestions { grid-template-columns: 1fr; gap: 10px; margin-top: 20px; }
+  .suggest {
+    min-height: auto;
+    padding: 13px 44px 13px 13px;
+    border-radius: 14px;
+    font-size: 13.5px;
+  }
+  .suggest-icon {
+    width: 32px; height: 32px;
+    font-size: 15px;
+    right: 10px; bottom: 10px;
+  }
+  .welcome-hint { margin-top: 16px; font-size: 12px; }
+  
+  .messages { gap: 18px; }
+  .msg-user { max-width: 92%; }
+  .msg-user .bubble {
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 18px 18px 4px 18px;
+  }
+  .msg-ai { gap: 10px; }
+  .msg-ai .avatar { width: 28px; height: 28px; font-size: 13px; }
+  .msg-ai .content { font-size: 14px; line-height: 1.6; }
+  
+  /* Bảng biểu responsive - cuộn mượt mà không vỡ bố cục */
+  .table-wrap { margin: 6px 0 10px; -webkit-overflow-scrolling: touch; }
+  .content table { font-size: 12px; min-width: 440px; }
+  .content th, .content td { padding: 6px 8px; }
+  
+  /* Khung mô phỏng văn bản A4 */
+  .paper { padding: 16px 12px; font-size: 12.5px; line-height: 1.45; }
+  .paper-hdr {
+    flex-direction: column;
+    gap: 6px;
+    font-size: 11.5px;
+    margin-bottom: 12px;
+    text-align: left;
+  }
+  .paper-hdr .r { text-align: left; }
+  .paper-hdr .line { margin: 2px 0 4px 0; width: 140px; }
+  .paper-title .tl { font-size: 13.5px; }
+  .paper-title .ty { font-size: 13px; }
+  .paper-cv-ty { font-size: 11.5px; max-width: 100%; }
+  .paper-kg { flex-direction: column; gap: 2px; align-items: flex-start; }
+  .paper p { text-indent: 0.6cm; margin: 4px 0; }
+  .paper-ftr {
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 14px;
+    font-size: 11.5px;
+  }
+  .paper-ftr .sig { min-width: auto; text-align: right; }
+  .paper-ftr .sig .gap { height: 38px; }
+  
+  /* Nút hành động trên di động */
+  .actions { display: flex; flex-direction: column; width: 100%; gap: 6px; }
+  .act-btn {
+    width: 100%;
+    text-align: center;
+    padding: 10px 14px;
+    font-size: 13px;
+    justify-content: center;
+  }
+  
+  /* Thẻ tệp đính kèm & tải về */
+  .file-dl { padding: 8px 10px; gap: 10px; border-radius: 10px; }
+  .file-dl .ficon { width: 32px; height: 32px; font-size: 12px; }
+  .file-dl .flabel { font-size: 12.5px; }
+  .file-dl .fname { font-size: 11px; }
+  .file-dl .fget { font-size: 12px; }
+  
+  /* Khung soạn thảo tin nhắn */
+  .composer-wrap {
+    padding: 0 10px 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+  }
+  .composer { border-radius: 20px; padding: 6px 8px; }
+  #input { font-size: 16px; padding: 8px 4px; }
+  .icon-btn, .send-btn { width: 38px; height: 38px; }
+  .disclaimer { font-size: 10.5px; margin-top: 6px; line-height: 1.35; padding: 0 4px; }
+  .chip { max-width: 100%; font-size: 12px; padding: 4px 8px; }
+}
+
+/* 4. Màn hình điện thoại siêu nhỏ (< 380px) */
+@media (max-width: 380px) {
+  .brand-title { font-size: 14px; }
+  .model-picker-btn .model-name { max-width: 58px; }
+  .composer-row { gap: 4px; }
+  .icon-btn, .send-btn { width: 34px; height: 34px; }
+}
+

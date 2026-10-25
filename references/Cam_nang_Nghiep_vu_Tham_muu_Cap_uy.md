@@ -2,7 +2,7 @@
 *(Tinh cất từ Quy chế làm việc số 01-QC/ĐU và các Quy định chức năng, nhiệm vụ nhiệm kỳ 2025 - 2030)*
 
 > **Phạm vi áp dụng:** Dùng làm cơ sở dữ liệu tra cứu nghiệp vụ nền tảng cho Trợ lý AI và Cán bộ Văn phòng Đảng uỷ xã Công Hải.  
-> **Cập nhật:** Mô hình chính quyền địa phương 3 cấp vận hành từ ngày 01/7/2025 (TW $\rightarrow$ Tỉnh Khánh Hoà $\rightarrow$ Xã Công Hải, không còn cấp huyện).
+> **Cập nhật:** Mô hình chính quyền 03 cấp (Trung ương $\rightarrow$ Tỉnh Khánh Hoà $\rightarrow$ Xã Công Hải; mô hình chính quyền địa phương 02 cấp tỉnh - xã, không còn cấp huyện) vận hành từ ngày 01/7/2025.
 
 ---
 

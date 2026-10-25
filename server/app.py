@@ -25,6 +25,7 @@ from server.config import (
     BASE_DIR,
     CO_QUAN_BAN_HANH,
     CO_QUAN_CAP_TREN,
+    CORS_ORIGINS,
     DEBUG,
     DEEPSEEK_MODEL,
     NAM_HIEN_TAI,
@@ -34,6 +35,7 @@ from server.config import (
     VAN_BAN_DU_THAO_DIR,
     VAN_PHONG_NAME,
 )
+from server.logger import get_logger
 from server.router import WORKFLOW_MAP, route_incoming_file
 from server import chat_engine
 from server.workflows.wf1_synthesizer import (
@@ -53,21 +55,28 @@ from server.workflows.wf4_appraisal import (
     generate_appraisal_documents,
 )
 
+logger = get_logger("app")
+
 # Khởi tạo FastAPI app
 app = FastAPI(
     title="Chuyên viên Ảo Văn phòng Đảng uỷ xã Công Hải",
-    description="Hệ thống Tham mưu Tổng hợp, Văn thư và Tự động hoá cấp uỷ địa phương 3 cấp",
+    description="Hệ thống Tham mưu Tổng hợp, Văn thư và Tự động hoá cấp uỷ (mô hình chính quyền địa phương 02 cấp)",
     version="2.0.0",
 )
 
-# Cấu hình CORS để chạy mượt mà trên trình duyệt local
+# Cấu hình CORS an toàn cho môi trường nội bộ / local
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Chuyên viên ảo khởi động thành công trên http://%s:%s", SERVER_HOST, SERVER_PORT)
+    logger.info("Cấu hình CORS origins được phép: %s", CORS_ORIGINS)
 
 # Đường dẫn static
 STATIC_DIR = BASE_DIR / "server" / "static"

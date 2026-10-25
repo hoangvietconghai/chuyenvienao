@@ -21,7 +21,7 @@ import logging
 import re
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 from server.ai_connector import default_ai_client
@@ -33,7 +33,9 @@ from server.workflows.wf2_conclusions import analyze_meeting_notes, generate_mee
 from server.workflows.wf3_dispatch import analyze_provincial_directive, generate_dispatch_docx
 from server.workflows.wf4_appraisal import analyze_agency_draft, generate_appraisal_documents
 
-logger = logging.getLogger("chat_engine")
+from server.logger import get_logger
+
+logger = get_logger("chat_engine")
 
 MAX_INPUT_CHARS = 35000      # Giới hạn độ dài văn bản an toàn cho context window (tránh quá tải CPU)
 MAX_CHAT_ATTACH_CHARS = 20000
@@ -69,7 +71,7 @@ SESSIONS: Dict[str, Dict[str, Any]] = {}
 # QUẢN LÝ PHIÊN
 # ==============================================================================
 
-def get_session(session_id: Optional[str]) -> (str, Dict[str, Any]):
+def get_session(session_id: Optional[str]) -> Tuple[str, Dict[str, Any]]:
     if not session_id or session_id not in SESSIONS:
         session_id = session_id or uuid.uuid4().hex
         SESSIONS[session_id] = {"history": [], "attachments": [], "pending": None, "awaiting": None}
@@ -83,7 +85,7 @@ def reset_session(session_id: Optional[str]) -> str:
     return new_id
 
 
-def add_attachment(session_id: Optional[str], routing_result: Dict[str, Any]) -> (str, Dict[str, Any]):
+def add_attachment(session_id: Optional[str], routing_result: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     session_id, s = get_session(session_id)
     att = {
         "id": uuid.uuid4().hex[:10],

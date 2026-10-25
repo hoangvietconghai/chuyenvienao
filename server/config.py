@@ -91,6 +91,8 @@ SUPPORTED_MODELS = [
 SERVER_HOST = os.getenv("SERVER_HOST", "127.0.0.1")
 SERVER_PORT = int(os.getenv("SERVER_PORT", "8000"))
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
+_default_cors = f"http://localhost:{SERVER_PORT},http://127.0.0.1:{SERVER_PORT},http://localhost:3000,http://127.0.0.1:3000"
+CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", _default_cors).split(",") if o.strip()]
 
 # --- THÔNG TIN ĐƠN VỊ ĐẢNG BỘ XÃ CÔNG HẢI ---
 CO_QUAN_CAP_TREN = os.getenv("CO_QUAN_CAP_TREN", "ĐẢNG BỘ TỈNH KHÁNH HOÀ")
@@ -99,10 +101,11 @@ VAN_PHONG_NAME = os.getenv("VAN_PHONG_NAME", "VĂN PHÒNG")
 DIA_DANH = os.getenv("DIA_DANH", "Công Hải")
 NAM_HIEN_TAI = int(os.getenv("NAM_HIEN_TAI", "2026"))
 
-# --- ĐƯỜNG DẪN THƯ MỤC LƯU TRỮ VĂN BẢN ---
+# --- ĐƯỜNG DẪN THƯ MỤC LƯU TRỮ VĂN BẢN & LOGS ---
 VAN_BAN_DEN_DIR = BASE_DIR / "van_ban_den" / str(NAM_HIEN_TAI)
 VAN_BAN_DU_THAO_DIR = BASE_DIR / "van_ban_du_thao" / str(NAM_HIEN_TAI)
 DATA_DIR = BASE_DIR / "data"
+LOGS_DIR = BASE_DIR / "logs"
 
 # Các thư mục con của Văn bản đến
 FOLDER_CAP_TREN = VAN_BAN_DEN_DIR / "cap_tren"
@@ -115,6 +118,7 @@ for folder in [
     VAN_BAN_DEN_DIR,
     VAN_BAN_DU_THAO_DIR,
     DATA_DIR,
+    LOGS_DIR,
     FOLDER_CAP_TREN,
     FOLDER_DU_THAO_CQ,
     FOLDER_BAO_CAO_CO_SO,
@@ -126,5 +130,9 @@ for folder in [
     VAN_BAN_DU_THAO_DIR / "Nghi_quyet",
     VAN_BAN_DU_THAO_DIR / "Quyet_dinh",
     VAN_BAN_DU_THAO_DIR / "To_trinh",
+    VAN_BAN_DU_THAO_DIR / "Ket_luan",
+    VAN_BAN_DU_THAO_DIR / "Chi_thi",
+    VAN_BAN_DU_THAO_DIR / "Chuong_trinh",
 ]:
     folder.mkdir(parents=True, exist_ok=True)
+

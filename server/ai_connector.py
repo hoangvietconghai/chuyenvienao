@@ -28,8 +28,9 @@ from server.config import (
     DEEPSEEK_REASONER_MODEL,
 )
 
-logger = logging.getLogger("ai_connector")
-logging.basicConfig(level=logging.INFO)
+from server.logger import get_logger
+
+logger = get_logger("ai_connector")
 
 
 def extract_clean_json(text: str) -> str:

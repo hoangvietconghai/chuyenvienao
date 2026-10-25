@@ -1,7 +1,7 @@
 # HỆ THỐNG TRỢ LÝ AI THAM MƯU TỔNG HỢP & SOẠN THẢO VĂN BẢN ĐẢNG UỶ XÃ CÔNG HẢI
 *(Chuẩn thể thức Hướng dẫn số 05-HD/VPTW năm 2026 của Văn phòng Trung ương Đảng & Quy chế làm việc Đảng bộ xã)*
 
-Hệ thống được thiết kế theo **Mô hình Hạt nhân & Kỹ năng Chuyên sâu Đa tầng (Core & Multi-Tier Advisory Skills)** trên nền tảng **Google Antigravity 2.0**, đóng vai trò là **Trợ lý Tham mưu Tổng hợp Toàn diện** cho Thường trực Đảng uỷ, Ban Thường vụ Đảng uỷ và Ban Chấp hành Đảng bộ xã Công Hải, tỉnh Khánh Hoà (trực thuộc trực tiếp Tỉnh uỷ Khánh Hoà theo mô hình chính quyền địa phương 3 cấp từ 01/7/2025).
+Hệ thống được thiết kế theo **Mô hình Hạt nhân & Kỹ năng Chuyên sâu Đa tầng (Core & Multi-Tier Advisory Skills)** trên nền tảng **Google Antigravity 2.0**, đóng vai trò là **Trợ lý Tham mưu Tổng hợp Toàn diện** cho Thường trực Đảng uỷ, Ban Thường vụ Đảng uỷ và Ban Chấp hành Đảng bộ xã Công Hải, tỉnh Khánh Hoà (trực thuộc trực tiếp Tỉnh uỷ Khánh Hoà theo mô hình chính quyền địa phương 02 cấp từ 01/7/2025).
 
 ---
 
