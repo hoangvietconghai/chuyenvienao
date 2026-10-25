@@ -136,3 +136,19 @@ for folder in [
 ]:
     folder.mkdir(parents=True, exist_ok=True)
 
+
+# --- CẤU HÌNH ZALO CHATBOT ---
+ZALO_API_TOKEN = os.getenv("ZALO_API_TOKEN", "")
+ZALO_WEBHOOK_SECRET = os.getenv("ZALO_WEBHOOK_SECRET", "")
+ADMIN_ZALO_IDS = [x.strip() for x in os.getenv("ADMIN_ZALO_IDS", "").split(",") if x.strip()]
+SERVER_DOMAIN = os.getenv("SERVER_DOMAIN", "")
+
+# --- CẤU HÌNH GOOGLE DRIVE THƯ MỤC CHIA SẺ ---
+GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID", "1IhUuenISqXs_KeSkWqSI_5423DNstxGF")
+GDRIVE_FOLDER_URL = os.getenv(
+    "GDRIVE_FOLDER_URL",
+    f"https://drive.google.com/drive/folders/{GDRIVE_FOLDER_ID}?usp=sharing",
+)
+GDRIVE_WEB_APP_URL = os.getenv("GDRIVE_WEB_APP_URL", "")
+GDRIVE_SERVICE_ACCOUNT_FILE = os.getenv("GDRIVE_SERVICE_ACCOUNT_FILE", str(BASE_DIR / "credentials.json"))
+

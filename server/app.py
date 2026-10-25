@@ -83,6 +83,10 @@ STATIC_DIR = BASE_DIR / "server" / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+# Đăng ký Zalo Webhook Router
+from server.routers.zalo_webhook import router as zalo_router
+app.include_router(zalo_router)
+
 
 # --- PYDANTIC SCHEMAS ---
 class WorkflowAnalyzeRequest(BaseModel):

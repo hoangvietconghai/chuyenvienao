@@ -17,6 +17,7 @@ Luồng xử lý 1 tin nhắn:
 Phiên làm việc lưu trong bộ nhớ (chạy local 1 người dùng).
 """
 
+import json
 import logging
 import re
 import uuid
@@ -24,10 +25,16 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
+from scripts.export_docx import export_party_document
 from server.ai_connector import default_ai_client
 from server.config import BASE_DIR
 from server.prompts.chat_mode import CHAT_SYSTEM_PROMPT
 from server.prompts.intent_router import get_intent_messages, get_revise_messages
+from server.services.knowledge_loader import (
+    build_system_knowledge_prompt,
+    get_core_rules,
+    get_local_knowledge_summary,
+)
 from server.workflows.wf1_synthesizer import analyze_weekly_reports, generate_weekly_report_docx
 from server.workflows.wf2_conclusions import analyze_meeting_notes, generate_meeting_conclusion_docx
 from server.workflows.wf3_dispatch import analyze_provincial_directive, generate_dispatch_docx
@@ -133,11 +140,87 @@ def _reply(session: Dict[str, Any], text: str, **extra) -> Dict[str, Any]:
     return out
 
 
+DRAFT_SYSTEM_PROMPT = """Bạn là Chuyên viên ảo — Trợ lý AI Tham mưu Tổng hợp, Văn thư và Soạn thảo văn bản chuyên nghiệp của Văn phòng Đảng uỷ xã Công Hải, tỉnh Khánh Hoà (trực thuộc trực tiếp Tỉnh uỷ Khánh Hoà theo mô hình chính quyền địa phương 02 cấp).
+
+Nhiệm vụ: Căn cứ vào yêu cầu chỉ đạo của cán bộ và tài liệu đính kèm (nếu có), hãy soạn thảo văn bản Đảng hoàn chỉnh, chuẩn mực theo Hướng dẫn số 05-HD/VPTW ngày 12/01/2026 của Văn phòng Trung ương Đảng.
+
+QUY TẮC BẮT BUỘC:
+1. Mô hình 2 cấp: Tỉnh Khánh Hoà -> Xã Công Hải. TUYỆT ĐỐI KHÔNG CÒN CẤP HUYỆN.
+2. Thẩm quyền & Người ký chuẩn:
+   - Ban Thường vụ Đảng uỷ: T/M BAN THƯỜNG VỤ, Bí thư Vũ Thị Thuỳ Trang hoặc Phó Bí thư Nguyễn Xuân Hoàng.
+   - Ban Chấp hành Đảng bộ: T/M ĐẢNG UỶ, Bí thư Vũ Thị Thuỳ Trang.
+   - Văn phòng Đảng uỷ: K/T CHÁNH VĂN PHÒNG (hoặc CHÁNH VĂN PHÒNG) - Hoàng Việt Long.
+3. 5 cơ quan chuyên môn cấp xã: Uỷ ban nhân dân xã, Ban Xây dựng Đảng, Uỷ ban Kiểm tra Đảng uỷ, Cơ quan UBMTTQVN xã, Văn phòng Đảng uỷ.
+4. Đơn vị hành chính: Gồm 08 thôn chính thức: Bình Tiên, Ma Trai, Suối Vang, Phước Chiến, Động Thông, Hiệp Kiết, Kà Rôm, Suối Giếng.
+5. Chính tả khối Đảng: oà, uỷ, uý (Đảng uỷ, Khánh Hoà, Uỷ ban). Ngày tháng dạng dd/mm/yyyy.
+6. Thể loại văn bản (doc_type): CV (Công văn), KH (Kế hoạch), BC (Báo cáo), TB (Thông báo), QD (Quyết định), NQ (Nghị quyết), TTr (Tờ trình), CT (Chỉ thị), CTR (Chương trình).
+   - Nếu là Công văn (CV) hoặc Tờ trình (TTr): CÓ mục "kinh_gui".
+   - Nếu là Kế hoạch (KH), Báo cáo (BC), Thông báo (TB), Quyết định (QD), Nghị quyết (NQ): KHÔNG có kính gửi (kinh_gui để mảng rỗng []).
+   - Quyết định (QD): Bắt buộc chia Điều (Điều 1, Điều 2...).
+   - Nghị quyết (NQ), Công văn (CV): Tuyệt đối không chia Điều.
+
+ĐẦU RA BẮT BUỘC DẠNG JSON với đúng 2 trường:
+{
+  "summary": "Tóm tắt ngắn gọn tham mưu để gửi tin nhắn Zalo (gồm: Thể loại văn bản, Trích yếu, Cơ quan chủ trì/thực hiện, Nhiệm vụ trọng tâm, Thời hạn báo cáo/hoàn thành)",
+  "doc_payload": {
+    "doc_type": "CV",
+    "so_hieu": "Số      -CV/ĐU",
+    "dia_danh_ngay": "Công Hải, ngày   tháng   năm 2026",
+    "trich_yeu": "V/v tham mưu công tác tuyên truyền...",
+    "tieu_de": "Tiêu đề văn bản (nếu là KH, BC, TB, NQ, QD...)",
+    "kinh_gui": ["Ban Xây dựng Đảng xã."],
+    "noi_dung": [
+      "Đoạn 1 nêu căn cứ, bối cảnh, lý do...",
+      "1. **Chủ trì, phối hợp với...**: nội dung...",
+      "2. **Thời hạn**: hoàn thành trước ngày...",
+      "Đoạn kết thúc yêu cầu thực hiện..."
+    ],
+    "noi_nhan": [
+      "- Như trên;",
+      "- Thường trực Đảng uỷ;",
+      "- Lưu VPĐU."
+    ],
+    "tham_quyen": "T/M BAN THƯỜNG VỤ",
+    "chuc_vu": "PHÓ BÍ THƯ",
+    "nguoi_ky": "Nguyễn Xuân Hoàng"
+  }
+}
+"""
+
+
+def _normalize_doc_type(raw: str) -> str:
+    r = (raw or "").upper().strip()
+    if "CV" in r or "CÔNG VĂN" in r or "GIAO VIỆC" in r:
+        return "CV"
+    if "KH" in r or "KẾ HOẠCH" in r:
+        return "KH"
+    if "TB" in r or "THÔNG BÁO" in r:
+        return "TB"
+    if "KL" in r or "KẾT LUẬN" in r:
+        return "KL"
+    if "BC" in r or "BÁO CÁO" in r:
+        return "BC"
+    if "TTR" in r or "TỜ TRÌNH" in r:
+        return "TTr"
+    if "QĐ" in r or "QD" in r or "QUYẾT ĐỊNH" in r:
+        return "QD"
+    if "NQ" in r or "NGHỊ QUYẾT" in r:
+        return "NQ"
+    if "CT" in r or "CHỈ THỊ" in r:
+        return "CT"
+    if "CTR" in r or "CHƯƠNG TRÌNH" in r:
+        return "CTR"
+    return "CV"
+
+
 def _keyword_intent(message: str, new_atts: List[Dict], has_pending: bool) -> str:
     """Phân loại dự phòng bằng từ khoá khi DeepSeek lỗi."""
     m = message.lower()
     if has_pending and re.search(r"\b(sửa|đổi|thêm|bớt|bỏ|thay)\b", m):
         return "chinh_sua"
+    # Nhận diện lệnh soạn thảo văn bản tự do / chủ động
+    if re.search(r"\b(soạn|soan|viết|viet|tạo|tao|dự thảo|chủ động giao|giao việc cho|tham mưu văn bản)\b", m):
+        return "soan_thao"
     if re.search(r"giao việc|công văn giao|triển khai văn bản", m):
         return "wf3_giao_viec"
     if re.search(r"báo cáo tuần|báo cáo tháng|tổng hợp báo cáo", m):
@@ -162,7 +245,7 @@ async def _classify(message: str, new_atts: List[Dict], has_pending: bool) -> Di
         )
         data = res["data"] if isinstance(res["data"], dict) else {}
         intent = data.get("intent", "")
-        valid = set(WORKFLOWS) | {"chinh_sua", "tro_chuyen"}
+        valid = set(WORKFLOWS) | {"chinh_sua", "soan_thao", "tro_chuyen"}
         if intent not in valid:
             intent = _keyword_intent(message, new_atts, has_pending)
         if intent == "chinh_sua" and not has_pending:
@@ -186,10 +269,9 @@ def _build_input_text(message: str, new_atts: List[Dict]) -> str:
     parts = []
     for a in unique_atts:
         parts.append(f"=============== TỆP: {a['name']} ({a['category_label']}) ===============\n{a['text']}")
-    # Nếu cán bộ dán nội dung dài trực tiếp vào khung chat thì dùng luôn làm đầu vào
-    if len(message) > 200 or not unique_atts:
-        if len(message) > 200:
-            parts.append(f"=============== NỘI DUNG CÁN BỘ NHẬP TRỰC TIẾP ===============\n{message}")
+    # Đưa toàn bộ nội dung hoặc chỉ đạo của cán bộ vào đầu vào (không giới hạn độ dài)
+    if message and message.strip():
+        parts.append(f"=============== NỘI DUNG / CHỈ ĐẠO CỦA CÁN BỘ ===============\n{message.strip()}")
     text = "\n\n".join(parts).strip()
     if len(text) > MAX_INPUT_CHARS:
         text = text[:MAX_INPUT_CHARS] + "\n\n[... Văn bản quá dài, hệ thống đã cắt bớt phần cuối để đảm bảo an toàn ...]"
@@ -334,9 +416,49 @@ def _approval_actions(has_warnings: bool) -> List[Dict[str, str]]:
 # CÁC BƯỚC XỬ LÝ
 # ==============================================================================
 
+async def _draft_party_document(s: Dict[str, Any], message: str, new_atts: List[Dict]) -> Dict[str, Any]:
+    """Soạn thảo chủ động mọi thể loại văn bản Đảng theo lệnh của cán bộ với tri thức và kỹ năng được nạp đầy đủ."""
+    context_text = _build_input_text(message, new_atts)
+    detected_type = _normalize_doc_type(message)
+    knowledge_context = build_system_knowledge_prompt(detected_type, include_local=True)
+
+    messages = [
+        {"role": "system", "content": f"{DRAFT_SYSTEM_PROMPT}\n\n{knowledge_context}"},
+        {"role": "user", "content": f"Yêu cầu của cán bộ:\n{context_text}"},
+    ]
+    res = await default_ai_client.call_chat_async(messages, temperature=0.2, max_tokens=4000, json_mode=True)
+    out = res.get("data") if isinstance(res.get("data"), dict) else {}
+    doc_payload = out.get("doc_payload")
+    summary = out.get("summary") or "Đã dự thảo xong văn bản theo yêu cầu của đồng chí."
+
+    if not isinstance(doc_payload, dict):
+        return _reply(s, "Tôi chưa tổng hợp được dự thảo theo cấu trúc chuẩn. Đồng chí vui lòng mô tả rõ hơn hoặc gửi lại yêu cầu.")
+
+    doc_type = _normalize_doc_type(doc_payload.get("doc_type", "CV"))
+    doc_payload["doc_type"] = doc_type
+
+    for a in new_atts:
+        a["used"] = True
+
+    s["pending"] = {"workflow": "party_doc", "data": doc_payload, "summary": summary}
+
+    reply_text = (
+        f"📝 **DỰ THẢO THAM MƯU: {doc_type}**\n\n"
+        f"{summary}\n\n"
+        f"📌 **Trích yếu:** {doc_payload.get('trich_yeu', '')}\n"
+        f"👤 **Thẩm quyền ký:** {doc_payload.get('tham_quyen', 'T/M BAN THƯỜNG VỤ')} - {doc_payload.get('chuc_vu', 'BÍ THƯ')} ({doc_payload.get('nguoi_ky', 'Vũ Thị Thuỳ Trang')})\n\n"
+        f"👉 *Đồng chí xem lại nội dung trên. Nếu đồng ý, vui lòng gõ **'Duyệt'** để tôi xuất tệp Word lên Google Drive, hoặc gõ chỉ đạo chỉnh sửa trực tiếp.*"
+    )
+    return _reply(s, reply_text, actions=_approval_actions(False))
+
+
 async def _run_workflow(s: Dict[str, Any], wf: str, message: str, params: Dict[str, str]) -> Dict[str, Any]:
     new_atts = [a for a in s["attachments"] if not a["used"]]
     input_text = _build_input_text(message, new_atts)
+
+    # Nếu chọn wf3_giao_viec mà không có tệp đính kèm nhưng có lệnh trực tiếp -> tự động chuyển sang soạn thảo chủ động
+    if wf == "wf3_giao_viec" and not new_atts and message.strip():
+        return await _draft_party_document(s, message, new_atts)
 
     if not input_text:
         s["awaiting"] = wf
@@ -391,6 +513,39 @@ async def _run_workflow(s: Dict[str, Any], wf: str, message: str, params: Dict[s
 async def _revise(s: Dict[str, Any], instruction: str) -> Dict[str, Any]:
     pending = s["pending"]
     wf = pending["workflow"]
+
+    if wf == "party_doc":
+        current_data = pending["data"]
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Bạn là Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải. "
+                    "Hãy chỉnh sửa cấu trúc dữ liệu doc_payload theo đúng chỉ đạo của cán bộ. "
+                    "Đầu ra BẮT BUỘC dạng JSON: {'summary': 'tóm tắt điểm đã sửa ngắn gọn', 'doc_payload': {toàn bộ payload mới theo chuẩn Hướng dẫn 05-HD/VPTW}}"
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"Dự thảo hiện tại:\n{json.dumps(current_data, ensure_ascii=False)}\n\nChỉ đạo chỉnh sửa của cán bộ:\n{instruction}",
+            },
+        ]
+        res = await default_ai_client.call_chat_async(messages, temperature=0.1, max_tokens=4000, json_mode=True)
+        out = res.get("data") if isinstance(res.get("data"), dict) else {}
+        new_payload = out.get("doc_payload")
+        if isinstance(new_payload, dict):
+            new_payload["doc_type"] = _normalize_doc_type(new_payload.get("doc_type", current_data.get("doc_type", "CV")))
+            pending["data"] = new_payload
+            note = out.get("summary") or "Đã cập nhật dự thảo theo chỉ đạo của đồng chí."
+            return _reply(
+                s,
+                f"✏️ **Đã chỉnh sửa:** {note}\n\n"
+                f"📌 **Trích yếu:** {new_payload.get('trich_yeu', '')}\n\n"
+                f"Đồng chí kiểm tra lại, nếu đồng ý thì gõ **'Duyệt'** để xuất Word lên Google Drive.",
+                actions=_approval_actions(False),
+            )
+        return _reply(s, "Tôi chưa sửa được theo yêu cầu. Đồng chí vui lòng diễn đạt cụ thể hơn.", actions=_approval_actions(False))
+
     res = await default_ai_client.call_chat_async(
         get_revise_messages(pending["data"], instruction), temperature=0.1, max_tokens=8000, json_mode=True
     )
@@ -416,7 +571,15 @@ def _confirm(s: Dict[str, Any]) -> Dict[str, Any]:
     wf, data = pending["workflow"], pending["data"]
 
     files = []
-    if wf == "wf4_tham_dinh":
+    if wf == "party_doc":
+        path = export_party_document(data)
+        doc_type_label = data.get("doc_type", "CV")
+        files.append({
+            "label": f"Văn bản dự thảo ({doc_type_label})",
+            "name": Path(path).name,
+            "url": _download_url(path),
+        })
+    elif wf == "wf4_tham_dinh":
         labels = {
             "bc_tham_dinh": "Báo cáo thẩm định (-BC/VPĐU)",
             "du_thao_chuan_hoa": "Dự thảo đã chuẩn hoá (HD 05)",
@@ -445,7 +608,9 @@ def _confirm(s: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
-    msgs = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
+    core_rules = get_core_rules()
+    local_facts = get_local_knowledge_summary()
+    msgs = [{"role": "system", "content": f"{CHAT_SYSTEM_PROMPT}\n\n{core_rules}\n\n{local_facts}"}]
     new_atts = [a for a in s["attachments"] if not a["used"]]
     if new_atts:
         att_text = "\n\n".join(f"=== TỆP: {a['name']} ===\n{a['text']}" for a in new_atts)[:MAX_CHAT_ATTACH_CHARS]
@@ -510,6 +675,8 @@ async def handle_chat(session_id: Optional[str], message: str = "", action: str 
 
         if intent == "chinh_sua":
             return done(await _revise(s, message))
+        if intent == "soan_thao":
+            return done(await _draft_party_document(s, message, new_atts))
         if intent in WORKFLOWS:
             return done(await _run_workflow(s, intent, message, cls))
         return done(await _chat(s, message))
