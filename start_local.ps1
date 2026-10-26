@@ -5,7 +5,10 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Set-Location $PSScriptRoot
 
-if (Get-Command python -ErrorAction SilentlyContinue) {
+$venvPy = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
+if (Test-Path $venvPy) {
+    & $venvPy run.py
+} elseif (Get-Command python -ErrorAction SilentlyContinue) {
     python run.py
 } elseif (Get-Command py -ErrorAction SilentlyContinue) {
     py -3 run.py

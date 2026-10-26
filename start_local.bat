@@ -12,6 +12,12 @@ echo    Khoi dong may chu Local tai http://127.0.0.1:8000
 echo =====================================================================
 echo.
 
+REM Uu tien chay bang moi truong ao .venv
+if exist "%~dp0.venv\Scripts\python.exe" (
+    "%~dp0.venv\Scripts\python.exe" run.py
+    goto end
+)
+
 where python >nul 2>nul
 if %errorlevel% equ 0 (
     python run.py

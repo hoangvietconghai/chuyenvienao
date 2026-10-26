@@ -24,6 +24,16 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 os.chdir(BASE_DIR)
 sys.path.insert(0, BASE_DIR)
 
+# Tự động chuyển sang .venv nếu đang chạy Python toàn cục chưa có uvicorn
+venv_python = os.path.join(BASE_DIR, ".venv", "Scripts", "python.exe")
+if os.path.exists(venv_python) and os.path.abspath(sys.executable).lower() != os.path.abspath(venv_python).lower():
+    try:
+        import uvicorn
+    except ImportError:
+        import subprocess
+        sys.exit(subprocess.call([venv_python, os.path.abspath(__file__)] + sys.argv[1:]))
+
+
 
 def open_browser():
     """Mở trình duyệt web sau 1.5 giây khi server đã lắng nghe cổng 8000."""
