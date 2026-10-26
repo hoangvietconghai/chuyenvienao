@@ -40,9 +40,13 @@ scratch/
 scripts/debug/
 *.log
 
-# File văn bản dự thảo & ảnh (không đưa lên Git)
-van_ban_du_thao/**/*.docx
-van_ban_du_thao/*.docx
-van_ban_den/**/*.docx
-van_ban_den/*.docx
+# File văn bản dự thảo & ảnh & tài liệu lớn (không đưa lên Git)
+*.pdf
+*.rar
+*.zip
+*.7z
 *.png
+van_ban_den/*
+!van_ban_den/.gitkeep
+van_ban_du_thao/*
+!van_ban_du_thao/.gitkeep
