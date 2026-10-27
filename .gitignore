@@ -38,6 +38,7 @@ Bảng theo dõi tiến độ/
 # Thư mục nháp & kiểm thử tạm thời
 scratch/
 scripts/debug/
+backups/
 *.log
 
 # File văn bản dự thảo & ảnh & tài liệu lớn (không đưa lên Git)
