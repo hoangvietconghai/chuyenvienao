@@ -12,6 +12,8 @@ venv/
 *.db
 *.db-wal
 *.db-shm
+# Ngoại lệ: Đồng bộ CSDL SQLite hợp nhất của Chuyên viên ảo giữa cơ quan và ở nhà
+!data/chuyen_vien_ao.db
 
 # Microsoft Office temporary files
 ~$*.docx

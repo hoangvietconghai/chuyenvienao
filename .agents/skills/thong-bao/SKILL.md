@@ -22,7 +22,7 @@ Trong công tác lãnh đạo của Đảng uỷ xã Công Hải (Đảng bộ c
 ### 1. Thông báo Kết luận cuộc họp Ban Thường vụ Đảng uỷ
 * **Tên loại văn bản:** **`THÔNG BÁO`** (Cỡ 15, in hoa, đậm, căn giữa).
 * **Số ký hiệu:** `Số        -TB/ĐU`.
-* **Trích yếu tiêu đề:** `Kết luận của Ban Thường vụ Đảng uỷ / về một số nội dung cuộc họp ngày dd/mm/yyyy` (hoặc `về công tác cán bộ/xét nạp đảng viên`).
+* **Trích yếu tiêu đề:** `Kết luận của Ban Thường vụ Đảng uỷ / về một số nội dung cuộc họp ngày dd/mm/yyyy` (hoặc `về công tác cán bộ/xét nạp đảng viên, ....`).
 * **Thẩm quyền đề ký:**  
   * Dòng 1: **`T/M BAN THƯỜNG VỤ`** (Cỡ 14, in hoa, đậm).  
   * Dòng 2: **`BÍ THƯ`** (Cỡ 14, VIẾT HOA, KHÔNG IN ĐẬM).  

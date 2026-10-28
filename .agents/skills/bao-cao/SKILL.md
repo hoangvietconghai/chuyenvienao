@@ -213,11 +213,12 @@ Khi nhận được báo cáo từ các cơ quan, đơn vị, Chuyên viên ảo
     │ Chắt lọc trọng tâm, không liệt kê dàn trải
     │ Nghi vấn số liệu ──→ Hỏi người dùng
     ▼
-[Bước 4: Soạn dự thảo Markdown & Tự thẩm định Quality Gate]
-    │ Áp dụng thể thức HD 05-HD/VPTW
-    │ Kiểm tra checklist 10 tiêu chí
+[Bước 4: ĐỐI SOÁT HẬU KIỂM SỐ LIỆU ĐẦU RA (POST-GENERATION DATA AUDIT)] ★ BẮT BUỘC ★
+    │ Đọc ngược lại dự thảo, trích xuất số liệu đối chiếu 1-1 với báo cáo gốc
+    │ Lập Ma trận Đối soát Hậu kiểm; nếu phát hiện lệch/thiếu → TỰ SỬA NGAY
+    │ Đạt khớp 100% mới chuyển sang xuất file
     ▼
-[Bước 5: Xuất file .docx hoặc bàn giao dự thảo .md]
+[Bước 5: Thẩm định Quality Gate & Xuất File Word .docx]
     │ Sử dụng scripts/export_docx.py
     │ Lưu tại van_ban_du_thao/[Năm]/Bao_cao/
 ```
@@ -298,4 +299,5 @@ Trước khi xuất file hoặc bàn giao dự thảo Báo cáo, Chuyên viên �
 - [ ] 8. **Số liệu & Cấp uỷ:** Số liệu khớp với Nghị quyết Đại hội I Đảng bộ xã (tăng trưởng 11-12%, ngân sách tăng 12%, 72 biên chế...); Đảng bộ xã là Đảng bộ cơ sở; hoàn toàn không còn cấp huyện.
 - [ ] 9. **Tôn trọng dữ liệu gốc:** Không tự ý thay đổi số liệu của cơ quan, đơn vị; nghi vấn đã được hỏi lại người dùng.
 - [ ] 10. **Đầy đủ nội dung:** Tất cả các mục trong đề cương (nếu có) hoặc kết cấu chuẩn đều đã có thông tin; các mục thiếu đã được thông báo cho người dùng.
-- [ ] 11. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `BC [Nội dung rút gọn] [Cơ quan: TU/ĐU/VPĐU] [Thời gian/Phiên bản].docx` (Ví dụ: `BC tuần 42 VPĐU.docx`, `BC thẩm định KH CĐS ĐU.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**).
+- [ ] 11. **Vượt qua Đối soát Hậu kiểm Dữ liệu Đầu ra (Post-Generation Data Audit):** Đọc ngược lại dự thảo đối chiếu 1-1 mọi số liệu, mốc thời gian với các báo cáo thành phần, đạt khớp 100% trước khi xuất file.
+- [ ] 12. **Quy chuẩn đặt tên file Word (.docx):** Bắt buộc đặt tên tiếng Việt rút gọn súc tích: `BC [Nội dung rút gọn] [Cơ quan: TU/ĐU/VPĐU] [Thời gian/Phiên bản].docx` (Ví dụ: `BC tuần 42 VPĐU.docx`, `BC thẩm định KH CĐS ĐU.docx`; Tỉnh uỷ ghi **TU**, Đảng uỷ ghi **ĐU**).

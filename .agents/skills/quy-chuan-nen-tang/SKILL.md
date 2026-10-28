@@ -458,19 +458,25 @@ Tên tệp tin Word (.docx) xuất ra vào kho `van_ban_du_thao/[Năm]/[Thư_m�
 
 ## PHẦN VII: QUY TRÌNH SOẠN THẢO VĂN BẢN TRÊN GOOGLE ANTIGRAVITY 2.0
 
-AI Agent vận hành theo quy trình tự động hóa 3 bước khi nhận lệnh soạn thảo:
+AI Agent vận hành theo quy trình tự động hóa 4 bước khép kín khi nhận lệnh soạn thảo:
 
 ```
 [Bước 1: Parse Yêu cầu, Bóc tách Văn bản cấp trên & Phân vai Cơ quan]
        │
        ▼
-[Bước 2: Dựng Khung 2 Cột ẩn & Áp dụng Định dạng Chuẩn (Paragraph 6pt/18pt/1cm)]
+[Bước 2: Soạn Dự thảo theo Thể thức Chuẩn (Paragraph 6pt/18pt/Indent 1cm)]
        │
        ▼
-[Bước 3: Tự Thẩm định Quality Gate & Xuất File Trực tiếp (.docx / .md)]
+[Bước 3: ĐỐI SOÁT HẬU KIỂM DỮ LIỆU ĐẦU RA (POST-GENERATION DATA AUDIT)] ★ BẮT BUỘC ★
+       │ Đọc ngược lại toàn văn dự thảo vừa tạo
+       │ Trích xuất từng số liệu, mốc thời gian, danh tính đối chiếu 1-1 với nguồn gốc
+       │ Lập Ma trận Đối soát Hậu kiểm; nếu phát hiện lệch/thiếu → TỰ SỬA NGAY
+       │ Chỉ khi đạt tỷ lệ khớp 100% mới chuyển sang Bước 4
+       ▼
+[Bước 4: Tự Thẩm định Quality Gate & Xuất File Trực tiếp (.docx / .md)]
 ```
 
-### Danh mục Kiểm tra Chất lượng Toàn diện (15 Tiêu chí Quality Gate)
+### Danh mục Kiểm tra Chất lượng Toàn diện (16 Tiêu chí Quality Gate)
 Trước khi bàn giao file cho cán bộ, AI Agent phải tự đối chiếu các tiêu chí sau:
 - [x] Lề trang: Trái 30 mm, Phải 15 mm, Trên 20 mm, Dưới 20 mm.
 - [x] Định dạng đoạn văn bản (Paragraph): Căn đều hai bên (Justified); TẤT CẢ các đoạn, các đề mục lớn (I, II), tiêu đề, tiểu mục (1, 2), điểm, dấu gạch đầu dòng (- / +) ĐỀU THỤT ĐẦU DÒNG ĐÚNG 1 CM (10 MM) NHƯ NHAU.
@@ -487,6 +493,7 @@ Trước khi bàn giao file cho cán bộ, AI Agent phải tự đối chiếu c
 - [x] Thẩm quyền ký & họ tên: `Vũ Thị Thuỳ Trang` (Bí thư), `Nguyễn Xuân Hoàng` (Phó Bí thư); 14pt đậm.
 - [x] Mô hình 3 cấp (từ 01/7/2025): Tuyệt đối không viện dẫn hoặc liên quan đến cấp huyện cũ (Huyện uỷ, UBND huyện Thuận Bắc).
 - [x] An toàn hệ thống: Tuyệt đối KHÔNG đụng đến mật khẩu; KHÔNG tự ý ban hành/ký số trên hệ thống khi chưa có lệnh cán bộ.
+- [x] Vượt qua Đối soát Hậu kiểm Dữ liệu Đầu ra (Post-Generation Data Audit): Bắt buộc đọc ngược lại dự thảo, đối chiếu 1-1 mọi số liệu, mốc thời gian với báo cáo/văn bản nguồn, đảm bảo khớp 100% trước khi xuất file.
 - [x] Quy chuẩn đặt tên file Word (.docx): BẮT BUỘC đặt tên tiếng Việt rút gọn súc tích theo cú pháp `[Mã loại] [Trích yếu rút gọn] [Số hiệu/Cơ quan: TU/ĐU] [Đối tượng/Thời gian].docx` (Lưu ý: Tỉnh uỷ ghi TU, Đảng uỷ ghi ĐU, Đảng viên ghi ĐV, Văn phòng ghi VPĐU).
 - [x] Tiết kiệm Token & Tối ưu phản hồi: Tuyệt đối KHÔNG in lại toàn văn văn bản vào khung chat khi đã xuất file Word (.docx); câu trả lời chỉ tóm tắt Bảng phân công/đối soát, Lưu ý nghiệp vụ và Link file.
 
