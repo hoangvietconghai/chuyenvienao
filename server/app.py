@@ -387,6 +387,298 @@ async def list_recent_documents():
     return {"documents": files[:30]}
 
 
+# --- RESTFUL APIS CHO SỔ NHIỆM VỤ, CHỈ TIÊU & DANH BẠ HỆ THỐNG ---
+
+class TaskCreateRequest(BaseModel):
+    noi_dung_nhiem_vu: str
+    co_quan_chu_tri: str
+    co_quan_chu_tri_code: str
+    so_hieu_vb: Optional[str] = None
+    lanh_dao_chi_dao: Optional[str] = None
+    cap_trinh: Optional[str] = None
+    ngay_giao: Optional[str] = None
+    deadline_date: str
+    deadline_time: Optional[str] = "17:00"
+    deadline_type: Optional[str] = "EXACT"
+    muc_do_uu_tien: Optional[str] = "Bình thường"
+    linh_vuc: Optional[str] = "Chung"
+    co_quan_phoi_hop: Optional[List[str]] = None
+
+
+class TaskStatusUpdateRequest(BaseModel):
+    trang_thai: str
+    ket_qua_bao_cao: Optional[str] = ""
+
+
+class KpiUpdateRequest(BaseModel):
+    gia_tri_hien_tai: float
+    bieu_thuc_chi_tiet: Optional[str] = ""
+    trang_thai_anh_sang: Optional[str] = "XANH"
+
+
+@app.get("/api/tasks")
+async def list_tasks(
+    trang_thai: Optional[str] = None,
+    co_quan: Optional[str] = None,
+    cap_trinh: Optional[str] = None,
+    tu_ngay: Optional[str] = None,
+    den_ngay: Optional[str] = None,
+):
+    """Truy vấn danh sách nhiệm vụ từ Sổ Nhiệm vụ (SQLite DB)."""
+    from server.services import db_service
+    tasks = db_service.get_tasks(
+        trang_thai=trang_thai,
+        co_quan_code=co_quan,
+        cap_trinh=cap_trinh,
+        tu_ngay=tu_ngay,
+        den_ngay=den_ngay,
+        limit=200,
+    )
+    return {"tasks": tasks, "total": len(tasks)}
+
+
+@app.post("/api/tasks")
+async def create_or_update_task_endpoint(req: TaskCreateRequest):
+    """Thêm mới hoặc cập nhật nhiệm vụ (tự động khử trùng lặp)."""
+    from server.services import db_service
+    task_dict = req.dict()
+    ok, task_id, action = db_service.add_or_update_task(task_dict)
+    return {
+        "success": ok,
+        "task_id": task_id,
+        "action": action,
+        "message": "Đã tạo nhiệm vụ mới thành công" if action == "created" else "Nhiệm vụ đã được cập nhật/lùi hạn",
+    }
+
+
+@app.put("/api/tasks/{task_id}/status")
+async def update_task_status_endpoint(task_id: str, req: TaskStatusUpdateRequest):
+    """Cập nhật trạng thái thực hiện nhiệm vụ (Hoàn thành / Đang thực hiện...)."""
+    from server.services import db_service
+    ok = db_service.update_task_status(task_id, req.trang_thai, req.ket_qua_bao_cao or "")
+    if not ok:
+        raise HTTPException(status_code=404, detail="Không tìm thấy nhiệm vụ yêu cầu.")
+    return {"success": True, "task_id": task_id, "status": req.trang_thai}
+
+
+@app.delete("/api/tasks/{task_id}")
+async def delete_task_endpoint(task_id: str):
+    """Xoá một nhiệm vụ theo ID."""
+    from server.services import db_service
+    ok = db_service.delete_task(task_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Không tìm thấy nhiệm vụ.")
+    return {"success": True, "message": f"Đã xoá nhiệm vụ {task_id}"}
+
+
+@app.get("/api/kpis")
+async def list_kpis(source: Optional[str] = None):
+    """Lấy danh sách các chỉ tiêu KPI (Đại hội Đảng bộ khoá I và NQ57 CĐS)."""
+    from server.services import db_service
+    kpis = db_service.get_all_kpis(nguon_nghi_quyet=source)
+    return {"kpis": kpis, "total": len(kpis)}
+
+
+@app.put("/api/kpis/{kpi_id}")
+async def update_kpi_endpoint(kpi_id: str, req: KpiUpdateRequest):
+    """Cập nhật tiến độ số liệu của một chỉ tiêu KPI."""
+    from server.services import db_service
+    ok = db_service.update_kpi_progress(
+        kpi_id,
+        gia_tri=req.gia_tri_hien_tai,
+        bieu_thuc=req.bieu_thuc_chi_tiet or "",
+        trang_thai=req.trang_thai_anh_sang or "XANH",
+    )
+    if not ok:
+        raise HTTPException(status_code=404, detail="Không tìm thấy chỉ tiêu KPI.")
+    return {"success": True, "kpi_id": kpi_id}
+
+
+@app.get("/api/directory")
+async def list_directory():
+    """Lấy danh bạ cán bộ, lãnh đạo, 08 thôn và 21 chi bộ xã Công Hải."""
+    from server.services import db_service
+    directory = db_service.get_all_can_bo(only_active=True)
+    return {"directory": directory, "total": len(directory)}
+
+
+@app.get("/api/search")
+async def search_documents_endpoint(q: str):
+    """Tìm kiếm nhanh toàn văn FTS5 BM25 trong kho văn bản."""
+    from server.services import db_service
+    results = db_service.search_fts_bm25(query=q, limit=20)
+    return {"query": q, "results": results, "total": len(results)}
+
+
+# --- HỆ THỐNG QUẢN LÝ & NẠP DỮ LIỆU RAG CÓ KIỂM SOÁT (HUMAN-IN-THE-LOOP) ---
+
+class ThematicCreateRequest(BaseModel):
+    ten_chuyen_de: str
+    ma_chuyen_de: Optional[str] = None
+    mo_ta: Optional[str] = ""
+    tu_khoa: Optional[str] = ""
+
+
+class RagCommitRequest(BaseModel):
+    file_path: Optional[str] = ""
+    so_hieu_vb: str
+    ngay_ban_hanh: str
+    co_quan_ban_hanh: str
+    co_quan_ban_hanh_code: str
+    the_loai_vb: str
+    nhom_vong_doi: str
+    ma_chuyen_de: Optional[str] = "VAN_PHONG_THI_DUA"
+    trich_yeu: str
+    thay_the_so_hieu: Optional[str] = ""
+    full_text: Optional[str] = ""
+    citations: Optional[List[Dict[str, Any]]] = None
+
+
+@app.get("/api/rag/thematics")
+async def list_thematics_endpoint():
+    """Lấy danh mục các chuyên đề công tác."""
+    from server.services import db_service
+    cats = db_service.get_all_chuyen_de()
+    return {"thematics": cats, "total": len(cats)}
+
+
+@app.post("/api/rag/thematics")
+async def create_thematic_endpoint(req: ThematicCreateRequest):
+    """Cán bộ tự thêm chuyên đề mới vào CSDL."""
+    if not req.ten_chuyen_de.strip():
+        raise HTTPException(status_code=400, detail="Tên chuyên đề không được để trống.")
+    from server.services import db_service
+    res = db_service.add_chuyen_de(
+        ten_chuyen_de=req.ten_chuyen_de,
+        ma_chuyen_de=req.ma_chuyen_de,
+        mo_ta=req.mo_ta or "",
+        tu_khoa=req.tu_khoa or ""
+    )
+    return {"success": True, "message": f"Đã thêm chuyên đề '{res['ten_chuyen_de']}'", "thematic": res}
+
+
+@app.post("/api/rag/clear")
+async def clear_rag_endpoint():
+    """Xoá sạch toàn bộ dữ liệu RAG trong CSDL để nạp lại từ đầu."""
+    from server.services import rag_service
+    return rag_service.clear_rag_data()
+
+
+@app.get("/api/rag/stats")
+async def get_rag_stats_endpoint():
+    """Lấy số liệu thống kê tổng thể kho RAG."""
+    from server.services import rag_service
+    return rag_service.get_rag_stats()
+
+
+class RagUpdateRequest(BaseModel):
+    so_hieu_vb: Optional[str] = None
+    ngay_ban_hanh: Optional[str] = None
+    co_quan_ban_hanh: Optional[str] = None
+    co_quan_ban_hanh_code: Optional[str] = None
+    the_loai_vb: Optional[str] = None
+    nhom_vong_doi: Optional[str] = None
+    ma_chuyen_de: Optional[str] = None
+    trich_yeu: Optional[str] = None
+    trang_thai_hieu_luc: Optional[str] = None
+    bi_thay_the_boi_so_hieu: Optional[str] = None
+
+
+@app.get("/api/rag/documents")
+async def list_rag_documents_endpoint(limit: int = 100):
+    """Liệt kê các văn bản đã được kiểm duyệt và nạp vào kho RAG."""
+    from server.services import rag_service
+    docs = rag_service.list_rag_documents(limit=limit)
+    return {"documents": docs, "total": len(docs)}
+
+
+@app.get("/api/rag/documents/{doc_id:path}")
+async def get_rag_document_endpoint(doc_id: str):
+    """Lấy chi tiết 1 văn bản trong kho RAG kèm các đoạn trích chunks và liên kết."""
+    from server.services import rag_service
+    detail = rag_service.get_document_detail(doc_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Không tìm thấy văn bản yêu cầu.")
+    return {"success": True, "document": detail}
+
+
+@app.put("/api/rag/documents/{doc_id:path}")
+async def update_rag_document_endpoint(doc_id: str, req: RagUpdateRequest):
+    """Cập nhật siêu dữ liệu văn bản đã nạp trong kho RAG."""
+    from server.services import rag_service
+    updates = {k: v for k, v in req.dict().items() if v is not None}
+    ok, msg, updated = rag_service.update_document_metadata(doc_id, updates)
+    if not ok:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"success": True, "message": msg, "document": updated}
+
+
+@app.delete("/api/rag/documents/{doc_id:path}")
+async def delete_rag_document_endpoint(doc_id: str):
+    """Xoá 1 văn bản khỏi kho RAG."""
+    from server.services import rag_service
+    ok = rag_service.delete_document_from_rag(doc_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Không tìm thấy văn bản để xoá.")
+    return {"success": True, "message": f"Đã xoá văn bản {doc_id} khỏi kho RAG."}
+
+
+@app.post("/api/rag/preview")
+async def preview_rag_upload_endpoint(file: UploadFile = File(...)):
+    """
+    Bước 1: Tiếp nhận tệp tải lên, phân tích bóc tách và trả về bản xem trước
+    để cán bộ kiểm tra, chỉnh sửa (Human-in-the-Loop) TRƯỚC KHI nạp vào CSDL.
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Không có tệp được chọn.")
+
+    from server.services import rag_service
+    # Lưu tệp vào thư mục văn bản đến theo năm
+    dest_dir = VAN_BAN_DEN_DIR / "cap_tren"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    saved_file_path = dest_dir / file.filename
+
+    with open(saved_file_path, "wb") as out_file:
+        shutil.copyfileobj(file.file, out_file)
+
+    ok, msg, preview_data = rag_service.preview_document_for_review(str(saved_file_path))
+    if not ok:
+        # Nếu bị chặn bởi Secret Gatekeeper hoặc lỗi, xoá file tạm
+        if saved_file_path.exists():
+            try:
+                os.remove(saved_file_path)
+            except Exception:
+                pass
+        raise HTTPException(status_code=400, detail=msg)
+
+    resp = {
+        "success": True,
+        "message": msg,
+        "preview": preview_data,
+    }
+    # Unpack preview_data để tương thích trực tiếp các trường ở client
+    resp.update(preview_data)
+    return resp
+
+
+@app.post("/api/rag/commit")
+async def commit_rag_endpoint(req: RagCommitRequest):
+    """
+    Bước 2: Sau khi cán bộ đã kiểm tra và chỉnh sửa xong thông tin,
+    bấm nút 'Phê duyệt & Nạp' để chính thức ghi vào kho CSDL SQLite RAG.
+    """
+    from server.services import rag_service
+    ok, msg, res_data = rag_service.commit_reviewed_document(req.dict())
+    if not ok:
+        raise HTTPException(status_code=400, detail=msg)
+
+    return {
+        "success": True,
+        "message": msg,
+        "data": res_data,
+    }
+
+
 @app.get("/api/download")
 async def download_file(file_path: str):
     """Tải tệp Word đã xuất về máy tính của cán bộ."""

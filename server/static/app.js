@@ -205,12 +205,18 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.value = '';
   });
 
-  // Kéo thả tệp trên toàn cửa sổ
+  // Kéo thả tệp trên toàn cửa sổ (hỗ trợ cả Chat và Kho RAG thông minh)
   let dragCounter = 0;
   window.addEventListener('dragenter', (e) => {
     e.preventDefault();
     dragCounter++;
-    dropOverlay.classList.add('show');
+    const isRagActive = document.getElementById('tab-rag')?.classList.contains('active');
+    if (isRagActive) {
+      const dropzone = document.getElementById('ragDropZone');
+      if (dropzone) dropzone.classList.add('drag-active');
+    } else {
+      if (dropOverlay) dropOverlay.classList.add('show');
+    }
   });
 
   window.addEventListener('dragleave', (e) => {
@@ -218,7 +224,9 @@ document.addEventListener('DOMContentLoaded', () => {
     dragCounter--;
     if (dragCounter <= 0) {
       dragCounter = 0;
-      dropOverlay.classList.remove('show');
+      if (dropOverlay) dropOverlay.classList.remove('show');
+      const dropzone = document.getElementById('ragDropZone');
+      if (dropzone) dropzone.classList.remove('drag-active');
     }
   });
 
@@ -227,10 +235,24 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('drop', async (e) => {
     e.preventDefault();
     dragCounter = 0;
-    dropOverlay.classList.remove('show');
+    if (dropOverlay) dropOverlay.classList.remove('show');
+    const dropzone = document.getElementById('ragDropZone');
+    if (dropzone) dropzone.classList.remove('drag-active');
+
     const files = Array.from(e.dataTransfer?.files || []);
-    for (const f of files) {
-      await uploadFile(f);
+    if (files.length === 0) return;
+
+    const isRagActive = document.getElementById('tab-rag')?.classList.contains('active');
+    if (isRagActive) {
+      // Đang ở Tab Kho RAG -> Chuyển sang nạp và kiểm duyệt RAG
+      if (window.processRagFileForPreview) {
+        await window.processRagFileForPreview(files[0]);
+      }
+    } else {
+      // Đang ở Tab Chat hoặc tab khác -> Đính kèm vào khung Chat
+      for (const f of files) {
+        await uploadFile(f);
+      }
     }
   });
 
@@ -725,8 +747,881 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 50);
   }
 
+  // ============================================================================
+  // 7. ĐIỀU KHIỂN 05 TABS & TẢI DỮ LIỆU QUẢN TRỊ (SỔ VIỆC, KPI, RAG, DANH BẠ)
+  // ============================================================================
+  const navTabs = document.querySelectorAll('.nav-tab');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  navTabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.getAttribute('data-tab');
+      navTabs.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(tc => tc.classList.remove('active'));
+
+      btn.classList.add('active');
+      const activeContent = document.getElementById(targetTab);
+      if (activeContent) activeContent.classList.add('active');
+
+      if (targetTab === 'tab-tasks') loadTasks();
+      if (targetTab === 'tab-rag') {
+        loadRagStats();
+        loadRagDocuments();
+      }
+      if (targetTab === 'tab-kpis') loadKpis();
+      if (targetTab === 'tab-directory') loadDirectory();
+    });
+  });
+
+  // --- SỔ NHIỆM VỤ ---
+  const tasksTableBody = document.getElementById('tasksTableBody');
+  const filterTaskUnit = document.getElementById('filterTaskUnit');
+  const filterTaskStatus = document.getElementById('filterTaskStatus');
+  const btnRefreshTasks = document.getElementById('btnRefreshTasks');
+
+  if (filterTaskUnit) filterTaskUnit.addEventListener('change', loadTasks);
+  if (filterTaskStatus) filterTaskStatus.addEventListener('change', loadTasks);
+  if (btnRefreshTasks) btnRefreshTasks.addEventListener('click', loadTasks);
+
+  async function loadTasks() {
+    if (!tasksTableBody) return;
+    tasksTableBody.innerHTML = '<tr><td colspan="7" class="loading-td">Đang tải Sổ nhiệm vụ...</td></tr>';
+    try {
+      const unit = filterTaskUnit ? filterTaskUnit.value : '';
+      const status = filterTaskStatus ? filterTaskStatus.value : '';
+      const res = await fetch(`/api/tasks?co_quan=${encodeURIComponent(unit)}&trang_thai=${encodeURIComponent(status)}`);
+      const data = await res.json();
+      const tasks = data.tasks || [];
+
+      if (tasks.length === 0) {
+        tasksTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color:#94a3b8;">Không có nhiệm vụ nào phù hợp với bộ lọc.</td></tr>';
+        return;
+      }
+
+      tasksTableBody.innerHTML = tasks.map(t => {
+        let badgeClass = 'status-pending';
+        if (t.trang_thai === 'Đang thực hiện') badgeClass = 'status-inprogress';
+        if (t.trang_thai === 'Hoàn thành') badgeClass = 'status-completed';
+        if (t.trang_thai === 'Chuyển tiếp tháng sau') badgeClass = 'status-rescheduled';
+
+        const isDone = t.trang_thai === 'Hoàn thành';
+        const actionBtn = isDone
+          ? '<span style="color:#64748b; font-size:12px;">Đã chốt</span>'
+          : `<button class="btn-status-done" onclick="window.markTaskDone('${t.task_id}')">✓ Xong</button>`;
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:700; color:#38bdf8;">${escapeHtml(t.task_id)}</div>
+              <div style="font-size:11.5px; color:#94a3b8;">${escapeHtml(t.so_hieu_vb || '-')}</div>
+            </td>
+            <td><b>${escapeHtml(t.co_quan_chu_tri)}</b></td>
+            <td>
+              <div>${escapeHtml(t.noi_dung_nhiem_vu)}</div>
+              ${t.cap_trinh ? `<div style="font-size:11.5px; color:#cbd5e1; margin-top:2px;">Cấp trình: <i>${escapeHtml(t.cap_trinh)}</i></div>` : ''}
+            </td>
+            <td><code>${escapeHtml(t.deadline_date || '')}</code></td>
+            <td><span style="font-size:12px;">${escapeHtml(t.muc_do_uu_tien || 'Bình thường')}</span></td>
+            <td><span class="status-badge ${badgeClass}">${escapeHtml(t.trang_thai)}</span></td>
+            <td>${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    } catch (err) {
+      tasksTableBody.innerHTML = `<tr><td colspan="7" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  window.markTaskDone = async function(taskId) {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trang_thai: 'Hoàn thành', ket_qua_bao_cao: 'Đã hoàn thành báo cáo' })
+      });
+      if (res.ok) {
+        loadTasks();
+      }
+    } catch (err) {
+      alert('Lỗi cập nhật nhiệm vụ: ' + err.message);
+    }
+  };
+
+  // ============================================================================
+  // --- KHO VĂN BẢN RAG CÓ KIỂM SOÁT (HUMAN-IN-THE-LOOP INGESTION) ---
+  // ============================================================================
+  const btnUploadForRag = document.getElementById('btnUploadForRag');
+  const btnClearRag = document.getElementById('btnClearRag');
+  const ragFileInput = document.getElementById('ragFileInput');
+  const btnRefreshRagDocs = document.getElementById('btnRefreshRagDocs');
+
+  const statRagDocs = document.getElementById('statRagDocs');
+  const statRagChunks = document.getElementById('statRagChunks');
+  const statRagCore = document.getElementById('statRagCore');
+  const statRagThematic = document.getElementById('statRagThematic');
+
+  const ragDocsTableBody = document.getElementById('ragDocsTableBody');
+  const ragSearchInput = document.getElementById('ragSearchInput');
+  const btnRagSearch = document.getElementById('btnRagSearch');
+  const ragResultsWrap = document.getElementById('ragResultsWrap');
+
+  // Modal Review Elements
+  const modalRagReview = document.getElementById('modalRagReview');
+  const btnCloseRagModal = document.getElementById('btnCloseRagModal');
+  const btnCancelRagReview = document.getElementById('btnCancelRagReview');
+  const btnCommitRag = document.getElementById('btnCommitRag');
+
+  const reviewFileNotice = document.getElementById('reviewFileNotice');
+  const reviewSoHieu = document.getElementById('reviewSoHieu');
+  const reviewNgay = document.getElementById('reviewNgay');
+  const reviewCoQuan = document.getElementById('reviewCoQuan');
+  const reviewCoQuanCode = document.getElementById('reviewCoQuanCode');
+  const reviewTheLoai = document.getElementById('reviewTheLoai');
+  const reviewVongDoi = document.getElementById('reviewVongDoi');
+  const reviewChuyenDe = document.getElementById('reviewChuyenDe');
+  const wrapNewChuyenDe = document.getElementById('wrapNewChuyenDe');
+  const inputNewChuyenDe = document.getElementById('inputNewChuyenDe');
+  const btnSaveNewChuyenDe = document.getElementById('btnSaveNewChuyenDe');
+  const reviewTrichYeu = document.getElementById('reviewTrichYeu');
+  const reviewThayThe = document.getElementById('reviewThayThe');
+  const reviewChunksPreview = document.getElementById('reviewChunksPreview');
+
+  let currentRagPreviewData = null;
+
+  // 1. Tải số liệu thống kê kho RAG
+  async function loadRagStats() {
+    try {
+      const res = await fetch('/api/rag/stats');
+      if (!res.ok) return;
+      const d = await res.json();
+      if (statRagDocs) statRagDocs.textContent = d.total_docs || d.total_documents || 0;
+      if (statRagChunks) statRagChunks.textContent = d.total_chunks || 0;
+      if (statRagCore) statRagCore.textContent = d.core_docs || d.core_directives || 0;
+      if (statRagThematic) statRagThematic.textContent = d.thematic_docs || d.thematic_cases || 0;
+    } catch (err) {
+      console.warn('Lỗi tải thống kê RAG:', err);
+    }
+  }
+
+  // Tải danh mục chuyên đề công tác vào Dropdown
+  async function loadThematics(selectedCode = '') {
+    if (!reviewChuyenDe) return;
+    try {
+      const res = await fetch('/api/rag/thematics');
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = data.thematics || [];
+
+      let html = list.map(c => `<option value="${escapeHtml(c.ma_chuyen_de)}">${escapeHtml(c.ten_chuyen_de)}</option>`).join('');
+      html += '<option value="__NEW__">➕ Thêm chuyên đề mới...</option>';
+      reviewChuyenDe.innerHTML = html;
+
+      if (selectedCode) {
+        reviewChuyenDe.value = selectedCode;
+      }
+    } catch (err) {
+      console.warn('Lỗi tải danh mục chuyên đề:', err);
+    }
+  }
+
+  // Sự kiện chọn hoặc thêm chuyên đề mới
+  if (reviewChuyenDe) {
+    reviewChuyenDe.addEventListener('change', () => {
+      if (reviewChuyenDe.value === '__NEW__') {
+        if (wrapNewChuyenDe) wrapNewChuyenDe.style.display = 'block';
+        if (inputNewChuyenDe) inputNewChuyenDe.focus();
+      } else {
+        if (wrapNewChuyenDe) wrapNewChuyenDe.style.display = 'none';
+      }
+    });
+  }
+
+  if (btnSaveNewChuyenDe && inputNewChuyenDe) {
+    btnSaveNewChuyenDe.addEventListener('click', async () => {
+      const name = inputNewChuyenDe.value.trim();
+      if (!name) {
+        alert('Vui lòng nhập tên chuyên đề mới!');
+        inputNewChuyenDe.focus();
+        return;
+      }
+      try {
+        btnSaveNewChuyenDe.disabled = true;
+        btnSaveNewChuyenDe.textContent = '⏳ Đang lưu...';
+        const res = await fetch('/api/rag/thematics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ten_chuyen_de: name })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert(`✓ Đã thêm chuyên đề mới "${name}" thành công! Chuyên đề này đã được lưu vào hệ thống.`);
+          inputNewChuyenDe.value = '';
+          if (wrapNewChuyenDe) wrapNewChuyenDe.style.display = 'none';
+          await loadThematics(data.thematic.ma_chuyen_de);
+        } else {
+          alert('Lỗi: ' + (data.detail || 'Không thể tạo chuyên đề'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối: ' + err.message);
+      } finally {
+        btnSaveNewChuyenDe.disabled = false;
+        btnSaveNewChuyenDe.textContent = '+ Thêm ngay';
+      }
+    });
+  }
+
+  // 2. Tải danh mục văn bản đã duyệt trong kho
+  async function loadRagDocuments() {
+    if (!ragDocsTableBody) return;
+    ragDocsTableBody.innerHTML = '<tr><td colspan="9" class="loading-td">Đang tải danh mục văn bản trong kho...</td></tr>';
+    try {
+      const res = await fetch('/api/rag/documents');
+      if (!res.ok) throw new Error('Không thể lấy danh sách văn bản');
+      const d = await res.json();
+      const docs = d.documents || [];
+
+      if (docs.length === 0) {
+        ragDocsTableBody.innerHTML = '<tr><td colspan="9" class="loading-td">Kho RAG hiện đang trống. Bấm "Nạp văn bản mới" để bắt đầu nạp có kiểm duyệt.</td></tr>';
+        return;
+      }
+
+      ragDocsTableBody.innerHTML = docs.map(doc => {
+        let badgeVongDoi = '<span class="status-badge status-inprogress">Chuyên đề</span>';
+        if (doc.nhom_vong_doi === 'CORE_DIRECTIVE') {
+          badgeVongDoi = '<span class="status-badge status-completed">Nền tảng</span>';
+        } else if (doc.nhom_vong_doi === 'EPHEMERAL_EVENT') {
+          badgeVongDoi = '<span class="status-badge status-rescheduled">Sự vụ</span>';
+        }
+
+        return `
+          <tr>
+            <td><b style="color:#38bdf8;">${escapeHtml(doc.so_hieu_vb || '-')}</b></td>
+            <td><span class="badge-theloai">${escapeHtml(doc.the_loai_vb || doc.the_loai || '-')}</span></td>
+            <td>${escapeHtml(doc.co_quan_ban_hanh || '-')}</td>
+            <td><code>${escapeHtml(doc.ngay_ban_hanh || '-')}</code></td>
+            <td>${badgeVongDoi}</td>
+            <td><span class="badge-theloai" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-weight:600;">${escapeHtml(doc.ten_chuyen_de || doc.ma_chuyen_de || 'Chung')}</span></td>
+            <td style="max-width: 280px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${escapeHtml(doc.trich_yeu || '')}">${escapeHtml(doc.trich_yeu || '-')}</td>
+            <td style="text-align: center;"><span class="badge-theloai" style="background: rgba(255,255,255,0.08); color: #cbd5e1; font-weight: 600;">${doc.chunk_count || 0}</span></td>
+            <td style="text-align: center; white-space: nowrap;">
+              <button class="btn-edit-doc" onclick="window.openRagDocDetail('${escapeHtml(doc.doc_id)}')" title="Xem chi tiết các đoạn trích và chỉnh sửa văn bản">👁️ Sửa</button>
+              <button class="btn-delete-doc" onclick="window.deleteRagDocument('${escapeHtml(doc.doc_id)}', '${escapeHtml(doc.so_hieu_vb || '')}')" title="Xoá văn bản này khỏi kho">🗑️</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (err) {
+      ragDocsTableBody.innerHTML = `<tr><td colspan="9" style="color:#ef4444; padding:20px;">Lỗi: ${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  // --- MODAL CHI TIẾT & CHỈNH SỬA VĂN BẢN (READ & UPDATE) ---
+  const modalRagDetail = document.getElementById('modalRagDetail');
+  const btnCloseEditModal = document.getElementById('btnCloseEditModal');
+  const btnCancelEditModal = document.getElementById('btnCancelEditModal');
+  const btnSaveDocEdit = document.getElementById('btnSaveDocEdit');
+
+  const editDocId = document.getElementById('editDocId');
+  const editSoHieu = document.getElementById('editSoHieu');
+  const editNgay = document.getElementById('editNgay');
+  const editCoQuan = document.getElementById('editCoQuan');
+  const editTheLoai = document.getElementById('editTheLoai');
+  const editVongDoi = document.getElementById('editVongDoi');
+  const editChuyenDe = document.getElementById('editChuyenDe');
+  const editHieuLuc = document.getElementById('editHieuLuc');
+  const editThayTheBoi = document.getElementById('editThayTheBoi');
+  const editTrichYeu = document.getElementById('editTrichYeu');
+  const editChunksList = document.getElementById('editChunksList');
+  const editCitationsList = document.getElementById('editCitationsList');
+  const editChunksTitle = document.getElementById('editChunksTitle');
+
+  // Hàm mở Modal Chi tiết & Chỉnh sửa văn bản (Read & Update)
+  window.openRagDocDetail = async function(docId) {
+    try {
+      const res = await fetch(`/api/rag/documents/${encodeURIComponent(docId)}`);
+      if (!res.ok) throw new Error('Không thể tải chi tiết văn bản');
+      const data = await res.json();
+      const doc = data.document;
+
+      if (!doc) return;
+
+      // Đổ dữ liệu vào form
+      if (editDocId) editDocId.value = doc.doc_id || '';
+      if (editSoHieu) editSoHieu.value = doc.so_hieu_vb || '';
+      if (editNgay) editNgay.value = doc.ngay_ban_hanh || '';
+      if (editCoQuan) editCoQuan.value = doc.co_quan_ban_hanh || '';
+      if (editTheLoai) editTheLoai.value = doc.the_loai_vb || 'BC';
+      if (editVongDoi) editVongDoi.value = doc.nhom_vong_doi || 'THEMATIC_CASE';
+      if (editHieuLuc) editHieuLuc.value = doc.trang_thai_hieu_luc || 'CON_HIEU_LUC';
+      if (editThayTheBoi) editThayTheBoi.value = doc.bi_thay_the_boi_so_hieu || '';
+      if (editTrichYeu) editTrichYeu.value = doc.trich_yeu || '';
+
+      // Tải danh mục chuyên đề vào select của Edit modal
+      if (editChuyenDe) {
+        const resThematics = await fetch('/api/rag/thematics');
+        if (resThematics.ok) {
+          const tData = await resThematics.json();
+          editChuyenDe.innerHTML = (tData.thematics || []).map(c => 
+            `<option value="${escapeHtml(c.ma_chuyen_de)}">${escapeHtml(c.ten_chuyen_de)}</option>`
+          ).join('');
+          editChuyenDe.value = doc.ma_chuyen_de || 'VAN_PHONG_THI_DUA';
+        }
+      }
+
+      // Render danh sách chunks
+      const chunks = doc.chunks || [];
+      if (editChunksTitle) editChunksTitle.textContent = `Danh sách các đoạn trích trong CSDL (${chunks.length} đoạn chunks):`;
+      if (editChunksList) {
+        if (chunks.length === 0) {
+          editChunksList.innerHTML = '<div style="color:#94a3b8; font-size:12px;">Văn bản này chưa có đoạn trích chunks nào.</div>';
+        } else {
+          editChunksList.innerHTML = chunks.map((c, idx) => `
+            <div class="chunk-preview-box">
+              <div style="font-weight:700; color:#38bdf8; margin-bottom:3px;">
+                Đoạn ${idx + 1}: ${escapeHtml(c.section_path || 'Nội dung chung')} (${escapeHtml(c.sub_doc_owner || 'Tập thể')})
+              </div>
+              <div>${escapeHtml(c.chunk_text || '')}</div>
+            </div>
+          `).join('');
+        }
+      }
+
+      // Render đồ thị liên kết
+      const citations = doc.citations || [];
+      if (editCitationsList) {
+        if (citations.length === 0) {
+          editCitationsList.innerHTML = '<div style="color:#94a3b8; font-size:12px;">Chưa ghi nhận liên kết căn cứ với văn bản khác.</div>';
+        } else {
+          editCitationsList.innerHTML = citations.map(cit => `
+            <div style="padding: 6px 10px; background: #1e293b; border-radius: 6px; border-left: 3px solid #10b981;">
+              • <b>${escapeHtml(cit.vb_dich_so_hieu)}</b>: <i style="color:#94a3b8;">${escapeHtml(cit.ghi_chu_quan_he || cit.loai_quan_he)}</i>
+            </div>
+          `).join('');
+        }
+      }
+
+      // Mở modal
+      if (modalRagDetail) modalRagDetail.style.display = 'flex';
+    } catch (err) {
+      alert('Lỗi tải chi tiết văn bản: ' + err.message);
+    }
+  };
+
+  // Đóng modal Edit
+  function closeEditModal() {
+    if (modalRagDetail) modalRagDetail.style.display = 'none';
+  }
+  if (btnCloseEditModal) btnCloseEditModal.addEventListener('click', closeEditModal);
+  if (btnCancelEditModal) btnCancelEditModal.addEventListener('click', closeEditModal);
+
+  // Lưu chỉnh sửa văn bản (Update)
+  if (btnSaveDocEdit) {
+    btnSaveDocEdit.addEventListener('click', async () => {
+      const docId = editDocId ? editDocId.value : '';
+      if (!docId) return;
+
+      const soHieu = editSoHieu ? editSoHieu.value.trim() : '';
+      const trichYeu = editTrichYeu ? editTrichYeu.value.trim() : '';
+      if (!soHieu) {
+        alert('Số hiệu văn bản không được để trống!');
+        return;
+      }
+      if (!trichYeu) {
+        alert('Trích yếu không được để trống!');
+        return;
+      }
+
+      const updates = {
+        so_hieu_vb: soHieu,
+        ngay_ban_hanh: editNgay ? editNgay.value : '',
+        co_quan_ban_hanh: editCoQuan ? editCoQuan.value.trim() : '',
+        the_loai_vb: editTheLoai ? editTheLoai.value : 'BC',
+        nhom_vong_doi: editVongDoi ? editVongDoi.value : 'THEMATIC_CASE',
+        ma_chuyen_de: editChuyenDe ? editChuyenDe.value : 'VAN_PHONG_THI_DUA',
+        trang_thai_hieu_luc: editHieuLuc ? editHieuLuc.value : 'CON_HIEU_LUC',
+        bi_thay_the_boi_so_hieu: editThayTheBoi ? editThayTheBoi.value.trim() : '',
+        trich_yeu: trichYeu
+      };
+
+      try {
+        btnSaveDocEdit.disabled = true;
+        btnSaveDocEdit.textContent = '⏳ Đang lưu cập nhật...';
+
+        const res = await fetch(`/api/rag/documents/${encodeURIComponent(docId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert(`✓ Đã cập nhật thành công thông tin văn bản "${updates.so_hieu_vb}"!`);
+          closeEditModal();
+          loadRagDocuments();
+          loadRagStats();
+        } else {
+          alert('Lỗi cập nhật: ' + (data.detail || 'Lỗi server'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối: ' + err.message);
+      } finally {
+        btnSaveDocEdit.disabled = false;
+        btnSaveDocEdit.textContent = '💾 Lưu chỉnh sửa văn bản';
+      }
+    });
+  }
+
+  // 3. Xoá từng văn bản
+  window.deleteRagDocument = async function(docId, soHieu) {
+    const confirmMsg = `Đồng chí có chắc chắn muốn xoá văn bản "${soHieu || docId}" cùng toàn bộ các đoạn trích liên quan khỏi Kho RAG?`;
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/rag/documents/${encodeURIComponent(docId)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'Đã xoá văn bản thành công!');
+        loadRagStats();
+        loadRagDocuments();
+      } else {
+        alert('Lỗi: ' + (data.detail || 'Không thể xoá văn bản'));
+      }
+    } catch (err) {
+      alert('Lỗi mạng khi xoá văn bản: ' + err.message);
+    }
+  };
+
+  // 4. Xoá sạch toàn bộ kho RAG
+  if (btnClearRag) {
+    btnClearRag.addEventListener('click', async () => {
+      const confirm1 = confirm('⚠️ CẢNH BÁO: Thao tác này sẽ xoá TOÀN BỘ dữ liệu RAG (sổ văn bản, đoạn trích chunks, chỉ mục tìm kiếm FTS5, liên kết trích dẫn) để chuẩn bị nạp lại từ đầu.\n\nĐồng chí có chắc chắn muốn xoá sạch?');
+      if (!confirm1) return;
+
+      const confirm2 = confirm('Xác nhận lần 2: Dữ liệu văn bản RAG sẽ bị làm trống hoàn toàn. Tiếp tục?');
+      if (!confirm2) return;
+
+      try {
+        btnClearRag.disabled = true;
+        btnClearRag.textContent = '⏳ Đang xoá sạch...';
+        const res = await fetch('/api/rag/clear', { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          alert('✓ Đã xoá sạch toàn bộ dữ liệu Kho RAG thành công!');
+          loadRagStats();
+          loadRagDocuments();
+          if (ragResultsWrap) ragResultsWrap.innerHTML = '';
+        } else {
+          alert('Lỗi xoá dữ liệu: ' + (data.detail || 'Lỗi server'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối: ' + err.message);
+      } finally {
+        btnClearRag.disabled = false;
+        btnClearRag.innerHTML = '🗑️ Xoá sạch kho RAG';
+      }
+    });
+  }
+
+  // 5. Nạp văn bản mới & Chế độ Kéo Thả (Drag & Drop Zone)
+  const ragDropZone = document.getElementById('ragDropZone');
+  const ragDropLoading = document.getElementById('ragDropLoading');
+  const btnBrowseDropzone = document.getElementById('btnBrowseDropzone');
+
+  // Hàm xử lý tệp nạp vào Kho RAG (Preview -> Modal Kiểm Duyệt)
+  window.processRagFileForPreview = async function(file) {
+    if (!file) return;
+
+    // Kiểm tra định dạng đuôi tệp
+    const fileName = file.name.toLowerCase();
+    const validExts = ['.docx', '.doc', '.pdf', '.txt', '.md'];
+    const isValid = validExts.some(ext => fileName.endsWith(ext));
+    if (!isValid) {
+      alert(`Định dạng tệp "${file.name}" không được hỗ trợ.\nHệ thống chỉ tiếp nhận văn bản: Word (.docx, .doc), PDF (.pdf), Text (.txt, .md).`);
+      return;
+    }
+
+    const originalBtnText = btnUploadForRag ? btnUploadForRag.innerHTML : '';
+    if (btnUploadForRag) {
+      btnUploadForRag.disabled = true;
+      btnUploadForRag.innerHTML = '⏳ Đang phân tích văn bản...';
+    }
+    if (ragDropLoading) ragDropLoading.style.display = 'flex';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/rag/preview', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert('⚠️ Không thể tiếp nhận văn bản:\n\n' + (data.detail || 'Lỗi không xác định'));
+        return;
+      }
+
+      // Lưu preview data vào biến toàn cục phiên
+      const preview = data.preview || data;
+      currentRagPreviewData = preview;
+
+      // Điền dữ liệu bóc tách vào Modal
+      if (reviewFileNotice) {
+        reviewFileNotice.textContent = `Tệp: "${escapeHtml(preview.file_name || preview.file_path || file.name)}" — Đã bóc tách ${preview.file_size_kb || 0} KB, dự kiến tạo ${preview.estimated_chunks || 0} đoạn trích (chunks).`;
+      }
+      if (reviewSoHieu) reviewSoHieu.value = preview.so_hieu_vb || '';
+      if (reviewNgay) reviewNgay.value = preview.ngay_ban_hanh || '';
+      if (reviewCoQuan) reviewCoQuan.value = preview.co_quan_ban_hanh || 'Đảng uỷ xã Công Hải';
+      if (reviewCoQuanCode) reviewCoQuanCode.value = preview.co_quan_ban_hanh_code || 'DU';
+      if (reviewTheLoai) reviewTheLoai.value = preview.the_loai_vb || 'BC';
+      if (reviewVongDoi) reviewVongDoi.value = preview.nhom_vong_doi || 'THEMATIC_CASE';
+      if (reviewTrichYeu) reviewTrichYeu.value = preview.trich_yeu || '';
+      if (reviewThayThe) reviewThayThe.value = preview.thay_the_so_hieu || '';
+
+      // Tải danh mục chuyên đề và chọn chuyên đề AI vừa phát hiện
+      if (wrapNewChuyenDe) wrapNewChuyenDe.style.display = 'none';
+      await loadThematics(preview.ma_chuyen_de || 'VAN_PHONG_THI_DUA');
+
+      // Hiển thị danh sách chunks preview
+      if (reviewChunksPreview) {
+        const chunks = preview.preview_chunks || [];
+        if (chunks.length === 0) {
+          reviewChunksPreview.innerHTML = '<div style="color:#94a3b8; font-size:12px;">Đang chuẩn bị cắt đoạn trích khi phê duyệt.</div>';
+        } else {
+          reviewChunksPreview.innerHTML = chunks.map((c, idx) => `
+            <div class="chunk-preview-box">
+              <div style="font-weight:700; color:#38bdf8; margin-bottom:3px;">
+                Đoạn ${idx + 1}: ${escapeHtml(c.section_path || 'Nội dung chung')} (${escapeHtml(c.sub_doc_owner || 'Tập thể')})
+              </div>
+              <div>${escapeHtml((c.chunk_text || '').substring(0, 180))}...</div>
+            </div>
+          `).join('');
+        }
+      }
+
+      // Mở Modal kiểm duyệt (Human-in-the-Loop)
+      if (modalRagReview) modalRagReview.style.display = 'flex';
+    } catch (err) {
+      alert('Lỗi khi đọc và bóc tách tệp: ' + err.message);
+    } finally {
+      if (btnUploadForRag) {
+        btnUploadForRag.disabled = false;
+        btnUploadForRag.innerHTML = originalBtnText;
+      }
+      if (ragDropLoading) ragDropLoading.style.display = 'none';
+    }
+  };
+
+  // Nút Nạp trên thanh điều khiển
+  if (btnUploadForRag && ragFileInput) {
+    btnUploadForRag.addEventListener('click', () => {
+      ragFileInput.value = '';
+      ragFileInput.click();
+    });
+  }
+
+  // Nút Chọn tệp trên Khung Kéo Thả
+  if (btnBrowseDropzone && ragFileInput) {
+    btnBrowseDropzone.addEventListener('click', (e) => {
+      e.stopPropagation(); // Không trigger click vào ragDropZone
+      ragFileInput.value = '';
+      ragFileInput.click();
+    });
+  }
+
+  // Click vào vùng Khung Kéo Thả
+  if (ragDropZone && ragFileInput) {
+    ragDropZone.addEventListener('click', () => {
+      ragFileInput.value = '';
+      ragFileInput.click();
+    });
+
+    // Kéo thả trực tiếp vào Khung Dropzone
+    ragDropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      ragDropZone.classList.add('drag-active');
+    });
+
+    ragDropZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      ragDropZone.classList.remove('drag-active');
+    });
+
+    ragDropZone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      ragDropZone.classList.remove('drag-active');
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        await window.processRagFileForPreview(files[0]);
+      }
+    });
+  }
+
+  // Khi chọn file từ hộp thoại máy tính
+  if (ragFileInput) {
+    ragFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        await window.processRagFileForPreview(file);
+      }
+    });
+  }
+
+  // 6. Đóng Modal Kiểm duyệt
+  function closeRagModal() {
+    if (modalRagReview) modalRagReview.style.display = 'none';
+    currentRagPreviewData = null;
+    if (ragFileInput) ragFileInput.value = '';
+    if (wrapNewChuyenDe) wrapNewChuyenDe.style.display = 'none';
+  }
+
+  if (btnCloseRagModal) btnCloseRagModal.addEventListener('click', closeRagModal);
+  if (btnCancelRagReview) btnCancelRagReview.addEventListener('click', closeRagModal);
+
+  // 7. Cán bộ Phê duyệt & Nạp chính thức vào Kho RAG
+  if (btnCommitRag) {
+    btnCommitRag.addEventListener('click', async () => {
+      if (!currentRagPreviewData) {
+        alert('Không có dữ liệu văn bản để nạp!');
+        return;
+      }
+
+      const soHieu = reviewSoHieu ? reviewSoHieu.value.trim() : '';
+      const ngay = reviewNgay ? reviewNgay.value : '';
+      const coQuan = reviewCoQuan ? reviewCoQuan.value.trim() : '';
+      const trichYeu = reviewTrichYeu ? reviewTrichYeu.value.trim() : '';
+
+      if (!soHieu) {
+        alert('Vui lòng nhập Số hiệu văn bản!');
+        if (reviewSoHieu) reviewSoHieu.focus();
+        return;
+      }
+      if (!ngay) {
+        alert('Vui lòng chọn Ngày ban hành văn bản!');
+        if (reviewNgay) reviewNgay.focus();
+        return;
+      }
+      if (!coQuan) {
+        alert('Vui lòng nhập Cơ quan ban hành!');
+        if (reviewCoQuan) reviewCoQuan.focus();
+        return;
+      }
+      if (!trichYeu) {
+        alert('Vui lòng nhập Trích yếu nội dung văn bản!');
+        if (reviewTrichYeu) reviewTrichYeu.focus();
+        return;
+      }
+
+      // Xử lý chuyên đề
+      let maChuyenDe = reviewChuyenDe ? reviewChuyenDe.value : 'VAN_PHONG_THI_DUA';
+      if (maChuyenDe === '__NEW__') {
+        const customName = inputNewChuyenDe ? inputNewChuyenDe.value.trim() : '';
+        if (customName) {
+          try {
+            const resCat = await fetch('/api/rag/thematics', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ten_chuyen_de: customName })
+            });
+            if (resCat.ok) {
+              const dataCat = await resCat.json();
+              maChuyenDe = dataCat.thematic.ma_chuyen_de;
+            }
+          } catch (e) {
+            console.warn('Lỗi tự động lưu chuyên đề:', e);
+          }
+        } else {
+          maChuyenDe = 'VAN_PHONG_THI_DUA';
+        }
+      }
+
+      // Xây dựng payload đã kiểm duyệt
+      const payload = {
+        file_path: currentRagPreviewData.file_path || '',
+        so_hieu_vb: soHieu,
+        ngay_ban_hanh: ngay,
+        co_quan_ban_hanh: coQuan,
+        co_quan_ban_hanh_code: reviewCoQuanCode ? reviewCoQuanCode.value : 'DU',
+        the_loai_vb: reviewTheLoai ? reviewTheLoai.value : 'BC',
+        nhom_vong_doi: reviewVongDoi ? reviewVongDoi.value : 'THEMATIC_CASE',
+        ma_chuyen_de: maChuyenDe,
+        trich_yeu: trichYeu,
+        thay_the_so_hieu: (reviewThayThe && reviewThayThe.value.trim()) ? reviewThayThe.value.trim() : '',
+        full_text: currentRagPreviewData.full_text || '',
+        citations: currentRagPreviewData.citations || []
+      };
+
+      try {
+        btnCommitRag.disabled = true;
+        btnCommitRag.textContent = '⏳ Đang lưu vào Kho RAG...';
+
+        const res = await fetch('/api/rag/commit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          const chunkCount = (data.data && data.data.chunks) || 'nhiều';
+          alert(`✓ Phê duyệt và nạp văn bản "${payload.so_hieu_vb}" vào Kho RAG thành công! (${chunkCount} đoạn trích)`);
+          closeRagModal();
+          loadRagStats();
+          loadRagDocuments();
+        } else {
+          alert('⚠️ Lỗi khi lưu văn bản: ' + (data.detail || 'Lỗi hệ thống'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối khi lưu: ' + err.message);
+      } finally {
+        btnCommitRag.disabled = false;
+        btnCommitRag.innerHTML = '✓ Phê duyệt & Nạp vào Kho RAG';
+      }
+    });
+  }
+
+  // 8. Làm mới danh mục văn bản
+  if (btnRefreshRagDocs) {
+    btnRefreshRagDocs.addEventListener('click', () => {
+      loadRagStats();
+      loadRagDocuments();
+    });
+  }
+
+  // 9. Tra cứu đối soát FTS5 BM25
+  if (btnRagSearch) btnRagSearch.addEventListener('click', searchRag);
+  if (ragSearchInput) {
+    ragSearchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') searchRag();
+    });
+  }
+
+  async function searchRag() {
+    const q = ragSearchInput ? ragSearchInput.value.trim() : '';
+    if (!q) return;
+    ragResultsWrap.innerHTML = '<div class="loading-state">Đang tra cứu siêu tốc FTS5 BM25...</div>';
+
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const results = data.results || [];
+
+      if (results.length === 0) {
+        ragResultsWrap.innerHTML = `<div class="empty-state">Không tìm thấy đoạn trích nào chứa từ khoá: "<b>${escapeHtml(q)}</b>".</div>`;
+        return;
+      }
+
+      ragResultsWrap.innerHTML = results.map((r, idx) => `
+        <div class="rag-item">
+          <div class="rag-header">
+            <span class="rag-sohieu">${escapeHtml(r.so_hieu_vb || 'Văn bản')}</span>
+            <span>Ngày: ${escapeHtml(r.ngay_ban_hanh || '2026')} | Tầng: <b>${escapeHtml(r.nhom_vong_doi || 'THEMATIC')}</b></span>
+          </div>
+          <div style="font-size:13.5px; font-weight:600; color:#f8fafc;">${escapeHtml(r.trich_yeu || '')}</div>
+          <div class="rag-snippet">${escapeHtml(r.chunk_text || '')}</div>
+        </div>
+      `).join('');
+    } catch (err) {
+      ragResultsWrap.innerHTML = `<div style="color:#ef4444; padding:20px;">Lỗi tìm kiếm: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  // --- GIÁM SÁT CHỈ TIÊU KPI ---
+  const kpisGrid = document.getElementById('kpisGrid');
+  const kpiFilterChips = document.querySelectorAll('[data-kpi-source]');
+
+  kpiFilterChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      kpiFilterChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      loadKpis(chip.getAttribute('data-kpi-source'));
+    });
+  });
+
+  async function loadKpis(sourceFilter = '') {
+    if (!kpisGrid) return;
+    kpisGrid.innerHTML = '<div class="loading-state">Đang tải chỉ tiêu...</div>';
+
+    try {
+      const url = sourceFilter ? `/api/kpis?source=${encodeURIComponent(sourceFilter)}` : '/api/kpis';
+      const res = await fetch(url);
+      const data = await res.json();
+      const kpis = data.kpis || [];
+
+      if (kpis.length === 0) {
+        kpisGrid.innerHTML = '<div class="empty-state">Không có chỉ tiêu nào.</div>';
+        return;
+      }
+
+      kpisGrid.innerHTML = kpis.map(k => {
+        let badgeClass = 'badge-green';
+        let fillClass = 'fill-green';
+        if (k.trang_thai_anh_sang === 'VANG') { badgeClass = 'badge-yellow'; fillClass = 'fill-yellow'; }
+        if (k.trang_thai_anh_sang === 'DO') { badgeClass = 'badge-red'; fillClass = 'fill-red'; }
+
+        // Tính % tiến độ ước tính
+        let percent = 100;
+        if (k.chi_tieu_nam_2026 && k.chi_tieu_nam_2026 > 0) {
+          percent = Math.min(100, Math.round(((k.gia_tri_hien_tai || 0) / k.chi_tieu_nam_2026) * 100));
+        }
+
+        return `
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">${escapeHtml(k.ten_chi_tieu)}</div>
+              <span class="kpi-badge ${badgeClass}">${escapeHtml(k.trang_thai_anh_sang || 'XANH')}</span>
+            </div>
+            <div class="kpi-value-row">
+              <span>Mục tiêu 2026: <b class="kpi-target">${escapeHtml(k.bieu_thuc_chi_tiet || (k.chi_tieu_nam_2026 + ' ' + k.don_vi_tinh))}</b></span>
+              <span>Hiện tại: <b style="color:#38bdf8;">${k.gia_tri_hien_tai ? k.gia_tri_hien_tai + ' ' + k.don_vi_tinh : 'Đạt'}</b></span>
+            </div>
+            <div class="kpi-progress-bar">
+              <div class="kpi-progress-fill ${fillClass}" style="width: ${percent}%;"></div>
+            </div>
+            <div class="kpi-note">Phụ trách: ${escapeHtml(k.co_quan_phu_trach || 'UBND xã')}</div>
+          </div>
+        `;
+      }).join('');
+    } catch (err) {
+      kpisGrid.innerHTML = `<div style="color:#ef4444; padding:20px;">Lỗi tải chỉ tiêu: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  // --- DANH BẠ HỆ THỐNG ---
+  const directoryGrid = document.getElementById('directoryGrid');
+
+  async function loadDirectory() {
+    if (!directoryGrid) return;
+    directoryGrid.innerHTML = '<div class="loading-state">Đang tải danh bạ cán bộ & chi bộ...</div>';
+
+    try {
+      const res = await fetch('/api/directory');
+      const data = await res.json();
+      const dir = data.directory || [];
+
+      directoryGrid.innerHTML = dir.map(cb => `
+        <div class="dir-card">
+          <div class="dir-name">${escapeHtml(cb.ho_ten)}</div>
+          <div class="dir-role">${escapeHtml(cb.chuc_vu)}</div>
+          <div class="dir-unit">Đơn vị: <b>${escapeHtml(cb.co_quan)}</b></div>
+          ${cb.so_dien_thoai ? `<div style="font-size:12px; color:#64748b;">ĐT: ${escapeHtml(cb.so_dien_thoai)}</div>` : ''}
+        </div>
+      `).join('');
+    } catch (err) {
+      directoryGrid.innerHTML = `<div style="color:#ef4444; padding:20px;">Lỗi tải danh bạ: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
   // Khởi động
   checkStatus();
   loadModels();
   updateSendButton();
 });
+

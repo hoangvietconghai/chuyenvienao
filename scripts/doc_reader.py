@@ -11,12 +11,90 @@ Cơ quan ban hành, Ngày tháng) và gợi ý phân luồng workflow.
 import os
 import re
 import sys
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
+from pathlib import Path
 
 # Đảm bảo UTF-8 output cho console Windows
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
+
+
+def check_secret_document(text: str) -> Tuple[bool, str]:
+    """
+    Secret Document Gatekeeper (Nghị định 63/2026/NĐ-CP & Quyết định 37-QĐ/ĐU):
+    Quét từ khóa đóng dấu độ mật ở phần đầu văn bản.
+    Từ chối nạp và không đưa lên AI nếu phát hiện độ MẬT.
+    """
+    first_chunk = text[:1500].upper()
+    secret_patterns = [
+        r'\b(TỐI MẬT|TUYỆT MẬT)\b',
+        r'ĐỘ MẬT\s*:\s*(MẬT|TỐI MẬT|TUYỆT MẬT)',
+        r'(^|\n)\s*(MẬT|TỐI MẬT|TUYỆT MẬT)\s*(\n|$)',
+    ]
+    for pat in secret_patterns:
+        if re.search(pat, first_chunk):
+            return True, "CẢNH BÁO AN NINH: Văn bản chứa dấu độ MẬT / TỐI MẬT / TUYỆT MẬT theo Quyết định 37-QĐ/ĐU và Nghị định 63/2026/NĐ-CP. Tuyệt đối không nạp vào CSDL công cộng."
+    return False, ""
+
+
+def parse_dual_filename(filename: str) -> Dict[str, Any]:
+    """
+    Dual Filename Parser: Trích xuất siêu dữ liệu chuẩn hóa từ tên file:
+    1. Dạng mã E-Office: A32.65-{Cơ_quan}-{Thể_loại}-{Số_hiệu}-{Năm}
+    2. Dạng tiếng Việt rút gọn chuẩn AGENTS.md: {Mã_loại} {Số_hiệu} {Cơ_quan} {Trích_yếu}.ext
+    """
+    base_name = Path(filename).stem
+    result = {
+        "so_hieu": "",
+        "the_loai": "",
+        "co_quan_code": "",
+        "nam": None,
+        "trich_yeu": "",
+        "parser_type": "unknown"
+    }
+
+    # Luồng 1: Dạng mã E-Office (VD: A32.65-ĐU-BC-0140-2026, A32-TU-CV-1940-2026)
+    eoffice_match = re.search(r'A\d+(?:\.\d+)?-([A-Za-zĐđ]+)-([A-Za-z]+)-0*(\d+)-(\d{4})', base_name)
+    if eoffice_match:
+        cq = eoffice_match.group(1).upper()
+        tl = eoffice_match.group(2).upper()
+        so = eoffice_match.group(3)
+        nam = int(eoffice_match.group(4))
+        so_hieu = f"{so}-{tl}/{cq}" if cq in ["ĐU", "TU"] else f"{so}/{tl}-{cq}"
+        result.update({
+            "so_hieu": so_hieu,
+            "the_loai": tl,
+            "co_quan_code": cq,
+            "nam": nam,
+            "parser_type": "eoffice"
+        })
+        return result
+
+    # Luồng 2: Dạng tiếng Việt rút gọn chuẩn AGENTS.md
+    # VD: 'CV 0681 ĐU triển khai TB 25 của BCĐ 57 về CĐS'
+    # VD: 'KH 0123 ĐU tuyên truyền chuyên sâu NQ 57 về CĐS'
+    # VD: 'QĐ 98 ĐU thành lập Tổ hỗ trợ CNTT và CĐS xã'
+    tv_match = re.match(r'^(CV|KH|BC|TB|QĐ|QD|NQ|TTr|CT|CTr|GM|QC)\s*(?:(\d+)\s*)?([A-Za-zĐđ0-9_\s]+?)(?:\s+(.*))?$', base_name, re.IGNORECASE)
+    if tv_match:
+        tl = tv_match.group(1).upper().replace("QD", "QĐ")
+        so = tv_match.group(2) or ""
+        cq_raw = tv_match.group(3).strip().upper()
+        trich_yeu = (tv_match.group(4) or "").strip()
+
+        cq_code = "DU" if "ĐU" in cq_raw else ("UBND" if "UBND" in cq_raw else ("TU" if "TU" in cq_raw else "DU"))
+        so_hieu = f"{int(so):02d}-{tl}/{cq_code}" if so else f"-{tl}/{cq_code}"
+
+        result.update({
+            "so_hieu": so_hieu,
+            "the_loai": tl,
+            "co_quan_code": cq_code,
+            "trich_yeu": trich_yeu,
+            "parser_type": "vietnamese_standard"
+        })
+        return result
+
+    return result
 
 
 def clean_extracted_text(text: str) -> str:
@@ -28,13 +106,20 @@ def clean_extracted_text(text: str) -> str:
     text = text.replace('\xad', '-')
     text = text.replace('\u200b', '')  # Zero-width space
     text = text.replace('\r\n', '\n').replace('\r', '\n')
+    # Chuẩn hoá dấu Khối Đảng: uỷ, oà
+    text = text.replace('Ủy', 'Uỷ').replace('ủy', 'uỷ')
+    text = text.replace('Hòa', 'Hoà').replace('hòa', 'hoà')
+    text = text.replace('Úy', 'Uý').replace('úy', 'uý')
     # Xoá khoảng trắng thừa đầu và cuối dòng
     lines = [re.sub(r'[ \t]+', ' ', line).strip() for line in text.split('\n')]
     return '\n'.join(lines)
 
 
 def read_pdf(file_path: str) -> Dict[str, Any]:
-    """Trích xuất text từ tệp PDF bằng PyMuPDF (fitz)."""
+    """
+    Trích xuất text từ tệp PDF bằng PyMuPDF (fitz).
+    Tích hợp Spatial Coordinate Extraction để xử lý văn bản có tem ký số điện tử.
+    """
     try:
         import fitz  # PyMuPDF
     except ImportError:
@@ -43,9 +128,18 @@ def read_pdf(file_path: str) -> Dict[str, Any]:
     doc = fitz.open(file_path)
     full_text = []
     pages_text = []
+    spatial_header_text = ""
 
     for page_num in range(len(doc)):
         page = doc[page_num]
+        
+        # Nếu là trang 1: trích xuất thêm các từ ở nửa trên trang theo tọa độ trực quan
+        if page_num == 0:
+            words = page.get_text("words")  # (x0, y0, x1, y1, word, block_no, line_no, word_no)
+            # Lọc các từ nằm ở phần header (y1 <= 240)
+            header_words = [w[4] for w in sorted(words, key=lambda x: (x[1], x[0])) if w[3] <= 240]
+            spatial_header_text = " ".join(header_words)
+
         text = page.get_text("text")
         cleaned_page = clean_extracted_text(text)
         pages_text.append(cleaned_page)
@@ -57,6 +151,7 @@ def read_pdf(file_path: str) -> Dict[str, Any]:
         "text": combined_text,
         "page_count": len(pages_text),
         "pages": pages_text,
+        "spatial_header": spatial_header_text,
         "format": "pdf"
     }
 
@@ -201,12 +296,31 @@ def extract_document_text(file_path: str) -> Dict[str, Any]:
         raise ValueError(f"Định dạng tệp không được hỗ trợ: {ext}. Chỉ hỗ trợ .pdf, .docx, .doc, .txt, .md")
 
     # Bổ sung thông tin tệp
-    result["file_name"] = os.path.basename(file_path)
+    file_name = os.path.basename(file_path)
+    result["file_name"] = file_name
     result["file_path"] = os.path.abspath(file_path)
     result["file_size"] = os.path.getsize(file_path)
 
-    # Trích xuất siêu dữ liệu thông minh
+    # 1. Chốt chặn tài liệu mật (Secret Gatekeeper)
+    is_secret, secret_warning = check_secret_document(result["text"])
+    result["is_secret"] = is_secret
+    result["secret_warning"] = secret_warning
+
+    # 2. Trích xuất siêu dữ liệu từ Tên file (Dual Filename Parser)
+    fn_meta = parse_dual_filename(file_name)
+    result["filename_metadata"] = fn_meta
+
+    # 3. Trích xuất siêu dữ liệu thông minh từ nội dung
     meta = extract_metadata_heuristics(result["text"])
+    # Ưu tiên số hiệu và thể loại từ tên file nếu nội dung bị khuyết/tem đè
+    if fn_meta.get("so_hieu") and not meta.get("so_hieu"):
+        meta["so_hieu"] = fn_meta["so_hieu"]
+    if fn_meta.get("trich_yeu") and not meta.get("trich_yeu"):
+        meta["trich_yeu"] = fn_meta["trich_yeu"]
+    if fn_meta.get("co_quan_code") and not meta.get("co_quan_ban_hanh"):
+        cq = "Đảng uỷ xã Công Hải" if fn_meta["co_quan_code"] == "DU" else ("Ban Thường vụ Tỉnh uỷ" if fn_meta["co_quan_code"] == "TU" else "Uỷ ban nhân dân xã")
+        meta["co_quan_ban_hanh"] = cq
+
     result["metadata"] = meta
     return result
 

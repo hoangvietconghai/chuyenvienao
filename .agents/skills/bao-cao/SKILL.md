@@ -33,7 +33,7 @@ Báo cáo của Cấp uỷ là **công cụ tổng hợp, đánh giá toàn di�
 
 #### a) Báo cáo Định kỳ Toàn diện gửi Ban Thường vụ Tỉnh uỷ Khánh Hoà
 Trong mô hình chính quyền 03 cấp (Trung ương $\rightarrow$ Tỉnh $\rightarrow$ Xã), Đảng bộ xã Công Hải báo cáo **trực tiếp với Ban Thường vụ Tỉnh uỷ và các Ban Đảng Tỉnh uỷ**, hoàn toàn không qua khâu trung gian cấp huyện:
-* **Báo cáo công tác tháng:** Đánh giá việc thực hiện nghị quyết trong tháng, nhiệm vụ trọng tâm tháng tiếp theo (hoàn thành trước ngày 22 - 25 hằng tháng).
+* **Báo cáo công tác tháng:** Đánh giá việc thực hiện nghị quyết trong tháng, nhiệm vụ trọng tâm tháng tiếp theo (hoàn thành trước ngày 22 - 25 hằng tháng). Đối với Báo cáo tháng định kỳ toàn diện của Đảng uỷ xã, kích hoạt chuyên sâu skill **[bao-cao-thang](../bao-cao-thang/SKILL.md)** để thực hiện quy trình đối soát 4 tầng số liệu và tổng hợp đa nguồn từ 5 khối cơ quan.
 * **Báo cáo công tác quý (I, III):** Đánh giá tình hình thực hiện nhiệm vụ chính trị quý, so sánh chỉ tiêu cùng kỳ (hoàn thành trước ngày 20 tháng cuối quý).
 * **Báo cáo 6 tháng (Sơ kết 6 tháng đầu năm):** Đánh giá nửa đầu năm, rà soát chỉ tiêu nhiệm vụ năm, đề ra giải pháp đột phá 6 tháng cuối năm (hoàn thành trước ngày 15/6).
 * **Báo cáo 9 tháng:** Đánh giá chặng về đích, đôn đốc các chỉ tiêu kinh tế - xã hội và kết nạp đảng viên (hoàn thành trước ngày 20/9).

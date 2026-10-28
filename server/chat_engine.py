@@ -21,6 +21,7 @@ import json
 import logging
 import re
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
@@ -564,6 +565,49 @@ async def _revise(s: Dict[str, Any], instruction: str) -> Dict[str, Any]:
     )
 
 
+def _sync_tasks_from_draft(wf: str, data: Dict[str, Any]) -> int:
+    """Tự động đồng bộ các nhiệm vụ giao việc từ dự thảo vừa duyệt vào Sổ Nhiệm vụ (SQLite DB)."""
+    try:
+        from server.services import db_service
+        count = 0
+        doc_payload = data.get("document_payload") or data
+        so_hieu = doc_payload.get("so_hieu", "")
+
+        noi_dung_lines = doc_payload.get("noi_dung", [])
+        if isinstance(noi_dung_lines, list):
+            for line in noi_dung_lines:
+                if not isinstance(line, str):
+                    continue
+                # Nhận diện dòng giao việc theo cơ quan
+                m = re.search(r'(?:Giao\s+|[0-9]+\.\s+)(Uỷ ban nhân dân xã|UBND xã|Ban Xây dựng Đảng|Cơ quan Uỷ ban Kiểm tra|UBKT|MTTQ|Văn phòng Đảng uỷ)\s*[:\-]\s*(.+)', line, re.IGNORECASE)
+                if m:
+                    cq = m.group(1).strip()
+                    nd = m.group(2).strip()
+                    cq_code = "UBND" if "UBND" in cq or "Uỷ ban nhân dân" in cq else ("BXDD" if "Xây dựng" in cq else ("UBKT" if "Kiểm tra" in cq else ("MTTQ" if "MTTQ" in cq else "VPDU")))
+
+                    deadline_date = datetime.now().strftime("%Y-%m-%d")
+                    dl_match = re.search(r'(?:hoàn thành|báo cáo|trình)?\s*(?:trước|trong)?\s*ngày\s*([0-9]{1,2})[\/\-]([0-9]{1,2})(?:[\/\-]([0-9]{4}))?', nd, re.IGNORECASE)
+                    if dl_match:
+                        d = int(dl_match.group(1))
+                        m_val = int(dl_match.group(2))
+                        y = int(dl_match.group(3)) if dl_match.group(3) else datetime.now().year
+                        deadline_date = f"{y}-{m_val:02d}-{d:02d}"
+
+                    db_service.add_or_update_task({
+                        "so_hieu_vb": so_hieu,
+                        "co_quan_chu_tri": cq,
+                        "co_quan_chu_tri_code": cq_code,
+                        "noi_dung_nhiem_vu": nd[:250],
+                        "deadline_date": deadline_date,
+                        "created_from_wf": wf,
+                    })
+                    count += 1
+        return count
+    except Exception as ex:
+        logger.warning(f"Lỗi khi đồng bộ nhiệm vụ vào CSDL: {ex}")
+        return 0
+
+
 def _confirm(s: Dict[str, Any]) -> Dict[str, Any]:
     pending = s["pending"]
     if not pending:
@@ -597,11 +641,16 @@ def _confirm(s: Dict[str, Any]) -> Dict[str, Any]:
         path = gen(data["document_payload"])
         files.append({"label": WORKFLOWS[wf], "name": Path(path).name, "url": _download_url(path)})
 
+    # Tự động đồng bộ các đầu việc mới vào Sổ Nhiệm vụ (SQLite WAL)
+    synced_tasks = _sync_tasks_from_draft(wf, data)
+
     s["pending"] = None
+    task_notice = f"\n\n📋 *Đã tự động cập nhật **{synced_tasks}** đầu việc vào Sổ Nhiệm vụ của Đảng uỷ.*" if synced_tasks > 0 else ""
     return _reply(
         s,
         f"📄 Đã xuất **{len(files)}** tệp Word chuẩn thể thức Hướng dẫn 05-HD/VPTW. "
-        "Đồng chí tải về, kiểm tra lại lần cuối trước khi trình ký.\n\n"
+        "Đồng chí tải về, kiểm tra lại lần cuối trước khi trình ký."
+        f"{task_notice}\n\n"
         "*Lưu ý: Đây là dự thảo tham mưu — việc ban hành, ký số do cán bộ trực tiếp thực hiện.*",
         files=files,
     )
@@ -611,13 +660,34 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
     core_rules = get_core_rules()
     local_facts = get_local_knowledge_summary()
     msgs = [{"role": "system", "content": f"{CHAT_SYSTEM_PROMPT}\n\n{core_rules}\n\n{local_facts}"}]
+
+    # 1. Truy xuất Hybrid RAG từ Kho văn bản cấp uỷ (Giỏ Ngữ Cảnh 2 - 4 - 2)
+    citations = []
+    try:
+        from server.services.rag_service import retrieve_hybrid_context
+        rag_res = retrieve_hybrid_context(message, max_slots=6)
+        if rag_res.get("context_text"):
+            msgs.append({"role": "system", "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"})
+            citations = rag_res.get("citations", [])
+    except Exception as ex:
+        logger.warning(f"Lỗi khi tra cứu Hybrid RAG: {ex}")
+
     new_atts = [a for a in s["attachments"] if not a["used"]]
     if new_atts:
         att_text = "\n\n".join(f"=== TỆP: {a['name']} ===\n{a['text']}" for a in new_atts)[:MAX_CHAT_ATTACH_CHARS]
         msgs.append({"role": "system", "content": f"Cán bộ đã đính kèm các tệp sau, dùng để trả lời nếu liên quan:\n\n{att_text}"})
     msgs.extend(s["history"][-10:])
     res = await default_ai_client.call_chat_async(msgs, temperature=0.3, max_tokens=2000, json_mode=False)
-    return _reply(s, res.get("content", "").strip() or "Xin lỗi, tôi chưa có câu trả lời.")
+
+    reply_content = res.get("content", "").strip() or "Xin lỗi, tôi chưa có câu trả lời."
+    # Bổ sung trích dẫn nguồn RAG ở cuối câu trả lời nếu có
+    if citations:
+        cite_lines = ["\n\n📚 **Căn cứ tra cứu thực chứng từ Kho văn bản:**"]
+        for c in citations[:3]:
+            cite_lines.append(f"• **{c['so_hieu']}** ({c['tier']}): *{c['trich_yeu']}*")
+        reply_content += "\n".join(cite_lines)
+
+    return _reply(s, reply_content)
 
 
 # ==============================================================================

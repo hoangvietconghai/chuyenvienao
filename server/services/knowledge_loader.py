@@ -89,6 +89,8 @@ def get_skill_instruction(doc_type_or_wf: str) -> str:
         "CV": "cong-van",
         "KH": "ke-hoach",
         "BC": "bao-cao",
+        "BC_THANG": "bao-cao-thang",
+        "bao_cao_thang": "bao-cao-thang",
         "TB": "thong-bao",
         "KL": "ket-luan",
         "QD": "quyet-dinh",

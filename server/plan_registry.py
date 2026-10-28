@@ -21,7 +21,28 @@ PLAN_REGISTRY_FILE = WORKSPACE_ROOT / "references" / "so_ke_hoach_chi_dao.json"
 
 
 def get_indicator_registry() -> Dict[str, Any]:
-    """Tải toàn bộ cơ sở dữ liệu chỉ tiêu nhiệm kỳ 2025 - 2030."""
+    """Tải toàn bộ cơ sở dữ liệu chỉ tiêu nhiệm kỳ 2025 - 2030 (Ưu tiên SQLite DB)."""
+    try:
+        from server.services import db_service
+        kpis = db_service.get_all_kpis(nguon_nghi_quyet="NQ_DAI_HOI_I")
+        if kpis:
+            indicators = []
+            for k in kpis:
+                indicators.append({
+                    "ma_chi_tieu": k["kpi_id"].replace("KPI-DH-", ""),
+                    "nhom": k["nhom_chi_tieu"],
+                    "ten_chi_tieu": k["ten_chi_tieu"],
+                    "gia_tri_chuan": k["bieu_thuc_chi_tiet"] or f"{k['chi_tieu_nam_2026'] or ''} {k['don_vi_tinh']}".strip(),
+                    "don_vi": k["don_vi_tinh"],
+                    "muc_tieu_so": k["chi_tieu_nam_2026"],
+                    "trich_dan_nguyen_van": k.get("ghi_chu_vuong_mac", ""),
+                    "co_quan_chu_tri": k.get("co_quan_phu_trach", "UBND xã"),
+                    "tu_khoa": [k["ten_chi_tieu"].lower()]
+                })
+            return {"danh_sach_chi_tieu": indicators, "source": "sqlite"}
+    except Exception:
+        pass
+
     if not INDICATOR_FILE.exists():
         return {"danh_sach_chi_tieu": [], "cac_khau_dot_pha": []}
     with open(INDICATOR_FILE, "r", encoding="utf-8") as f:

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chuyên viên ảo — Văn phòng Đảng uỷ xã Công Hải</title>
-  <meta name="description" content="Trợ lý AI tham mưu tổng hợp của Văn phòng Đảng uỷ xã Công Hải: giao việc, tổng hợp báo cáo, thông báo kết luận, thẩm định dự thảo.">
+  <meta name="description" content="Trợ lý AI tham mưu tổng hợp, quản lý Sổ nhiệm vụ, Giám sát chỉ tiêu KPI và Kho văn bản Hybrid RAG của Đảng uỷ xã Công Hải.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,6 +19,31 @@
         <div class="brand-sub">Văn phòng Đảng uỷ xã Công Hải</div>
       </div>
     </div>
+
+    <!-- 05 TAB ĐIỀU HƯỚNG CHUYÊN NGHIỆP -->
+    <nav class="nav-tabs" id="navTabs">
+      <button class="nav-tab active" data-tab="tab-chat">
+        <span class="tab-icon">💬</span>
+        <span class="tab-text">Trợ lý Soạn thảo</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-tasks">
+        <span class="tab-icon">📋</span>
+        <span class="tab-text">Sổ Nhiệm Vụ</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-rag">
+        <span class="tab-icon">📚</span>
+        <span class="tab-text">Kho Văn Bản RAG</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-kpis">
+        <span class="tab-icon">🎯</span>
+        <span class="tab-text">Giám sát Chỉ tiêu</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-directory">
+        <span class="tab-icon">👥</span>
+        <span class="tab-text">Danh Bạ Hệ Thống</span>
+      </button>
+    </nav>
+
     <div class="top-actions">
       <!-- Selector chọn mô hình AI -->
       <div class="model-picker-wrap">
@@ -44,53 +69,426 @@
     </div>
   </header>
 
-  <main class="chat-scroll" id="chatScroll">
-    <section class="welcome" id="welcome">
-      <h1 class="greet">
-        <span class="greet-gradient">Xin chào đồng chí,</span><br>
-        <span class="greet-sub">hôm nay cần tham mưu việc gì?</span>
-      </h1>
-      <div class="suggestions">
-        <button class="suggest" data-prompt="Tham mưu công văn giao việc từ văn bản của Tỉnh uỷ">
-          <span class="suggest-text">Tham mưu <b>công văn giao việc</b> từ văn bản của Tỉnh uỷ</span>
-          <span class="suggest-icon">📥</span>
-        </button>
-        <button class="suggest" data-prompt="Tổng hợp báo cáo tuần từ các báo cáo của các cơ quan">
-          <span class="suggest-text"><b>Tổng hợp báo cáo tuần</b> từ báo cáo của các cơ quan</span>
-          <span class="suggest-icon">📊</span>
-        </button>
-        <button class="suggest" data-prompt="Soạn thông báo kết luận cuộc họp Thường trực Đảng uỷ">
-          <span class="suggest-text">Soạn <b>thông báo kết luận</b> cuộc họp Thường trực</span>
-          <span class="suggest-icon">📋</span>
-        </button>
-        <button class="suggest" data-prompt="Thẩm định dự thảo kế hoạch của UBND xã">
-          <span class="suggest-text"><b>Thẩm định dự thảo</b> do cơ quan chuyên môn gửi</span>
-          <span class="suggest-icon">🔍</span>
-        </button>
-      </div>
-      <p class="welcome-hint">Bấm 📎 để đính kèm tệp PDF / Word, rồi gõ lệnh như khi giao việc cho chuyên viên.</p>
+  <!-- NỘI DUNG 05 TAB -->
+  <div class="app-body">
+    <!-- TAB 1: KHUNG CHAT AI & SOẠN THẢO -->
+    <section class="tab-content active" id="tab-chat">
+      <main class="chat-scroll" id="chatScroll">
+        <section class="welcome" id="welcome">
+          <h1 class="greet">
+            <span class="greet-gradient">Xin chào đồng chí,</span><br>
+            <span class="greet-sub">hôm nay cần tham mưu việc gì?</span>
+          </h1>
+          <div class="suggestions">
+            <button class="suggest" data-prompt="Tham mưu công văn giao việc từ văn bản của Tỉnh uỷ">
+              <span class="suggest-text">Tham mưu <b>công văn giao việc</b> từ văn bản của Tỉnh uỷ</span>
+              <span class="suggest-icon">📥</span>
+            </button>
+            <button class="suggest" data-prompt="Tổng hợp báo cáo tuần từ các báo cáo của các cơ quan">
+              <span class="suggest-text"><b>Tổng hợp báo cáo tuần</b> từ báo cáo của các cơ quan</span>
+              <span class="suggest-icon">📊</span>
+            </button>
+            <button class="suggest" data-prompt="Soạn thông báo kết luận cuộc họp Thường trực Đảng uỷ">
+              <span class="suggest-text">Soạn <b>thông báo kết luận</b> cuộc họp Thường trực</span>
+              <span class="suggest-icon">📋</span>
+            </button>
+            <button class="suggest" data-prompt="Thẩm định dự thảo kế hoạch của UBND xã">
+              <span class="suggest-text"><b>Thẩm định dự thảo</b> do cơ quan chuyên môn gửi</span>
+              <span class="suggest-icon">🔍</span>
+            </button>
+          </div>
+          <p class="welcome-hint">Bấm 📎 để đính kèm tệp PDF / Word, hoặc gõ lệnh để hệ thống tra cứu Kho văn bản RAG và trả lời.</p>
+        </section>
+
+        <div class="messages" id="messages"></div>
+      </main>
+
+      <footer class="composer-wrap">
+        <div class="composer" id="composer">
+          <div class="attach-list" id="attachList"></div>
+          <div class="composer-row">
+            <button class="icon-btn" id="btnAttach" title="Đính kèm tệp (PDF, Word, TXT)">
+              <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16.5 6v11.5a4 4 0 0 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 0 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 0 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6z"/></svg>
+            </button>
+            <textarea id="input" rows="1" placeholder="Nhập lệnh hoặc câu hỏi cho Chuyên viên ảo..."></textarea>
+            <button class="send-btn" id="btnSend" title="Gửi (Enter)" disabled>
+              <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3.4 20.4 21.85 12 3.4 3.6 3.39 10.2 16.5 12 3.39 13.8z"/></svg>
+            </button>
+          </div>
+          <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.md" hidden>
+        </div>
+        <div class="disclaimer">AI hỗ trợ — Con người quyết định. Không nhập thông tin thuộc Bí mật Nhà nước.</div>
+        <div class="drop-overlay" id="dropOverlay">Thả tệp vào đây để đính kèm</div>
+      </footer>
     </section>
 
-    <div class="messages" id="messages"></div>
-  </main>
+    <!-- TAB 2: SỔ NHIỆM VỤ CƠ QUAN -->
+    <section class="tab-content" id="tab-tasks">
+      <div class="view-container">
+        <div class="view-header">
+          <div>
+            <h2 class="view-title">Sổ Nhiệm Vụ Cơ Quan Cấp Xã</h2>
+            <p class="view-desc">Quản lý theo dõi tiến độ các nhiệm vụ chính trị, phân công 5 Rõ và kiểm soát hạn chót.</p>
+          </div>
+          <div class="view-controls">
+            <select id="filterTaskUnit" class="select-filter">
+              <option value="">Tất cả cơ quan</option>
+              <option value="UBND">UBND xã</option>
+              <option value="BXDD">Ban Xây dựng Đảng</option>
+              <option value="UBKT">Cơ quan UBKT</option>
+              <option value="VPDU">Văn phòng Đảng uỷ</option>
+              <option value="MTTQ">Cơ quan UBMTTQ</option>
+            </select>
+            <select id="filterTaskStatus" class="select-filter">
+              <option value="">Tất cả trạng thái</option>
+              <option value="Chưa thực hiện">Chưa thực hiện</option>
+              <option value="Đang thực hiện">Đang thực hiện</option>
+              <option value="Hoàn thành">Hoàn thành</option>
+              <option value="Chuyển tiếp tháng sau">Chuyển tiếp tháng sau</option>
+            </select>
+            <button class="btn-refresh" id="btnRefreshTasks">🔄 Làm mới</button>
+          </div>
+        </div>
 
-  <footer class="composer-wrap">
-    <div class="composer" id="composer">
-      <div class="attach-list" id="attachList"></div>
-      <div class="composer-row">
-        <button class="icon-btn" id="btnAttach" title="Đính kèm tệp (PDF, Word, TXT)">
-          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16.5 6v11.5a4 4 0 0 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 0 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 0 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6z"/></svg>
-        </button>
-        <textarea id="input" rows="1" placeholder="Nhập lệnh cho Chuyên viên ảo..."></textarea>
-        <button class="send-btn" id="btnSend" title="Gửi (Enter)" disabled>
-          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3.4 20.4 21.85 12 3.4 3.6 3.39 10.2 16.5 12 3.39 13.8z"/></svg>
-        </button>
+        <div class="tasks-table-wrap">
+          <table class="data-table" id="tasksTable">
+            <thead>
+              <tr>
+                <th width="120">Mã NV / Số hiệu</th>
+                <th width="140">Cơ quan chủ trì</th>
+                <th>Nội dung nhiệm vụ</th>
+                <th width="120">Hạn chót</th>
+                <th width="110">Mức độ</th>
+                <th width="140">Trạng thái</th>
+                <th width="100">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="tasksTableBody">
+              <tr><td colspan="7" class="loading-td">Đang tải dữ liệu Sổ nhiệm vụ...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.md" hidden>
-    </div>
-    <div class="disclaimer">AI hỗ trợ — Con người quyết định. Không nhập thông tin thuộc Bí mật Nhà nước.</div>
-    <div class="drop-overlay" id="dropOverlay">Thả tệp vào đây để đính kèm</div>
-  </footer>
+    </section>
+
+    <!-- TAB 3: KHO VĂN BẢN HYBRID RAG (NẠP CÓ KIỂM SOÁT) -->
+    <section class="tab-content" id="tab-rag">
+      <div class="view-container">
+        <div class="view-header">
+          <div>
+            <h2 class="view-title">Quản Trị Kho Văn Bản RAG Có Kiểm Soát</h2>
+            <p class="view-desc">Cán bộ chủ động tải văn bản, đối soát và phê duyệt dữ liệu trước khi nạp vào hệ thống.</p>
+          </div>
+          <div class="view-controls">
+            <button class="btn-primary" id="btnUploadForRag">📤 Nạp văn bản mới (Có kiểm duyệt)</button>
+            <button class="btn-danger-outline" id="btnClearRag">🗑️ Xoá sạch kho RAG</button>
+            <input type="file" id="ragFileInput" accept=".pdf,.docx,.doc,.txt,.md" hidden>
+          </div>
+        </div>
+
+        <!-- KHU VỰC KÉO THẢ TÀI LIỆU RAG (DRAG & DROP ZONE) -->
+        <div class="rag-dropzone" id="ragDropZone" title="Kéo thả tệp văn bản từ máy tính vào đây">
+          <div class="rag-dropzone-content">
+            <div class="rag-dropzone-icon">📥</div>
+            <div class="rag-dropzone-text">
+              <span class="rag-dropzone-title">Kéo & Thả văn bản vào đây để nạp vào Kho RAG</span>
+              <span class="rag-dropzone-subtitle">Hỗ trợ tệp <b>Word (.docx, .doc)</b>, <b>PDF (.pdf)</b>, <b>Text (.txt, .md)</b> — Tự động bóc tách & phân loại chuyên đề</span>
+            </div>
+            <button type="button" class="btn-primary btn-dropzone-browse" id="btnBrowseDropzone">
+              📂 Chọn tệp từ máy tính
+            </button>
+          </div>
+          <div class="rag-dropzone-loading" id="ragDropLoading" style="display: none;">
+            <div class="spinner-small"></div>
+            <span>⏳ Đang tải lên và bóc tách siêu dữ liệu văn bản...</span>
+          </div>
+        </div>
+
+        <!-- Thống kê nhanh kho RAG -->
+        <div class="rag-stats-cards">
+          <div class="stat-card">
+            <div class="stat-num" id="statRagDocs">0</div>
+            <div class="stat-label">Văn bản trong kho</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statRagChunks">0</div>
+            <div class="stat-label">Đoạn trích (Chunks)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statRagCore">0</div>
+            <div class="stat-label">Văn bản Nền tảng</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statRagThematic">0</div>
+            <div class="stat-label">Văn bản Chuyên đề</div>
+          </div>
+        </div>
+
+        <!-- Khung tìm kiếm đối soát FTS5 -->
+        <div class="rag-search-section">
+          <div class="view-search-box">
+            <input type="text" id="ragSearchInput" placeholder="Tra cứu đối soát FTS5 BM25 (VD: 140-BC/ĐU, chuyển đổi số, Đề án 06)...">
+            <button id="btnRagSearch" class="btn-primary">🔍 Tìm kiếm</button>
+          </div>
+        </div>
+        <div class="rag-results-wrap" id="ragResultsWrap"></div>
+
+        <!-- Bảng danh sách văn bản ĐÃ ĐƯỢC DUYỆT trong kho -->
+        <div class="view-section-header">
+          <h3 class="section-subtitle">Danh mục Văn bản đã Phê duyệt trong Kho RAG</h3>
+          <button class="btn-refresh" id="btnRefreshRagDocs">🔄 Làm mới danh mục</button>
+        </div>
+        <div class="tasks-table-wrap">
+          <table class="data-table" id="ragDocsTable">
+            <thead>
+              <tr>
+                <th width="130">Số hiệu</th>
+                <th width="80">Thể loại</th>
+                <th width="150">Cơ quan</th>
+                <th width="100">Ngày</th>
+                <th width="100">Vòng đời</th>
+                <th width="150">Chuyên đề</th>
+                <th>Trích yếu nội dung</th>
+                <th width="70">Đoạn</th>
+                <th width="110">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="ragDocsTableBody">
+              <tr><td colspan="9" class="loading-td">Kho RAG hiện đang trống. Bấm nút phía trên để nạp văn bản đầu tiên.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MODAL KIỂM DUYỆT VĂN BẢN (HUMAN-IN-THE-LOOP REVIEW MODAL) -->
+      <div class="modal-backdrop" id="modalRagReview" style="display: none;">
+        <div class="modal-box">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">🔍 Kiểm Duyệt & Đối Soát Văn Bản Trước Khi Nạp</h3>
+              <p class="modal-desc" id="reviewFileNotice">Kiểm tra và hiệu chỉnh lại các trường siêu dữ liệu nếu cần thiết.</p>
+            </div>
+            <button class="modal-close" id="btnCloseRagModal">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Số hiệu văn bản (*):</label>
+                <input type="text" id="reviewSoHieu" placeholder="VD: 140-BC/ĐU, 708-CV/ĐU">
+              </div>
+              <div class="form-group">
+                <label>Ngày ban hành (YYYY-MM-DD) (*):</label>
+                <input type="date" id="reviewNgay">
+              </div>
+              <div class="form-group">
+                <label>Cơ quan ban hành (*):</label>
+                <input type="text" id="reviewCoQuan" placeholder="VD: Đảng uỷ xã Công Hải">
+              </div>
+              <div class="form-group">
+                <label>Mã cơ quan:</label>
+                <select id="reviewCoQuanCode">
+                  <option value="DU">ĐU (Đảng uỷ xã)</option>
+                  <option value="UBND">UBND (UBND xã)</option>
+                  <option value="BXDD">BXDD (Ban Xây dựng Đảng)</option>
+                  <option value="UBKT">UBKT (Uỷ ban Kiểm tra)</option>
+                  <option value="VPDU">VPDU (Văn phòng Đảng uỷ)</option>
+                  <option value="TU">TU (Tỉnh uỷ Khánh Hoà)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Thể loại văn bản:</label>
+                <select id="reviewTheLoai">
+                  <option value="NQ">Nghị quyết (-NQ)</option>
+                  <option value="KH">Kế hoạch (-KH)</option>
+                  <option value="BC">Báo cáo (-BC)</option>
+                  <option value="TB">Thông báo (-TB)</option>
+                  <option value="CV">Công văn (-CV)</option>
+                  <option value="QĐ">Quyết định (-QĐ)</option>
+                  <option value="CTr">Chương trình (-CTr)</option>
+                  <option value="QC">Quy chế (-QC)</option>
+                  <option value="KL">Kết luận (-KL)</option>
+                  <option value="TTr">Tờ trình (-TTr)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Nhóm vòng đời văn bản:</label>
+                <select id="reviewVongDoi">
+                  <option value="THEMATIC_CASE">Chuyên đề (Báo cáo, Kế hoạch, Công văn...)</option>
+                  <option value="CORE_DIRECTIVE">Nền tảng (Nghị quyết Đại hội, Quy chế làm việc...)</option>
+                  <option value="EPHEMERAL_EVENT">Sự vụ ngắn hạn (Giấy mời, Báo cáo nhanh...)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Chuyên đề công tác (*):</label>
+                <select id="reviewChuyenDe">
+                  <!-- Được tải động từ API -->
+                </select>
+              </div>
+              <div class="form-group full-width" id="wrapNewChuyenDe" style="display: none; background: rgba(56, 189, 248, 0.08); padding: 12px; border-radius: 8px; border: 1px dashed rgba(56, 189, 248, 0.3);">
+                <label style="color: #38bdf8; font-weight: 600;">✨ Tự thêm chuyên đề mới (hệ thống sẽ lưu cho các lần sau):</label>
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                  <input type="text" id="inputNewChuyenDe" placeholder="Nhập tên chuyên đề (VD: Đại hội Đảng bộ các cấp, Phòng chống thiên tai...)" style="flex: 1;">
+                  <button type="button" class="btn-primary" id="btnSaveNewChuyenDe" style="padding: 6px 14px; font-size: 13px;">+ Thêm ngay</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Trích yếu nội dung (*):</label>
+              <textarea id="reviewTrichYeu" rows="2" placeholder="Tóm tắt trích yếu nội dung văn bản..."></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Văn bản bị thay thế / bãi bỏ (nếu có):</label>
+              <input type="text" id="reviewThayThe" placeholder="VD: 43/QĐ-UBND (hệ thống sẽ tự động hạ hiệu lực văn bản cũ)">
+            </div>
+
+            <div class="review-chunks-section">
+              <div class="chunks-section-title">Xem trước các đoạn trích (Chunks) dự kiến sinh ra:</div>
+              <div id="reviewChunksPreview" class="review-chunks-list"></div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn-ghost" id="btnCancelRagReview">Huỷ bỏ</button>
+            <button class="btn-primary" id="btnCommitRag">✓ Phê duyệt & Nạp vào Kho RAG</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL XEM CHI TIẾT & CHỈNH SỬA VĂN BẢN (VIEW & UPDATE MODAL) -->
+      <div class="modal-backdrop" id="modalRagDetail" style="display: none;">
+        <div class="modal-box">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title" id="editModalTitle">📄 Chi Tiết & Hiệu Chỉnh Văn Bản</h3>
+              <p class="modal-desc" id="editModalNotice">Xem các đoạn trích chunks và cập nhật thông tin văn bản trong kho RAG.</p>
+            </div>
+            <button class="modal-close" id="btnCloseEditModal">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <input type="hidden" id="editDocId">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Số hiệu văn bản (*):</label>
+                <input type="text" id="editSoHieu">
+              </div>
+              <div class="form-group">
+                <label>Ngày ban hành (YYYY-MM-DD) (*):</label>
+                <input type="date" id="editNgay">
+              </div>
+              <div class="form-group">
+                <label>Cơ quan ban hành (*):</label>
+                <input type="text" id="editCoQuan">
+              </div>
+              <div class="form-group">
+                <label>Thể loại văn bản:</label>
+                <select id="editTheLoai">
+                  <option value="NQ">Nghị quyết (-NQ)</option>
+                  <option value="KH">Kế hoạch (-KH)</option>
+                  <option value="BC">Báo cáo (-BC)</option>
+                  <option value="TB">Thông báo (-TB)</option>
+                  <option value="CV">Công văn (-CV)</option>
+                  <option value="QĐ">Quyết định (-QĐ)</option>
+                  <option value="CTr">Chương trình (-CTr)</option>
+                  <option value="QC">Quy chế (-QC)</option>
+                  <option value="KL">Kết luận (-KL)</option>
+                  <option value="TTr">Tờ trình (-TTr)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tầng vòng đời:</label>
+                <select id="editVongDoi">
+                  <option value="THEMATIC_CASE">Chuyên đề (Báo cáo, Kế hoạch, Công văn...)</option>
+                  <option value="CORE_DIRECTIVE">Nền tảng (Nghị quyết Đại hội, Quy chế...)</option>
+                  <option value="EPHEMERAL_EVENT">Sự vụ ngắn hạn (Giấy mời, Báo cáo nhanh...)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Chuyên đề công tác (*):</label>
+                <select id="editChuyenDe">
+                  <!-- Tải động -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Trạng thái hiệu lực:</label>
+                <select id="editHieuLuc">
+                  <option value="CON_HIEU_LUC">Còn hiệu lực thi hành</option>
+                  <option value="HET_HIEU_LUC">Hết hiệu lực thi hành</option>
+                  <option value="BI_THAY_THE">Đã bị thay thế / bãi bỏ</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Bị thay thế bởi văn bản (nếu có):</label>
+                <input type="text" id="editThayTheBoi" placeholder="VD: 55-QĐ/ĐU">
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Trích yếu nội dung (*):</label>
+              <textarea id="editTrichYeu" rows="2"></textarea>
+            </div>
+
+            <!-- Các đoạn trích Chunks thực tế trong CSDL -->
+            <div class="review-chunks-section">
+              <div class="chunks-section-title" id="editChunksTitle">Danh sách các đoạn trích (Chunks) lưu trong CSDL:</div>
+              <div id="editChunksList" class="review-chunks-list" style="max-height: 200px;"></div>
+            </div>
+
+            <!-- Căn cứ liên kết trích dẫn -->
+            <div class="review-chunks-section" id="editCitationsSection">
+              <div class="chunks-section-title">Đồ thị liên kết căn cứ pháp lý & chỉ đạo:</div>
+              <div id="editCitationsList" style="font-size: 12.5px; color: #cbd5e1; display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn-ghost" id="btnCancelEditModal">Đóng</button>
+            <button class="btn-primary" id="btnSaveDocEdit">💾 Lưu chỉnh sửa văn bản</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: GIÁM SÁT CHỈ TIÊU KPI -->
+    <section class="tab-content" id="tab-kpis">
+      <div class="view-container">
+        <div class="view-header">
+          <div>
+            <h2 class="view-title">Giám Sát Chỉ Tiêu Nghị Quyết Đại Hội & NQ57</h2>
+            <p class="view-desc">Theo dõi trực quan 20 chỉ tiêu Đại hội Đảng bộ xã lần thứ I và 19 chỉ tiêu Chuyển đổi số.</p>
+          </div>
+          <div class="view-controls">
+            <button class="filter-chip active" data-kpi-source="">Tất cả chỉ tiêu</button>
+            <button class="filter-chip" data-kpi-source="NQ_DAI_HOI_I">Đại hội Đảng bộ khoá I</button>
+            <button class="filter-chip" data-kpi-source="NQ57_CDS">Nghị quyết 57 (CĐS)</button>
+          </div>
+        </div>
+
+        <div class="kpis-grid" id="kpisGrid">
+          <div class="loading-state">Đang nạp hệ thống chỉ tiêu...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: DANH BẠ HỆ THỐNG -->
+    <section class="tab-content" id="tab-directory">
+      <div class="view-container">
+        <div class="view-header">
+          <div>
+            <h2 class="view-title">Danh Bạ Cán Bộ & 21 Chi Bộ Xã Công Hải</h2>
+            <p class="view-desc">Cơ cấu chính quyền địa phương 02 cấp sau sáp nhập: Thường trực, 5 cơ quan chuyên môn, 08 thôn và 21 chi bộ (382 đảng viên).</p>
+          </div>
+        </div>
+
+        <div class="directory-grid" id="directoryGrid">
+          <div class="loading-state">Đang tải danh bạ cán bộ...</div>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>
