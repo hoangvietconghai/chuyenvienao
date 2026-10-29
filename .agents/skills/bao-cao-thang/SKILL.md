@@ -47,11 +47,12 @@ Báo cáo tháng của Đảng uỷ xã là văn kiện chính trị - hành ch�
 ## PHẦN II. NGUYÊN TẮC QUẢN TRỊ SỐ LIỆU & VĂN PHONG CHÍNH TRỊ THỰC CHIẾN
 
 > [!IMPORTANT]
-> **4 NGUYÊN TẮC CỐT LÕI BẮT BUỘC:**
-> 1. **Bóc tách số liệu động theo thời sự từng tháng (Dynamic Fact Extraction):** Không áp đặt số lượng chỉ tiêu cứng nhắc. Tôn trọng đặc thù từng tháng (tháng tựu trường/sáp nhập trường, tháng bão lũ, tháng thu thuế cuối năm, tháng tuyển quân...).
-> 2. **Văn phong chính trị - hành chính chuẩn mực:** Tiếp tục dùng các cụm từ đánh giá bao quát quy chuẩn (*"nhìn chung ổn định"*, *"cơ bản ổn định"*) khi trên địa bàn không có điểm nóng hay diễn biến bất thường; đồng thời kết hợp nêu số liệu, vụ việc cụ thể ở phần diễn giải chi tiết.
-> 3. **Tôn trọng số liệu báo cáo chính thức:** Làm việc dựa trên văn bản báo cáo chính thức được cung cấp, không suy diễn ngoài văn bản và không cảnh báo thừa khi các ngành đã chủ động tổng hợp chung.
-> 4. **Quy tắc phân loại Tồn tại, hạn chế:** Chỉ đưa vào các hạn chế bắt nguồn từ **nguyên nhân chủ quan** (trách nhiệm lãnh đạo, chỉ đạo, tổ chức thực hiện của bộ máy xã). **TUYỆT ĐỐI KHÔNG đưa những tồn tại mang tính khách quan** vào mục Tồn tại, hạn chế của địa phương.
+> **5 NGUYÊN TẮC CỐT LÕI BẮT BUỘC:**
+> 1. **Chủ động yêu cầu bổ sung văn bản & chỉ đạo của Thường trực, Ban Thường vụ:** Khi tổng hợp từ các báo cáo cơ sở của 4 ngành (UBND, Ban Xây dựng Đảng, UBKT, MTTQ), nếu chưa có đầy đủ thông tin về các Quyết định, Kế hoạch, Thông báo kết luận do Đảng uỷ ban hành, Chuyên viên ảo **bắt buộc chủ động yêu cầu cán bộ bổ sung thêm nội dung văn bản đã ban hành trong tháng và các ý kiến chỉ đạo trọng tâm của Thường trực, Ban Thường vụ** để khái quát đầy đủ vào Mục I.1; tuyệt đối không tự suy đoán hay viết chung chung sáo rỗng.
+> 2. **Tôn trọng triệt để số liệu báo cáo & Hỏi lại người dùng khi phát hiện sai sót (Data Respect & Inquiry Protocol):** Làm việc dựa trên văn bản báo cáo chính thức được cung cấp, tôn trọng tuyệt đối tính trung thực của số liệu gốc từ các ngành. Tuyệt đối không tự suy diễn, không tự ý chỉnh sửa số liệu ngoài văn bản. Nếu trong quá trình đối soát phát hiện có mâu thuẫn số liệu, sai lệch logic, số cộng không khớp hoặc nghi vấn số liệu giữa các ngành vênh nhau, Chuyên viên ảo **BẮT BUỘC PHẢI HỎI LẠI CÁN BỘ ĐỂ XÁC NHẬN VÀ CHỈNH SỬA**, tuyệt đối không tự ý sửa đổi số liệu của cơ quan chuyên môn.
+> 3. **Bóc tách số liệu động theo thời sự từng tháng (Dynamic Fact Extraction):** Không áp đặt số lượng chỉ tiêu cứng nhắc. Tôn trọng đặc thù từng tháng (tháng tựu trường/sáp nhập trường, tháng bão lũ, tháng thu thuế cuối năm, tháng tuyển quân...). Phân biệt rạch ròi giữa số phát sinh trong kỳ vs số lũy kế/truy lĩnh kỳ trước.
+> 4. **Văn phong chính trị - hành chính chuẩn mực khối Đảng:** Đứng đúng vị thế lãnh đạo toàn diện của cấp uỷ (dùng các cụm từ khẳng định: *"Ban Thường vụ Đảng uỷ ban hành...", "chỉ đạo triển khai...", "kết luận..."*, tuyệt đối không dùng từ *"Tham mưu Ban Thường vụ..."* trong báo cáo của chính cấp uỷ); tiếp tục dùng các cụm từ đánh giá bao quát quy chuẩn (*"nhìn chung ổn định"*, *"cơ bản ổn định"*) khi trên địa bàn không có điểm nóng hay diễn biến bất thường; kết hợp nêu số liệu, vụ việc cụ thể ở phần diễn giải.
+> 5. **Quy tắc phân loại Tồn tại, hạn chế:** Chỉ đưa vào các hạn chế bắt nguồn từ **nguyên nhân chủ quan** (trách nhiệm lãnh đạo, chỉ đạo, tổ chức thực hiện của bộ máy xã). **TUYỆT ĐỐI KHÔNG đưa những tồn tại mang tính khách quan** vào mục Tồn tại, hạn chế của địa phương.
 
 ### 1. Cơ chế Bóc tách Số liệu Động theo Thời sự từng Tháng
 - Không bắt buộc phải đủ một số lượng chỉ tiêu cố định (ví dụ không ép cứng 15 chỉ tiêu).
@@ -192,13 +193,23 @@ Trước khi xuất file, AI Agent bắt buộc phải kiểm tra và in bảng 
    - Phần I: `1.`, `2.`, `3.` (in đậm cả số và tiêu đề: `**1. Công tác lãnh đạo, chỉ đạo...:**`).
    - Phần II: `**1. Kết quả đạt được:**`, `**2. Tồn tại, hạn chế:**`.
    - Phần III: `1.`, `2.`, `3.`, `**4. Phân công nhiệm vụ cụ thể cho từng cơ quan, đơn vị:**`. Dưới mục 4 là các tiểu mục `4.1. Uỷ ban nhân dân xã:`, `4.2. Ban Xây dựng Đảng:`, `4.3. Cơ quan Uỷ ban Kiểm tra Đảng uỷ:`, `4.4. Uỷ ban MTTQ Việt Nam xã và các tổ chức chính trị - xã hội:`, `4.5. Văn phòng Đảng uỷ:`, `4.6. Các chi bộ trực thuộc:`.
-4. **Định dạng bảng Header & Thể thức Ô chữ ký:**
+4. **Định dạng bảng Header, Thể thức Ô chữ ký & Danh mục Nơi nhận chuẩn:**
    - Header 2 cột ẩn viền: Cỡ chữ 14 toàn bộ. Gạch chân dưới Tiêu ngữ ĐCSVN dài 192pt, dày 3/4pt.
    - Ô chữ ký:
      - Dòng 1: `T/M BAN THƯỜNG VỤ` (in hoa, đậm).
-     - Dòng 2: `BÍ THƯ` hoặc `PHÓ BÍ THƯ` (in hoa, thường, KHÔNG in đậm).
+     - Dòng 2: `BÍ THƯ` (in hoa, thường, KHÔNG in đậm; đồng chí Bí thư trực tiếp ký báo cáo tháng gửi Tỉnh uỷ; trường hợp vắng mặt thì Phó Bí thư ký thay).
      - Cách 5 dòng trống (cỡ 14pt).
-     - Dòng họ tên: Chữ thường, đứng, **in đậm**.
+     - Dòng họ tên: Chữ thường, đứng, **in đậm** (Ví dụ: **Vũ Thị Thuỳ Trang**).
+   - Danh mục Nơi nhận chuẩn mực:
+     - `- Thường trực Tỉnh uỷ (báo cáo);`
+     - `- Văn phòng Tỉnh uỷ, các Ban Đảng Tỉnh uỷ;`
+     - `- Đ/c Lương Đức Hải - UVTV Tỉnh uỷ, phụ trách địa bàn;`
+     - `- Thường trực Đảng uỷ xã;`
+     - `- Thường trực HĐND, UBND xã;`
+     - `- Cơ quan UBMTTQVN xã;`
+     - `- Các cơ quan tham mưu, giúp việc Đảng uỷ;`
+     - `- Các chi bộ trực thuộc;`
+     - `- Lưu VPĐU.`
 5. **Quy tắc đặt tên file Word chuẩn hoá:**
    - Cấu trúc: `BC tinh hinh thuc hien nhiem vu Thang [N] DU.docx`
    - Ví dụ: `BC tinh hinh thuc hien nhiem vu Thang 10 DU.docx`
