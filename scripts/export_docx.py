@@ -441,9 +441,9 @@ class PartyDocumentBuilder:
             # Làm sạch các ký hiệu markdown trong phần tiền tố và tiêu đề để nhận diện
             clean_prefix = prefix_part.replace('***', '').replace('**', '').replace('*', '').strip()
             
-            # Khớp tiền tố chỉ mục: Chỉ áp dụng in đậm đồng bộ cho Số (1., 2.) và Chữ cái (a), b), a., b.)
+            # Khớp tiền tố chỉ mục: Chỉ áp dụng in đậm đồng bộ cho Số (1., 2.) và Chữ cái (a), b), đ), a., b., đ.)
             # Tuyệt đối KHÔNG in đậm chỉ mục dấu gạch ngang (-) và dấu cộng (+) (chuẩn Cấp 4, 5 HD 05-HD/VPTW)
-            m_pref = re.match(r'^(\d+\.|[a-z]\)|[a-z]\.)\s*(.*)$', clean_prefix)
+            m_pref = re.match(r'^(\d+\.|[a-zđÀ-Ỹà-ỹ]\)|[a-zđÀ-Ỹà-ỹ]\.)\s*(.*)$', clean_prefix, flags=re.IGNORECASE)
             if m_pref:
                 indicator_sym = m_pref.group(1).strip()
                 indicator_name = m_pref.group(2).strip()
@@ -467,7 +467,7 @@ class PartyDocumentBuilder:
                     return
 
         # 2. Nhận diện Tiêu đề tiểu mục độc lập (ví dụ: "1. Mục tiêu tổng quát", "2. Nhiệm vụ và giải pháp")
-        m_sub = re.match(r'^((?:\d+\.|[a-z]\))\s+[A-ZÀ-Ỹ][^.\n]{2,80})$', text)
+        m_sub = re.match(r'^((?:\d+\.|[a-zđÀ-Ỹà-ỹ]\))\s+[A-ZÀ-Ỹ][^.\n]{2,80})$', text, flags=re.IGNORECASE)
         if m_sub:
             clean_sub = text.replace('***', '').replace('**', '').replace('*', '').strip()
             r_sub = p.add_run(clean_sub)
