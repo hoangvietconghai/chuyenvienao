@@ -58,11 +58,18 @@ def run_remote_command(ssh: paramiko.SSHClient, command: str, step_title: str) -
 
 
 def main():
+    is_update_mode = "--update" in sys.argv or "update" in sys.argv
+    clean_argv = [a for a in sys.argv[1:] if a not in ("--update", "update")]
+
     print_banner()
+    if is_update_mode:
+        print("⚡ CHẾ ĐỘ: CẬP NHẬT NHANH (CI/CD) — Giữ nguyên CSDL & .env, chỉ cập nhật mã nguồn!")
+    else:
+        print("🛠️  CHẾ ĐỘ: TRIỂN KHAI TOÀN DIỆN (Cài đặt mới / Reset môi trường)")
 
     # Nhập mật khẩu an toàn (không hiển thị trên màn hình)
-    if len(sys.argv) > 1 and sys.argv[1]:
-        password = sys.argv[1]
+    if clean_argv and clean_argv[0]:
+        password = clean_argv[0]
     else:
         password = getpass.getpass(f"Nhập mật khẩu SSH của tài khoản '{VPS_USER}' (ký tự sẽ ẩn): ")
 
@@ -73,7 +80,7 @@ def main():
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-    print(f"\n[1/5] Đang kết nối tới máy chủ {VPS_IP}...")
+    print(f"\n[1/3] Đang kết nối tới máy chủ {VPS_IP}...")
     try:
         ssh.connect(
             hostname=VPS_IP,
@@ -90,7 +97,27 @@ def main():
         sys.exit(1)
 
     try:
-        # 1. Dọn dẹp và chuẩn bị môi trường sạch 100%
+        if is_update_mode:
+            # Chế độ cập nhật nhanh
+            update_cmd = (
+                "curl -sSL https://raw.githubusercontent.com/hoangvietconghai/chuyenvienao/main/scripts/update_vps.sh "
+                "-o /tmp/update_vps.sh && chmod +x /tmp/update_vps.sh && bash /tmp/update_vps.sh"
+            )
+            run_remote_command(ssh, update_cmd, "[2/3] Chạy kịch bản cập nhật nhanh update_vps.sh")
+
+            print("\n>> [3/3] Kiểm tra phản hồi dịch vụ sau cập nhật...")
+            stdin, stdout, stderr = ssh.exec_command("curl -s http://127.0.0.1:8000/health")
+            health_resp = stdout.read().decode("utf-8", errors="replace").strip()
+            print(f"Kết quả Health Check: {health_resp}")
+
+            print("\n" + "=" * 76)
+            print("🎉 CẬP NHẬT THÀNH CÔNG! HỆ THỐNG ĐÃ SẴN SÀNG.")
+            print("=" * 76)
+            print(f"🔹 Địa chỉ truy cập: http://{VPS_IP}")
+            print("=" * 76)
+            return
+
+        # 1. Dọn dẹp và chuẩn bị môi trường sạch 100% (Chế độ cài mới)
         clean_cmd = (
             "apt-get update -y && apt-get install -y git curl && "
             "systemctl stop chuyenvienao caddy apache2 nginx 2>/dev/null || true; "

@@ -1,0 +1,27 @@
+name: CI/CD Pipeline - Tự động Cập nhật lên VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Cập nhật lên VPS Đảng uỷ xã Công Hải
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚀 Kết nối SSH và chạy cập nhật tự động trên VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST || '45.119.82.227' }}
+          username: ${{ secrets.VPS_USER || 'root' }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            echo "Bắt đầu cập nhật mã nguồn Chuyên viên ảo..."
+            chmod +x /opt/chuyenvienao/scripts/update_vps.sh
+            bash /opt/chuyenvienao/scripts/update_vps.sh

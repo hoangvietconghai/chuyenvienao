@@ -10,11 +10,12 @@ Router quản trị hệ thống:
 5. Quản lý Danh bạ cán bộ, lãnh đạo, 08 thôn và 21 chi bộ.
 """
 
+import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
@@ -506,5 +507,26 @@ async def delete_cadre_endpoint(can_bo_id: str):
         return {"success": True, "message": f"Đã xoá cán bộ {can_bo_id}."}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/api/admin/system/deploy-webhook")
+async def deploy_webhook(request: Request):
+    """Webhook nhận tín hiệu push từ GitHub để tự động cập nhật hệ thống trên VPS."""
+    try:
+        update_script = BASE_DIR / "scripts" / "update_vps.sh"
+        if update_script.exists():
+            subprocess.Popen(
+                ["bash", str(update_script)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            logger.info("Đã kích hoạt CI/CD Webhook Deploy qua update_vps.sh")
+            return {"status": "success", "message": "Đã tiếp nhận tín hiệu CI/CD, hệ thống đang cập nhật..."}
+        return {"status": "error", "message": f"Không tìm thấy kịch bản cập nhật: {update_script.as_posix()}"}
+    except Exception as e:
+        logger.error(f"Lỗi khi thực hiện webhook deploy: {e}")
+        return {"status": "error", "message": str(e)}
+
 
 
