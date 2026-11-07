@@ -20,6 +20,7 @@ Phiên làm việc lưu trong bộ nhớ (chạy local 1 người dùng).
 import json
 import logging
 import re
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -709,9 +710,34 @@ async def handle_chat(session_id: Optional[str], message: str = "", action: str 
     message = (message or "").strip()
     action = (action or "").strip()
     new_atts = [a for a in s["attachments"] if not a["used"]]
+    start_time = time.time()
 
     def done(result: Dict[str, Any]) -> Dict[str, Any]:
         result["session_id"] = session_id
+        # Lưu nhật ký hội thoại NẾU phiên ĐÃ ĐĂNG NHẬP CHÍNH DANH
+        if s.get("authenticated") and s.get("can_bo"):
+            can_bo = s["can_bo"]
+            latency_ms = int((time.time() - start_time) * 1000)
+            names = ", ".join(a["name"] for a in s["attachments"])
+            reply_text = result.get("reply", "")
+            try:
+                from server.services import db_service
+                db_service.save_chat_log({
+                    "session_id": session_id,
+                    "channel": "web",
+                    "can_bo_id": can_bo.get("can_bo_id"),
+                    "so_dien_thoai": can_bo.get("so_dien_thoai"),
+                    "ho_ten": can_bo.get("ho_ten"),
+                    "co_quan": can_bo.get("co_quan"),
+                    "vai_tro": can_bo.get("vai_tro", "can_bo"),
+                    "message_text": message or "(thao tác nút/gửi tệp)",
+                    "attachment_names": names,
+                    "bot_reply": reply_text,
+                    "model_used": getattr(default_ai_client, "model", ""),
+                    "latency_ms": latency_ms,
+                })
+            except Exception as log_ex:
+                logger.warning(f"Lỗi lưu nhật ký chat: {log_ex}")
         return result
 
     # Ghi lịch sử phía người dùng

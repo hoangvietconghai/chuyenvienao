@@ -352,3 +352,88 @@ async def list_directory():
     directory = await run_in_threadpool(db_service.get_all_can_bo, only_active=True)
     return {"directory": directory, "total": len(directory)}
 
+
+# --- ADMIN DASHBOARD & SYSTEM MONITORING ---
+
+class CadrePhoneUpdateRequest(BaseModel):
+    so_dien_thoai: str
+    zalo_user_id: Optional[str] = None
+    zalo_chat_id: Optional[str] = None
+    vai_tro: Optional[str] = "can_bo"
+
+
+@router.get("/api/admin/conversations")
+async def get_admin_conversations(
+    channel: Optional[str] = None,
+    can_bo_id: Optional[str] = None,
+    search: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 30,
+):
+    """Lấy danh sách nhật ký hội thoại đa kênh (Web Chat & Zalo Bot) phục vụ quản trị."""
+    offset = max(0, (page - 1) * page_size)
+    items = await run_in_threadpool(
+        db_service.get_chat_logs,
+        channel=channel,
+        can_bo_id=can_bo_id,
+        search=search,
+        limit=page_size,
+        offset=offset,
+    )
+    total = await run_in_threadpool(
+        db_service.get_chat_logs_count,
+        channel=channel,
+        can_bo_id=can_bo_id,
+        search=search,
+    )
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size if page_size > 0 else 1,
+    }
+
+
+@router.get("/api/admin/system/metrics")
+async def get_system_metrics_endpoint():
+    """Lấy số liệu tài nguyên VPS (RAM, CPU, Ổ đĩa) và tình trạng các dịch vụ."""
+    metrics = await run_in_threadpool(db_service.get_system_metrics)
+    metrics["ai"] = {
+        "current_model": default_ai_client.model,
+        "provider": getattr(default_ai_client, "provider", "cloud"),
+        "is_local": default_ai_client.is_local(),
+        "is_gemini": getattr(default_ai_client, "is_gemini", lambda: False)(),
+        "configured": default_ai_client.is_configured(),
+    }
+    from server import chat_engine
+    metrics["active_sessions"] = len(chat_engine.SESSIONS)
+    return metrics
+
+
+@router.get("/api/admin/system/logs")
+async def get_system_logs_endpoint(limit: int = 80):
+    """Xem nhật ký hệ thống gần nhất trực tiếp trên trình duyệt."""
+    logs = await run_in_threadpool(db_service.get_recent_system_logs, max_lines=limit)
+    return {"logs": logs, "total_lines": len(logs)}
+
+
+@router.put("/api/admin/cadres/{can_bo_id}/phone")
+async def update_cadre_phone_endpoint(can_bo_id: str, req: CadrePhoneUpdateRequest):
+    """Cập nhật số điện thoại Zalo và phân quyền cho cán bộ trong danh bạ."""
+    clean_p = db_service.normalize_phone_number(req.so_dien_thoai)
+    with db_service.get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        UPDATE danh_ba_can_bo
+        SET so_dien_thoai = ?,
+            zalo_user_id = COALESCE(?, zalo_user_id),
+            zalo_chat_id = COALESCE(?, zalo_chat_id),
+            vai_tro = COALESCE(?, vai_tro),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE can_bo_id = ?;
+        """, (clean_p, req.zalo_user_id, req.zalo_chat_id, req.vai_tro, can_bo_id))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Không tìm thấy cán bộ.")
+    return {"success": True, "can_bo_id": can_bo_id, "so_dien_thoai": clean_p}
+

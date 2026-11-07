@@ -1269,20 +1269,70 @@ button { font-family: inherit; cursor: pointer; }
   white-space: nowrap;
 }
 
-.rag-dropzone-loading {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.92);
+/* ---------------- AUTH WIDGET & BADGE ---------------- */
+.auth-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #38bdf8;
-  z-index: 10;
-  backdrop-filter: blur(4px);
 }
+
+.btn-auth-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-auth-badge:hover {
+  background: var(--surface-3);
+  border-color: #64748b;
+}
+
+.btn-auth-badge.guest {
+  border-style: dashed;
+  color: #94a3b8;
+}
+
+.btn-auth-badge.authenticated {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.btn-auth-badge.admin {
+  background: rgba(234, 179, 8, 0.12);
+  border-color: rgba(234, 179, 8, 0.4);
+  color: #fde047;
+}
+
+.auth-badge-sub {
+  font-size: 11px;
+  opacity: 0.75;
+  font-weight: normal;
+}
+
+.nav-tab.admin-tab {
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  background: rgba(234, 179, 8, 0.06);
+  color: #fde047;
+}
+
+.nav-tab.admin-tab:hover {
+  background: rgba(234, 179, 8, 0.14);
+}
+
+.nav-tab.admin-tab.active {
+  background: rgba(234, 179, 8, 0.22);
+  border-color: #eab308;
+  color: #fef08a;
+}
+
 
 
 

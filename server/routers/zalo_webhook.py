@@ -202,7 +202,39 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
 
         full_reply_parts.append("\n🤖 *Trợ lý Chuyên viên ảo — VP Đảng uỷ xã Công Hải*")
 
-        send_message(chat_id, "\n".join(full_reply_parts))
+        full_reply_content = "\n".join(full_reply_parts)
+        send_message(chat_id, full_reply_content)
+
+        # Lưu nhật ký hội thoại kênh Zalo Bot vào CSDL SQLite WAL
+        try:
+            from server.services import db_service
+            cb = None
+            with db_service.get_db_connection() as conn:
+                c = conn.cursor()
+                c.execute(
+                    "SELECT * FROM danh_ba_can_bo WHERE zalo_chat_id = ? OR zalo_user_id = ? LIMIT 1;",
+                    (str(chat_id), str(sender_id))
+                )
+                r = c.fetchone()
+                if r:
+                    cb = dict(r)
+
+            db_service.save_chat_log({
+                "session_id": session_id,
+                "channel": "zalo",
+                "can_bo_id": cb.get("can_bo_id") if cb else None,
+                "so_dien_thoai": cb.get("so_dien_thoai") if cb else "",
+                "ho_ten": cb.get("ho_ten") if cb else display_name,
+                "co_quan": cb.get("co_quan") if cb else "Người dùng Zalo",
+                "vai_tro": cb.get("vai_tro") if cb else "can_bo",
+                "message_text": text,
+                "attachment_names": "",
+                "bot_reply": full_reply_content,
+                "model_used": "Gemini/DeepSeek",
+                "latency_ms": 0,
+            })
+        except Exception as zlog_ex:
+            logger.warning(f"Lỗi lưu nhật ký Zalo: {zlog_ex}")
 
     except Exception as ex:
         logger.exception(f"Lỗi xử lý sự kiện Zalo: {ex}")

@@ -252,6 +252,48 @@ def init_database() -> None:
             VALUES (?, ?, ?, ?, ?);
             """, default_chuyen_de)
 
+        # 9. Bảng Xác thực OTP qua Zalo (Zalo Phone Login)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS xac_thuc_otp (
+            phone TEXT PRIMARY KEY,
+            otp_code TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            expires_at REAL NOT NULL,
+            attempts INTEGER DEFAULT 0
+        );
+        """)
+
+        # 10. Bảng Nhật ký Hội thoại Đa kênh (Web Chat & Zalo Bot)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS nhat_ky_hoi_thoai (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            channel TEXT NOT NULL DEFAULT 'web',
+            can_bo_id TEXT,
+            so_dien_thoai TEXT,
+            ho_ten TEXT,
+            co_quan TEXT,
+            vai_tro TEXT DEFAULT 'can_bo',
+            message_text TEXT NOT NULL,
+            attachment_names TEXT DEFAULT '',
+            bot_reply TEXT NOT NULL,
+            model_used TEXT,
+            latency_ms INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (can_bo_id) REFERENCES danh_ba_can_bo(can_bo_id) ON DELETE SET NULL
+        );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_log_session ON nhat_ky_hoi_thoai(session_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_log_canbo ON nhat_ky_hoi_thoai(can_bo_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_log_channel ON nhat_ky_hoi_thoai(channel, created_at);")
+
+        # Cập nhật số điện thoại Admin cho đồng chí Hoàng Việt Long (CB-VPDU-01)
+        cursor.execute("""
+        UPDATE danh_ba_can_bo 
+        SET so_dien_thoai = '0327777707', vai_tro = 'admin' 
+        WHERE can_bo_id = 'CB-VPDU-01';
+        """)
+
         logger.info(f"Đã khởi tạo và kết nối thành công CSDL SQLite WAL: {DB_FILE}")
 
 
@@ -942,6 +984,258 @@ def add_chuyen_de(ten_chuyen_de: str, ma_chuyen_de: Optional[str] = None, mo_ta:
 
     logger.info(f"Đã lưu chuyên đề mới: {ma_code} - {ten_clean} (Từ khoá: {tu_khoa_val})")
     return {"ma_chuyen_de": ma_code, "ten_chuyen_de": ten_clean, "mo_ta": mo_ta}
+
+
+# ==============================================================================
+# 9. XÁC THỰC CÁN BỘ BẰNG SỐ ĐIỆN THOẠI ZALO & OTP (ZERO PII TO AI)
+# ==============================================================================
+
+def normalize_phone_number(phone: str) -> str:
+    """Chuẩn hoá số điện thoại về định dạng 10 số (bắt đầu bằng 0)."""
+    p = re.sub(r'[^0-9]', '', str(phone or ''))
+    if p.startswith('84') and len(p) == 11:
+        p = '0' + p[2:]
+    elif not p.startswith('0') and len(p) == 9:
+        p = '0' + p
+    return p
+
+
+def get_can_bo_by_phone(phone: str) -> Optional[Dict[str, Any]]:
+    """Tìm thông tin cán bộ trong danh bạ theo số điện thoại."""
+    clean_p = normalize_phone_number(phone)
+    if not clean_p:
+        return None
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT * FROM danh_ba_can_bo 
+        WHERE so_dien_thoai = ? OR so_dien_thoai = ? OR so_dien_thoai LIKE ?
+        LIMIT 1;
+        """, (clean_p, '84' + clean_p[1:], f"%{clean_p}%"))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+def create_zalo_otp(phone: str) -> Tuple[str, Optional[Dict[str, Any]]]:
+    """Sinh mã xác thực OTP 6 số và lưu vào CSDL (hạn dùng 5 phút)."""
+    import random
+    import time
+    clean_p = normalize_phone_number(phone)
+    can_bo = get_can_bo_by_phone(clean_p)
+    if not can_bo:
+        return "", None
+
+    otp_code = f"{random.randint(100000, 999999)}"
+    now = time.time()
+    expires_at = now + 300.0  # 5 phút
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT INTO xac_thuc_otp (phone, otp_code, created_at, expires_at, attempts)
+        VALUES (?, ?, ?, ?, 0)
+        ON CONFLICT(phone) DO UPDATE SET
+            otp_code = excluded.otp_code,
+            created_at = excluded.created_at,
+            expires_at = excluded.expires_at,
+            attempts = 0;
+        """, (clean_p, otp_code, now, expires_at))
+
+    logger.info(f"Đã tạo OTP cho số {clean_p} (Cán bộ: {can_bo.get('ho_ten')})")
+    return otp_code, can_bo
+
+
+def verify_zalo_otp(phone: str, otp_code: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+    """Xác thực mã OTP 6 số do cán bộ nhập vào."""
+    import time
+    clean_p = normalize_phone_number(phone)
+    clean_otp = str(otp_code or '').strip()
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM xac_thuc_otp WHERE phone = ?;", (clean_p,))
+        row = cursor.fetchone()
+        if not row:
+            return False, "Chưa yêu cầu mã OTP hoặc mã đã hết hiệu lực.", None
+
+        now = time.time()
+        if now > row["expires_at"]:
+            cursor.execute("DELETE FROM xac_thuc_otp WHERE phone = ?;", (clean_p,))
+            return False, "Mã OTP đã hết hạn (5 phút). Vui lòng bấm gửi lại mã mới.", None
+
+        if row["attempts"] >= 5:
+            cursor.execute("DELETE FROM xac_thuc_otp WHERE phone = ?;", (clean_p,))
+            return False, "Đã nhập sai quá 5 lần. Vui lòng bấm gửi lại mã mới.", None
+
+        if row["otp_code"] != clean_otp:
+            cursor.execute("UPDATE xac_thuc_otp SET attempts = attempts + 1 WHERE phone = ?;", (clean_p,))
+            return False, f"Mã xác thực không chính xác (còn {4 - row['attempts']} lần thử).", None
+
+        # Xác thực thành công -> Xoá OTP
+        cursor.execute("DELETE FROM xac_thuc_otp WHERE phone = ?;", (clean_p,))
+
+    can_bo = get_can_bo_by_phone(clean_p)
+    return True, "Xác thực thành công", can_bo
+
+
+# ==============================================================================
+# 10. NHẬT KÝ HỘI THOẠI ĐA KÊNH & QUẢN TRỊ ADMIN (`nhat_ky_hoi_thoai`)
+# ==============================================================================
+
+def save_chat_log(log_data: Dict[str, Any]) -> int:
+    """Lưu nhật ký hội thoại chính danh (chỉ lưu khi cán bộ đã đăng nhập hoặc Zalo bot)."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT INTO nhat_ky_hoi_thoai (
+            session_id, channel, can_bo_id, so_dien_thoai, ho_ten, co_quan, vai_tro,
+            message_text, attachment_names, bot_reply, model_used, latency_ms
+        ) VALUES (
+            :session_id, :channel, :can_bo_id, :so_dien_thoai, :ho_ten, :co_quan, :vai_tro,
+            :message_text, :attachment_names, :bot_reply, :model_used, :latency_ms
+        );
+        """, {
+            "session_id": log_data.get("session_id", ""),
+            "channel": log_data.get("channel", "web"),
+            "can_bo_id": log_data.get("can_bo_id"),
+            "so_dien_thoai": log_data.get("so_dien_thoai", ""),
+            "ho_ten": log_data.get("ho_ten", "Khách"),
+            "co_quan": log_data.get("co_quan", ""),
+            "vai_tro": log_data.get("vai_tro", "can_bo"),
+            "message_text": log_data.get("message_text", ""),
+            "attachment_names": log_data.get("attachment_names", ""),
+            "bot_reply": log_data.get("bot_reply", "")[:4000],
+            "model_used": log_data.get("model_used", ""),
+            "latency_ms": log_data.get("latency_ms", 0),
+        })
+        return cursor.lastrowid
+
+
+def get_chat_logs(
+    channel: Optional[str] = None,
+    can_bo_id: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0
+) -> List[Dict[str, Any]]:
+    """Truy vấn nhật ký hội thoại phục vụ trang quản trị Admin."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        conditions = []
+        params = []
+
+        if channel:
+            conditions.append("channel = ?")
+            params.append(channel)
+        if can_bo_id:
+            conditions.append("can_bo_id = ?")
+            params.append(can_bo_id)
+        if search and search.strip():
+            kw = f"%{search.strip()}%"
+            conditions.append("(message_text LIKE ? OR bot_reply LIKE ? OR ho_ten LIKE ?)")
+            params.extend([kw, kw, kw])
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        query = f"""
+        SELECT * FROM nhat_ky_hoi_thoai 
+        {where_clause}
+        ORDER BY created_at DESC 
+        LIMIT ? OFFSET ?;
+        """
+        params.extend([limit, offset])
+        cursor.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def get_chat_logs_count(
+    channel: Optional[str] = None,
+    can_bo_id: Optional[str] = None,
+    search: Optional[str] = None
+) -> int:
+    """Đếm tổng số bản ghi hội thoại."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        conditions = []
+        params = []
+        if channel:
+            conditions.append("channel = ?")
+            params.append(channel)
+        if can_bo_id:
+            conditions.append("can_bo_id = ?")
+            params.append(can_bo_id)
+        if search and search.strip():
+            kw = f"%{search.strip()}%"
+            conditions.append("(message_text LIKE ? OR bot_reply LIKE ? OR ho_ten LIKE ?)")
+            params.extend([kw, kw, kw])
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        cursor.execute(f"SELECT COUNT(*) as cnt FROM nhat_ky_hoi_thoai {where_clause};", params)
+        return cursor.fetchone()["cnt"]
+
+
+def get_system_metrics() -> Dict[str, Any]:
+    """Lấy số liệu tài nguyên máy chủ / VPS (RAM, CPU, Ổ đĩa) và thống kê hệ thống."""
+    import shutil
+    import sys
+    from server.config import BASE_DIR
+
+    disk = shutil.disk_usage(BASE_DIR)
+    total_gb = round(disk.total / (1024**3), 1)
+    used_gb = round(disk.used / (1024**3), 1)
+    free_gb = round(disk.free / (1024**3), 1)
+    disk_percent = round((disk.used / disk.total) * 100, 1)
+
+    # Thống kê CSDL SQLite
+    db_size_mb = 0.0
+    if DB_FILE.exists():
+        db_size_mb = round(DB_FILE.stat().st_size / (1024**2), 2)
+
+    with get_db_connection() as conn:
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) as cnt FROM danh_ba_can_bo;")
+        total_cadres = c.fetchone()["cnt"]
+        c.execute("SELECT COUNT(*) as cnt FROM nhat_ky_hoi_thoai;")
+        total_messages = c.fetchone()["cnt"]
+        c.execute("SELECT COUNT(*) as cnt FROM so_van_ban;")
+        total_docs = c.fetchone()["cnt"]
+        c.execute("SELECT COUNT(*) as cnt FROM so_nhiem_vu;")
+        total_tasks = c.fetchone()["cnt"]
+
+    return {
+        "disk": {
+            "total_gb": total_gb,
+            "used_gb": used_gb,
+            "free_gb": free_gb,
+            "percent": disk_percent,
+        },
+        "database": {
+            "size_mb": db_size_mb,
+            "cadres": total_cadres,
+            "messages": total_messages,
+            "docs": total_docs,
+            "tasks": total_tasks,
+        },
+        "python_version": sys.version.split()[0],
+    }
+
+
+def get_recent_system_logs(max_lines: int = 80) -> List[str]:
+    """Đọc các dòng nhật ký hệ thống gần nhất để xem trên Admin UI."""
+    from server.config import LOGS_DIR
+    log_file = LOGS_DIR / "chuyen_vien_ao.log"
+    if not log_file.exists():
+        log_files = list(LOGS_DIR.glob("*.log"))
+        if log_files:
+            log_file = log_files[0]
+        else:
+            return ["[INFO] Hệ thống chưa tạo tệp nhật ký ghi đĩa."]
+
+    try:
+        with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+            return [line.strip() for line in lines[-max_lines:]]
+    except Exception as ex:
+        return [f"[ERROR] Không thể đọc tệp log: {ex}"]
 
 
 # Khởi tạo bảng ngay khi import module

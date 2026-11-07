@@ -27,6 +27,7 @@ from server.config import (
 )
 from server.logger import get_logger
 from server.routers.admin import router as admin_router
+from server.routers.auth import router as auth_router
 from server.routers.chat import router as chat_router
 from server.routers.knowledge import router as knowledge_router, search_router
 from server.routers.zalo_webhook import router as zalo_router
@@ -72,6 +73,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # --- ĐĂNG KÝ CÁC ROUTER CHUYÊN TRÁCH ---
+app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(knowledge_router)
 app.include_router(search_router)

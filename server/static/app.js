@@ -3,8 +3,24 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Trạng thái phiên làm việc
-  let sessionId = localStorage.getItem('cva_session_id') || '';
+  // Trạng thái phiên làm việc (Chế độ Khách lưu sessionStorage, Cán bộ đăng nhập lưu localStorage)
+  function getStoredSessionId() {
+    const token = localStorage.getItem('cva_auth_token');
+    if (token) return localStorage.getItem('cva_session_id') || '';
+    return sessionStorage.getItem('cva_guest_session_id') || '';
+  }
+
+  function saveSessionId(sid) {
+    sessionId = sid;
+    const token = localStorage.getItem('cva_auth_token');
+    if (token) {
+      localStorage.setItem('cva_session_id', sid);
+    } else {
+      sessionStorage.setItem('cva_guest_session_id', sid);
+    }
+  }
+
+  let sessionId = getStoredSessionId();
   let pendingAttachments = []; // [{ id, name, category_label, char_count }]
   let isSending = false;
 
@@ -296,8 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await res.json();
       if (data.session_id) {
-        sessionId = data.session_id;
-        localStorage.setItem('cva_session_id', sessionId);
+        saveSessionId(data.session_id);
       }
 
       // Xoá chip tạm và thêm chip chính thức
@@ -402,8 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await res.json();
       if (data.session_id) {
-        sessionId = data.session_id;
-        localStorage.setItem('cva_session_id', sessionId);
+        saveSessionId(data.session_id);
       }
 
       thinkingEl.remove();
@@ -430,8 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({ session_id: sessionId }),
         });
         const d = await res.json();
-        sessionId = d.session_id;
-        localStorage.setItem('cva_session_id', sessionId);
+        saveSessionId(d.session_id);
       } catch {}
 
       messagesContainer.innerHTML = '';
@@ -783,6 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (targetTab === 'tab-kpis') loadKpis();
       if (targetTab === 'tab-directory') loadDirectory();
+      if (targetTab === 'tab-admin') loadAdminDashboard();
     });
   });
 
@@ -1632,7 +1646,379 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ============================================================================
+  // 8. ĐĂNG NHẬP SĐT ZALO & BẢNG ĐIỀU HÀNH ADMIN TOÀN DIỆN
+  // ============================================================================
+  const btnAuthTrigger = document.getElementById('btnAuthTrigger');
+  const authBadgeIcon = document.getElementById('authBadgeIcon');
+  const authBadgeName = document.getElementById('authBadgeName');
+  const authBadgeSub = document.getElementById('authBadgeSub');
+  const tabNavAdmin = document.getElementById('tabNavAdmin');
+
+  const modalAuth = document.getElementById('modalAuth');
+  const btnCloseAuthModal = document.getElementById('btnCloseAuthModal');
+
+  const authStep1 = document.getElementById('authStep1');
+  const inputAuthPhone = document.getElementById('inputAuthPhone');
+  const authNoticePhone = document.getElementById('authNoticePhone');
+  const btnSendOtp = document.getElementById('btnSendOtp');
+
+  const authStep2 = document.getElementById('authStep2');
+  const displayAuthTargetPhone = document.getElementById('displayAuthTargetPhone');
+  const inputAuthOtp = document.getElementById('inputAuthOtp');
+  const authNoticeOtp = document.getElementById('authNoticeOtp');
+  const authDevOtpHint = document.getElementById('authDevOtpHint');
+  const btnVerifyOtp = document.getElementById('btnVerifyOtp');
+  const btnBackToStep1 = document.getElementById('btnBackToStep1');
+
+  const authStepProfile = document.getElementById('authStepProfile');
+  const profileName = document.getElementById('profileName');
+  const profileRole = document.getElementById('profileRole');
+  const profilePhone = document.getElementById('profilePhone');
+  const profileAdminBadge = document.getElementById('profileAdminBadge');
+  const btnGoToAdminFromModal = document.getElementById('btnGoToAdminFromModal');
+  const btnLogout = document.getElementById('btnLogout');
+
+  let currentAuthTargetPhone = '';
+  let currentCadre = null;
+
+  async function checkAuthSession() {
+    try {
+      const token = localStorage.getItem('cva_auth_token') || '';
+      const res = await fetch('/api/auth/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token, session_id: sessionId })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated && data.can_bo) {
+          applyCadreLogin(data.can_bo, token);
+          return;
+        }
+      }
+      applyGuestMode();
+    } catch {
+      applyGuestMode();
+    }
+  }
+
+  function applyCadreLogin(cb, token) {
+    currentCadre = cb;
+    if (token) localStorage.setItem('cva_auth_token', token);
+    localStorage.setItem('cva_can_bo_info', JSON.stringify(cb));
+
+    if (authBadgeName) authBadgeName.textContent = cb.ho_ten;
+    if (authBadgeIcon) authBadgeIcon.textContent = cb.vai_tro === 'admin' ? '👑' : '👤';
+    if (authBadgeSub) authBadgeSub.textContent = cb.chuc_vu || '';
+    if (btnAuthTrigger) btnAuthTrigger.className = 'btn-auth-badge ' + (cb.vai_tro === 'admin' ? 'admin' : 'authenticated');
+
+    if (cb.vai_tro === 'admin') {
+      if (tabNavAdmin) tabNavAdmin.style.display = 'flex';
+      if (profileAdminBadge) profileAdminBadge.style.display = 'inline-block';
+      if (btnGoToAdminFromModal) btnGoToAdminFromModal.style.display = 'block';
+    } else {
+      if (tabNavAdmin) tabNavAdmin.style.display = 'none';
+      if (profileAdminBadge) profileAdminBadge.style.display = 'none';
+      if (btnGoToAdminFromModal) btnGoToAdminFromModal.style.display = 'none';
+    }
+  }
+
+  function applyGuestMode() {
+    currentCadre = null;
+    localStorage.removeItem('cva_auth_token');
+    localStorage.removeItem('cva_can_bo_info');
+
+    if (authBadgeName) authBadgeName.textContent = 'Chế độ Khách';
+    if (authBadgeIcon) authBadgeIcon.textContent = '🕶️';
+    if (authBadgeSub) authBadgeSub.textContent = '(Đóng tab tự xoá)';
+    if (btnAuthTrigger) btnAuthTrigger.className = 'btn-auth-badge guest';
+
+    if (tabNavAdmin) tabNavAdmin.style.display = 'none';
+  }
+
+  if (btnAuthTrigger) {
+    btnAuthTrigger.addEventListener('click', () => {
+      if (currentCadre) {
+        if (profileName) profileName.textContent = currentCadre.ho_ten;
+        if (profileRole) profileRole.textContent = `${currentCadre.chuc_vu} — ${currentCadre.co_quan}`;
+        if (profilePhone) profilePhone.textContent = `SĐT Zalo: ${currentCadre.so_dien_thoai || 'Chưa cập nhật'}`;
+        if (authStep1) authStep1.style.display = 'none';
+        if (authStep2) authStep2.style.display = 'none';
+        if (authStepProfile) authStepProfile.style.display = 'block';
+      } else {
+        if (authStep1) authStep1.style.display = 'block';
+        if (authStep2) authStep2.style.display = 'none';
+        if (authStepProfile) authStepProfile.style.display = 'none';
+        if (inputAuthPhone) {
+          inputAuthPhone.value = '';
+          setTimeout(() => inputAuthPhone.focus(), 100);
+        }
+        if (authNoticePhone) authNoticePhone.textContent = '';
+      }
+      if (modalAuth) modalAuth.style.display = 'flex';
+    });
+  }
+
+  if (btnCloseAuthModal) {
+    btnCloseAuthModal.addEventListener('click', () => {
+      if (modalAuth) modalAuth.style.display = 'none';
+    });
+  }
+
+  if (modalAuth) {
+    modalAuth.addEventListener('click', (e) => {
+      if (e.target === modalAuth) modalAuth.style.display = 'none';
+    });
+  }
+
+  if (btnSendOtp && inputAuthPhone) {
+    btnSendOtp.addEventListener('click', async () => {
+      const phone = inputAuthPhone.value.trim();
+      if (!phone) {
+        authNoticePhone.textContent = 'Vui lòng nhập số điện thoại Zalo của đồng chí!';
+        inputAuthPhone.focus();
+        return;
+      }
+      try {
+        btnSendOtp.disabled = true;
+        btnSendOtp.textContent = '⏳ Đang kiểm tra danh bạ...';
+        authNoticePhone.textContent = '';
+
+        const res = await fetch('/api/auth/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phone })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Không thể gửi mã xác thực');
+        }
+
+        currentAuthTargetPhone = phone;
+        if (displayAuthTargetPhone) displayAuthTargetPhone.textContent = phone;
+        if (authDevOtpHint) {
+          if (data.dev_otp) {
+            authDevOtpHint.textContent = `🔑 Mã xác thực của đồng chí: ${data.dev_otp}`;
+            authDevOtpHint.style.display = 'block';
+          } else {
+            authDevOtpHint.style.display = 'none';
+          }
+        }
+
+        authStep1.style.display = 'none';
+        authStep2.style.display = 'block';
+        if (inputAuthOtp) {
+          inputAuthOtp.value = '';
+          inputAuthOtp.focus();
+        }
+      } catch (err) {
+        authNoticePhone.textContent = '⚠️ ' + err.message;
+      } finally {
+        btnSendOtp.disabled = false;
+        btnSendOtp.textContent = '📲 Nhận mã xác thực qua Zalo';
+      }
+    });
+
+    inputAuthPhone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') btnSendOtp.click();
+    });
+  }
+
+  if (btnBackToStep1) {
+    btnBackToStep1.addEventListener('click', () => {
+      authStep2.style.display = 'none';
+      authStep1.style.display = 'block';
+      if (inputAuthPhone) inputAuthPhone.focus();
+    });
+  }
+
+  if (btnVerifyOtp && inputAuthOtp) {
+    btnVerifyOtp.addEventListener('click', async () => {
+      const otp = inputAuthOtp.value.trim();
+      if (!otp || otp.length < 6) {
+        authNoticeOtp.textContent = 'Vui lòng nhập đủ 6 chữ số mã OTP!';
+        inputAuthOtp.focus();
+        return;
+      }
+
+      try {
+        btnVerifyOtp.disabled = true;
+        btnVerifyOtp.textContent = '⏳ Đang xác nhận...';
+        authNoticeOtp.textContent = '';
+
+        const res = await fetch('/api/auth/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: currentAuthTargetPhone,
+            otp: otp,
+            session_id: sessionId
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Xác thực OTP thất bại');
+        }
+
+        applyCadreLogin(data.can_bo, data.token);
+        if (modalAuth) modalAuth.style.display = 'none';
+        alert(`✓ Đăng nhập thành công! Xin chào đồng chí ${data.can_bo.ho_ten} (${data.can_bo.chuc_vu}). Hệ thống sẽ tự động lưu trữ nhật ký công tác.`);
+      } catch (err) {
+        authNoticeOtp.textContent = '❌ ' + err.message;
+      } finally {
+        btnVerifyOtp.disabled = false;
+        btnVerifyOtp.textContent = '✓ Xác nhận đăng nhập';
+      }
+    });
+
+    inputAuthOtp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') btnVerifyOtp.click();
+    });
+  }
+
+  if (btnLogout) {
+    btnLogout.addEventListener('click', async () => {
+      if (confirm('Đồng chí có chắc chắn muốn đăng xuất? (Hệ thống sẽ chuyển về Chế độ Khách)')) {
+        try {
+          const token = localStorage.getItem('cva_auth_token') || '';
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token, session_id: sessionId })
+          });
+        } catch {}
+
+        applyGuestMode();
+        if (modalAuth) modalAuth.style.display = 'none';
+
+        const chatTabBtn = document.querySelector('.nav-tab[data-tab="tab-chat"]');
+        if (chatTabBtn) chatTabBtn.click();
+      }
+    });
+  }
+
+  if (btnGoToAdminFromModal) {
+    btnGoToAdminFromModal.addEventListener('click', () => {
+      if (modalAuth) modalAuth.style.display = 'none';
+      if (tabNavAdmin) tabNavAdmin.click();
+    });
+  }
+
+  // --- ADMIN DASHBOARD DATA LOADERS ---
+  const statAdminMessages = document.getElementById('statAdminMessages');
+  const statAdminCadres = document.getElementById('statAdminCadres');
+  const statAdminDisk = document.getElementById('statAdminDisk');
+  const statAdminAiModel = document.getElementById('statAdminAiModel');
+  const chatLogsTableBody = document.getElementById('chatLogsTableBody');
+  const filterLogChannel = document.getElementById('filterLogChannel');
+  const inputSearchChatLogs = document.getElementById('inputSearchChatLogs');
+  const btnSearchChatLogs = document.getElementById('btnSearchChatLogs');
+  const serverLogsPre = document.getElementById('serverLogsPre');
+  const btnRefreshServerLogs = document.getElementById('btnRefreshServerLogs');
+  const btnRefreshAdminDashboard = document.getElementById('btnRefreshAdminDashboard');
+
+  async function loadAdminDashboard() {
+    await Promise.all([
+      loadAdminMetrics(),
+      loadAdminChatLogs(),
+      loadAdminServerLogs()
+    ]);
+  }
+
+  async function loadAdminMetrics() {
+    try {
+      const res = await fetch('/api/admin/system/metrics');
+      if (!res.ok) return;
+      const d = await res.json();
+
+      if (statAdminMessages) statAdminMessages.textContent = d.database?.messages || 0;
+      if (statAdminCadres) statAdminCadres.textContent = d.database?.cadres || 0;
+      if (statAdminDisk && d.disk) {
+        statAdminDisk.textContent = `${d.disk.used_gb} / ${d.disk.total_gb} GB (${d.disk.percent}%)`;
+      }
+      if (statAdminAiModel && d.ai) {
+        statAdminAiModel.textContent = `${d.ai.current_model} [${d.ai.provider?.toUpperCase()}]`;
+      }
+    } catch (err) {
+      console.warn('Lỗi tải metrics admin:', err);
+    }
+  }
+
+  async function loadAdminChatLogs() {
+    if (!chatLogsTableBody) return;
+    chatLogsTableBody.innerHTML = '<tr><td colspan="6" class="loading-td">Đang tải nhật ký hội thoại...</td></tr>';
+
+    try {
+      const ch = filterLogChannel ? filterLogChannel.value : '';
+      const kw = inputSearchChatLogs ? inputSearchChatLogs.value.trim() : '';
+      const url = `/api/admin/conversations?channel=${encodeURIComponent(ch)}&search=${encodeURIComponent(kw)}&page=1&page_size=50`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Không thể tải nhật ký');
+      const data = await res.json();
+      const items = data.items || [];
+
+      if (items.length === 0) {
+        chatLogsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:30px;">Chưa có bản ghi hội thoại nào. (Chế độ Khách không lưu trữ vào CSDL)</td></tr>';
+        return;
+      }
+
+      chatLogsTableBody.innerHTML = items.map(it => {
+        const isZalo = it.channel === 'zalo';
+        const chBadge = isZalo
+          ? '<span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">💬 Zalo</span>'
+          : '<span style="background:rgba(16,185,129,0.15); color:#34d399; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">🌐 Web</span>';
+
+        const senderDisplay = `<b>${escapeHtml(it.ho_ten || 'Cán bộ')}</b>${it.so_dien_thoai ? `<br><span style="font-size:11px; color:#64748b;">${escapeHtml(it.so_dien_thoai)}</span>` : ''}`;
+
+        return `
+          <tr>
+            <td style="font-size:12px; color:#94a3b8;">${escapeHtml(it.created_at || '')}</td>
+            <td>${chBadge}</td>
+            <td>${senderDisplay}</td>
+            <td><div style="max-height:80px; overflow-y:auto; font-size:13px;">${escapeHtml(it.message_text)}</div></td>
+            <td><div style="max-height:80px; overflow-y:auto; font-size:12.5px; color:#cbd5e1;">${escapeHtml(it.bot_reply?.substring(0, 300) || '')}...</div></td>
+            <td><code style="font-size:11.5px; color:#eab308;">${escapeHtml(it.model_used || 'Gemini')}</code></td>
+          </tr>
+        `;
+      }).join('');
+    } catch (err) {
+      chatLogsTableBody.innerHTML = `<tr><td colspan="6" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  async function loadAdminServerLogs() {
+    if (!serverLogsPre) return;
+    serverLogsPre.textContent = '⏳ Đang đọc nhật ký máy chủ...';
+
+    try {
+      const res = await fetch('/api/admin/system/logs?limit=80');
+      if (!res.ok) throw new Error('Không thể đọc tệp log');
+      const d = await res.json();
+      const lines = d.logs || [];
+      serverLogsPre.textContent = lines.join('\n');
+      const container = serverLogsPre.parentElement;
+      if (container) container.scrollTop = container.scrollHeight;
+    } catch (err) {
+      serverLogsPre.textContent = `❌ Lỗi khi đọc log: ${err.message}`;
+    }
+  }
+
+  if (btnRefreshAdminDashboard) btnRefreshAdminDashboard.addEventListener('click', loadAdminDashboard);
+  if (btnRefreshServerLogs) btnRefreshServerLogs.addEventListener('click', loadAdminServerLogs);
+  if (btnSearchChatLogs) btnSearchChatLogs.addEventListener('click', loadAdminChatLogs);
+  if (filterLogChannel) filterLogChannel.addEventListener('change', loadAdminChatLogs);
+  if (inputSearchChatLogs) {
+    inputSearchChatLogs.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadAdminChatLogs();
+    });
+  }
+
   // Khởi động
+  checkAuthSession();
   checkStatus();
   loadModels();
   updateSendButton();
