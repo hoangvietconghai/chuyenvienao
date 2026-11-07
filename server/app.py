@@ -81,6 +81,21 @@ app.include_router(admin_router)
 app.include_router(zalo_router)
 
 
+# --- HEALTH CHECK ENDPOINT ---
+@app.get("/health")
+@app.get("/api/health")
+async def health_check():
+    """Kiểm tra tình trạng hoạt động của hệ thống và API."""
+    from server.config import ACTIVE_PROVIDER, DEFAULT_GEMINI_MODEL, CLOUD_DEEPSEEK_MODEL
+    return {
+        "status": "healthy",
+        "system": "Chuyên viên Ảo Văn phòng Đảng uỷ xã Công Hải",
+        "active_provider": ACTIVE_PROVIDER,
+        "primary_model": DEFAULT_GEMINI_MODEL if ACTIVE_PROVIDER == "gemini" else CLOUD_DEEPSEEK_MODEL,
+        "version": "2.1.0",
+    }
+
+
 # --- GIAO DIỆN CHÍNH ---
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
