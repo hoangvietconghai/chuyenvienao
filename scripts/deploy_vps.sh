@@ -74,18 +74,20 @@ sed -i 's/^SERVER_HOST=.*/SERVER_HOST=127.0.0.1/' .env || echo "SERVER_HOST=127.
 sed -i 's/^SERVER_PORT=.*/SERVER_PORT=8000/' .env || echo "SERVER_PORT=8000" >> .env
 sed -i 's/^DEBUG=.*/DEBUG=False/' .env || echo "DEBUG=False" >> .env
 
-# Nếu chưa có GEMINI_API_KEY hoặc DEEPSEEK_API_KEY trong .env, nhắc cán bộ nhập
+# Nếu chưa có GEMINI_API_KEY hoặc DEEPSEEK_API_KEY trong .env, nhắc cán bộ nhập (tự động bỏ qua sau 5 giây nếu không nhập)
 if ! grep -q "^GEMINI_API_KEY=AIza" .env; then
     echo -e "${YELLOW}----------------------------------------------------------------------${NC}"
     echo -e "${YELLOW}Chưa phát hiện Google Gemini API Key trong .env.${NC}"
-    read -p ">> Nhập GEMINI_API_KEY (hoặc nhấn Enter để bỏ qua): " input_gemini_key
+    read -t 5 -p ">> Nhập GEMINI_API_KEY (hoặc nhấn Enter để bỏ qua): " input_gemini_key || true
+    echo ""
     if [ -n "$input_gemini_key" ]; then
         sed -i "s/^GEMINI_API_KEY=.*/GEMINI_API_KEY=$input_gemini_key/" .env || echo "GEMINI_API_KEY=$input_gemini_key" >> .env
     fi
 fi
 
 if ! grep -q "^DEEPSEEK_API_KEY=sk-" .env; then
-    read -p ">> Nhập DEEPSEEK_API_KEY (hoặc nhấn Enter để bỏ qua): " input_deepseek_key
+    read -t 5 -p ">> Nhập DEEPSEEK_API_KEY (hoặc nhấn Enter để bỏ qua): " input_deepseek_key || true
+    echo ""
     if [ -n "$input_deepseek_key" ]; then
         sed -i "s/^DEEPSEEK_API_KEY=.*/DEEPSEEK_API_KEY=$input_deepseek_key/" .env || echo "DEEPSEEK_API_KEY=$input_deepseek_key" >> .env
     fi
@@ -122,6 +124,13 @@ systemctl restart chuyenvienao
 
 # 9. Cấu hình Nginx Reverse Proxy (Cổng 80)
 echo -e "${BLUE}[7/7] Cấu hình Nginx Reverse Proxy và Tường lửa UFW...${NC}"
+
+# Dừng và giải phóng cổng 80 nếu có dịch vụ web cũ (Caddy, Apache) đang chiếm
+echo -e "${BLUE}Giải phóng cổng 80 (dừng Caddy, Apache nếu có)...${NC}"
+systemctl stop caddy apache2 2>/dev/null || true
+systemctl disable caddy apache2 2>/dev/null || true
+pkill -9 -f caddy 2>/dev/null || true
+
 cat << 'EOF' > /etc/nginx/sites-available/chuyenvienao
 server {
     listen 80 default_server;
@@ -170,3 +179,4 @@ echo -e "🔹 Đăng nhập Admin:         Số điện thoại ${GREEN}03277777
 echo -e "🔹 Quản lý dịch vụ:         ${YELLOW}systemctl status chuyenvienao${NC}"
 echo -e "🔹 Xem log hệ thống:        ${YELLOW}journalctl -u chuyenvienao -f${NC}"
 echo -e "${GREEN}==============================================================================${NC}"
+

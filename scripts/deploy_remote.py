@@ -93,30 +93,27 @@ def main():
         # 1. Dọn dẹp và chuẩn bị môi trường
         run_remote_command(
             ssh,
-            "apt-get update -y && apt-get install -y git curl",
+            "apt-get update -y && apt-get install -y git curl && mkdir -p /opt/chuyenvienao",
             "[2/5] Cập nhật Ubuntu và kiểm tra công cụ Git/Curl",
         )
 
-        # 2. Tải và chạy deploy_vps.sh
-        deploy_cmd = (
-            "curl -sSL https://raw.githubusercontent.com/hoangvietconghai/chuyenvienao/main/scripts/deploy_vps.sh "
-            "-o /tmp/deploy_vps.sh && chmod +x /tmp/deploy_vps.sh && bash /tmp/deploy_vps.sh"
-        )
-        run_remote_command(ssh, deploy_cmd, "[3/5] Khởi chạy kịch bản cài đặt tự động trên VPS")
-
-        # 3. Đồng bộ tệp .env nội bộ từ máy tính sang VPS qua SFTP (nếu có)
+        # 2. Đồng bộ tệp .env nội bộ từ máy tính sang VPS qua SFTP trước
         if LOCAL_ENV_FILE.exists():
-            print("\n>> [4/5] Đồng bộ cấu hình .env (Gemini & DeepSeek keys) sang VPS...")
+            print("\n>> [3/5] Đồng bộ tệp cấu hình .env (Gemini & DeepSeek keys) sang VPS...")
             try:
                 sftp = ssh.open_sftp()
                 sftp.put(str(LOCAL_ENV_FILE), f"{REMOTE_APP_DIR}/.env")
                 sftp.close()
                 print("✅ Đã truyền file cấu hình .env an toàn sang VPS!")
-                # Khởi động lại dịch vụ để nhận .env mới
-                ssh.exec_command("systemctl restart chuyenvienao")
-                time.sleep(2)
             except Exception as sftp_err:
                 print(f"⚠️ Lưu ý SFTP: {sftp_err}")
+
+        # 3. Tải và chạy deploy_vps.sh
+        deploy_cmd = (
+            "curl -sSL https://raw.githubusercontent.com/hoangvietconghai/chuyenvienao/main/scripts/deploy_vps.sh "
+            "-o /tmp/deploy_vps.sh && chmod +x /tmp/deploy_vps.sh && bash /tmp/deploy_vps.sh"
+        )
+        run_remote_command(ssh, deploy_cmd, "[4/5] Khởi chạy kịch bản cài đặt tự động trên VPS")
 
         # 4. Kiểm tra dịch vụ
         print("\n>> [5/5] Kiểm tra phản hồi dịch vụ từ VPS...")
@@ -138,3 +135,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
