@@ -30,7 +30,6 @@ from server.routers.admin import router as admin_router
 from server.routers.auth import router as auth_router
 from server.routers.chat import router as chat_router
 from server.routers.knowledge import router as knowledge_router, search_router
-from server.routers.zalo_webhook import router as zalo_router
 from server.services import scheduler_service
 
 logger = get_logger("app")
@@ -78,7 +77,18 @@ app.include_router(chat_router)
 app.include_router(knowledge_router)
 app.include_router(search_router)
 app.include_router(admin_router)
-app.include_router(zalo_router)
+
+# Zalo Bot Router (mặc định TẮT hoàn toàn, chỉ bật khi cấu hình rõ ràng)
+import os
+if os.getenv("ENABLE_ZALO_BOT", "false").lower() == "true":
+    try:
+        from server.routers.zalo_webhook import router as zalo_router
+        app.include_router(zalo_router)
+        logger.info("Đã kích hoạt Zalo Webhook Router.")
+    except Exception as zerr:
+        logger.warning(f"Không thể khởi động Zalo Bot: {zerr}")
+else:
+    logger.info("Zalo Bot Webhook đang TẮT hoàn toàn theo cấu hình hệ thống.")
 
 
 # --- HEALTH CHECK ENDPOINT ---

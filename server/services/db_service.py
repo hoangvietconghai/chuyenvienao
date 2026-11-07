@@ -287,16 +287,15 @@ def init_database() -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_log_canbo ON nhat_ky_hoi_thoai(can_bo_id);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_log_channel ON nhat_ky_hoi_thoai(channel, created_at);")
 
-        # Cập nhật thông tin cán bộ Văn phòng Đảng uỷ & Admin
+        # Đảm bảo tài khoản Quản trị viên của đồng chí Ngô Hoàng Việt luôn tồn tại
         cursor.execute("""
-        UPDATE danh_ba_can_bo 
-        SET ho_ten = '(Đang cập nhật)', chuc_vu = 'Chánh Văn phòng Đảng uỷ', so_dien_thoai = NULL, vai_tro = 'lanh_dao_co_quan'
-        WHERE can_bo_id = 'CB-VPDU-01';
-        """)
-        cursor.execute("""
-        UPDATE danh_ba_can_bo 
-        SET ho_ten = 'Ngô Hoàng Việt', chuc_vu = 'Phó Chánh Văn phòng Đảng uỷ', so_dien_thoai = '0327777707', vai_tro = 'admin' 
-        WHERE can_bo_id = 'CB-VPDU-02';
+        INSERT INTO danh_ba_can_bo (can_bo_id, ho_ten, chuc_vu, co_quan, co_quan_code, co_quan_loai, so_dien_thoai, vai_tro, is_active)
+        VALUES ('CB-ADMIN-01', 'Ngô Hoàng Việt', 'Phó Chánh Văn phòng Đảng uỷ', 'Văn phòng Đảng uỷ', 'VPDU', 'co_quan_dang', '0327777707', 'admin', 1)
+        ON CONFLICT(can_bo_id) DO UPDATE SET 
+            ho_ten = 'Ngô Hoàng Việt',
+            chuc_vu = 'Phó Chánh Văn phòng Đảng uỷ',
+            so_dien_thoai = '0327777707',
+            vai_tro = 'admin';
         """)
 
         logger.info(f"Đã khởi tạo và kết nối thành công CSDL SQLite WAL: {DB_FILE}")
@@ -344,6 +343,20 @@ def add_or_update_can_bo(can_bo: Dict[str, Any]) -> bool:
             "is_active": can_bo.get("is_active", 1),
         })
         return True
+
+
+def delete_can_bo(can_bo_id: str) -> bool:
+    """Xoá cán bộ khỏi danh bạ (Bảo vệ: không cho phép xoá tài khoản Admin 0327777707)."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT vai_tro, so_dien_thoai FROM danh_ba_can_bo WHERE can_bo_id = ?", (can_bo_id,))
+        row = cursor.fetchone()
+        if not row:
+            return False
+        if row["so_dien_thoai"] == "0327777707":
+            raise ValueError("Không thể xoá tài khoản Quản trị viên (Admin) chính của hệ thống!")
+        cursor.execute("DELETE FROM danh_ba_can_bo WHERE can_bo_id = ?", (can_bo_id,))
+        return cursor.rowcount > 0
 
 
 def get_all_can_bo(only_active: bool = True) -> List[Dict[str, Any]]:

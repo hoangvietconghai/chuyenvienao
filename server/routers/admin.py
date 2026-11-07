@@ -437,3 +437,74 @@ async def update_cadre_phone_endpoint(can_bo_id: str, req: CadrePhoneUpdateReque
             raise HTTPException(status_code=404, detail="Không tìm thấy cán bộ.")
     return {"success": True, "can_bo_id": can_bo_id, "so_dien_thoai": clean_p}
 
+
+class CadreUpsertRequest(BaseModel):
+    can_bo_id: Optional[str] = None
+    ho_ten: str
+    chuc_vu: Optional[str] = "Chuyên viên"
+    co_quan: Optional[str] = "Văn phòng Đảng uỷ"
+    co_quan_code: Optional[str] = "VPDU"
+    co_quan_loai: Optional[str] = "co_quan_dang"
+    so_dien_thoai: Optional[str] = None
+    vai_tro: Optional[str] = "can_bo"
+
+
+@router.get("/api/admin/cadres")
+async def get_admin_cadres():
+    """Lấy danh sách toàn bộ cán bộ phục vụ quản trị danh bạ (CRUD)."""
+    cadres = await run_in_threadpool(db_service.get_all_can_bo, only_active=False)
+    return {"cadres": cadres, "total": len(cadres)}
+
+
+@router.post("/api/admin/cadres")
+async def create_cadre_endpoint(req: CadreUpsertRequest):
+    """Thêm cán bộ mới vào danh bạ."""
+    import uuid
+    clean_phone = db_service.normalize_phone_number(req.so_dien_thoai) if req.so_dien_thoai else None
+    cid = req.can_bo_id or f"CB-{req.co_quan_code or 'VP'}-{uuid.uuid4().hex[:6].upper()}"
+    cadre_data = {
+        "can_bo_id": cid,
+        "ho_ten": req.ho_ten.strip(),
+        "chuc_vu": req.chuc_vu or "",
+        "co_quan": req.co_quan or "",
+        "co_quan_code": req.co_quan_code or "VPDU",
+        "co_quan_loai": req.co_quan_loai or "co_quan_dang",
+        "so_dien_thoai": clean_phone,
+        "vai_tro": req.vai_tro or "can_bo",
+        "is_active": 1,
+    }
+    await run_in_threadpool(db_service.add_or_update_can_bo, cadre_data)
+    return {"success": True, "message": f"Đã thêm cán bộ {req.ho_ten}", "cadre": cadre_data}
+
+
+@router.put("/api/admin/cadres/{can_bo_id}")
+async def update_cadre_endpoint(can_bo_id: str, req: CadreUpsertRequest):
+    """Cập nhật toàn diện thông tin cán bộ trong danh bạ."""
+    clean_phone = db_service.normalize_phone_number(req.so_dien_thoai) if req.so_dien_thoai else None
+    cadre_data = {
+        "can_bo_id": can_bo_id,
+        "ho_ten": req.ho_ten.strip(),
+        "chuc_vu": req.chuc_vu or "",
+        "co_quan": req.co_quan or "",
+        "co_quan_code": req.co_quan_code or "VPDU",
+        "co_quan_loai": req.co_quan_loai or "co_quan_dang",
+        "so_dien_thoai": clean_phone,
+        "vai_tro": req.vai_tro or "can_bo",
+        "is_active": 1,
+    }
+    await run_in_threadpool(db_service.add_or_update_can_bo, cadre_data)
+    return {"success": True, "message": f"Đã cập nhật cán bộ {req.ho_ten}", "cadre": cadre_data}
+
+
+@router.delete("/api/admin/cadres/{can_bo_id}")
+async def delete_cadre_endpoint(can_bo_id: str):
+    """Xoá cán bộ khỏi danh bạ."""
+    try:
+        ok = await run_in_threadpool(db_service.delete_can_bo, can_bo_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="Không tìm thấy cán bộ cần xoá.")
+        return {"success": True, "message": f"Đã xoá cán bộ {can_bo_id}."}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+

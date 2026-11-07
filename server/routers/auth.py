@@ -75,22 +75,13 @@ async def send_otp(req: SendOtpRequest):
             detail="Không thể tạo mã xác thực. Vui lòng thử lại sau ít phút."
         )
 
-    # Thử gửi qua Zalo Bot nếu cán bộ đã có zalo_chat_id hoặc zalo_user_id
-    zalo_sent = False
-    chat_target = can_bo.get("zalo_chat_id") or can_bo.get("zalo_user_id")
-    if chat_target:
-        msg_text = (
-            f"🔐 **CHUYÊN VIÊN ẢO VĂN PHÒNG ĐẢNG UỶ XÃ CÔNG HẢI**\n\n"
-            f"Mã xác thực đăng nhập của đồng chí **{can_bo.get('ho_ten')}** là: **{otp_code}**\n\n"
-            f"⏳ *Mã có hiệu lực trong vòng 5 phút. Tuyệt đối không chia sẻ mã này cho người khác.*"
-        )
-        zalo_sent = send_message(str(chat_target), msg_text)
-
-    logger.info(f"Đã phát sinh OTP cho {clean_phone} (Zalo sent: {zalo_sent})")
+    logger.info(f"Đã phát sinh mã OTP trực tiếp cho {clean_phone} ({can_bo.get('ho_ten')})")
 
     return {
         "success": True,
-        "message": f"Đã gửi mã xác thực tới Zalo của đồng chí {can_bo.get('ho_ten')}.",
+        "message": f"Mã xác thực của đồng chí {can_bo.get('ho_ten')} đã sẵn sàng.",
+        "otp": otp_code,
+        "dev_otp": otp_code,
         "can_bo": {
             "can_bo_id": can_bo.get("can_bo_id"),
             "ho_ten": can_bo.get("ho_ten"),
@@ -98,9 +89,6 @@ async def send_otp(req: SendOtpRequest):
             "co_quan": can_bo.get("co_quan"),
             "vai_tro": can_bo.get("vai_tro", "can_bo"),
         },
-        "zalo_sent": zalo_sent,
-        # Trả về dev_otp để cán bộ đăng nhập ngay trên giao diện nội bộ khi chưa kích hoạt Zalo Webhook
-        "dev_otp": otp_code,
     }
 
 

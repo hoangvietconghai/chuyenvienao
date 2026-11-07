@@ -36,53 +36,12 @@ from server.services.db_service import (
 
 
 def seed_danh_ba_can_bo():
-    """Nạp danh bạ Thường trực, các cơ quan chuyên môn, 08 thôn và 21 chi bộ."""
+    """Khởi tạo danh bạ với tài khoản Quản trị viên (Admin) duy nhất; danh bạ thực tế sẽ do Admin chủ động thêm qua giao diện."""
     print("--- 1. NẠP DANH BẠ CÁN BỘ & TỔ CHỨC ---")
 
     can_bo_list = [
-        # Thường trực Đảng uỷ & Lãnh đạo chủ chốt
         {
-            "can_bo_id": "CB-TTDU-01",
-            "ho_ten": "Vũ Thị Thuỳ Trang",
-            "chuc_vu": "Bí thư Đảng uỷ, Chủ tịch HĐND xã, Trưởng BCĐ 57",
-            "co_quan": "Thường trực Đảng uỷ",
-            "co_quan_code": "TTDU",
-            "co_quan_loai": "thuong_truc",
-            "vai_tro": "lanh_dao_thuong_truc",
-            "so_dien_thoai": "0913xxxxxx"
-        },
-        {
-            "can_bo_id": "CB-TTDU-02",
-            "ho_ten": "Nguyễn Xuân Hoàng",
-            "chuc_vu": "Phó Bí thư Thường trực Đảng uỷ, Chủ nhiệm UBKT Đảng uỷ",
-            "co_quan": "Thường trực Đảng uỷ",
-            "co_quan_code": "TTDU",
-            "co_quan_loai": "thuong_truc",
-            "vai_tro": "lanh_dao_thuong_truc",
-            "so_dien_thoai": "0918xxxxxx"
-        },
-        {
-            "can_bo_id": "CB-UBND-01",
-            "ho_ten": "Trương Minh Vũ",
-            "chuc_vu": "Phó Bí thư Đảng uỷ, Chủ tịch UBND xã",
-            "co_quan": "Uỷ ban nhân dân xã",
-            "co_quan_code": "UBND",
-            "co_quan_loai": "chinh_quyen",
-            "vai_tro": "lanh_dao_thuong_truc",
-            "so_dien_thoai": "0905xxxxxx"
-        },
-        # Lãnh đạo Văn phòng Đảng uỷ
-        {
-            "can_bo_id": "CB-VPDU-01",
-            "ho_ten": "(Đang cập nhật)",
-            "chuc_vu": "Chánh Văn phòng Đảng uỷ",
-            "co_quan": "Văn phòng Đảng uỷ",
-            "co_quan_code": "VPDU",
-            "co_quan_loai": "co_quan_dang",
-            "vai_tro": "lanh_dao_co_quan",
-        },
-        {
-            "can_bo_id": "CB-VPDU-02",
+            "can_bo_id": "CB-ADMIN-01",
             "ho_ten": "Ngô Hoàng Việt",
             "chuc_vu": "Phó Chánh Văn phòng Đảng uỷ",
             "co_quan": "Văn phòng Đảng uỷ",
@@ -90,104 +49,14 @@ def seed_danh_ba_can_bo():
             "co_quan_loai": "co_quan_dang",
             "vai_tro": "admin",
             "so_dien_thoai": "0327777707",
-        },
-        # Lãnh đạo Ban Xây dựng Đảng & UBKT
-        {
-            "can_bo_id": "CB-BXDD-01",
-            "ho_ten": "Trưởng Ban Xây dựng Đảng",
-            "chuc_vu": "Trưởng Ban Xây dựng Đảng xã",
-            "co_quan": "Ban Xây dựng Đảng",
-            "co_quan_code": "BXDD",
-            "co_quan_loai": "co_quan_dang",
-            "vai_tro": "lanh_dao_co_quan",
-        },
-        {
-            "can_bo_id": "CB-UBKT-01",
-            "ho_ten": "Phó Chủ nhiệm UBKT Đảng uỷ",
-            "chuc_vu": "Phó Chủ nhiệm Thường trực UBKT Đảng uỷ",
-            "co_quan": "Cơ quan Uỷ ban Kiểm tra Đảng uỷ",
-            "co_quan_code": "UBKT",
-            "co_quan_loai": "co_quan_dang",
-            "vai_tro": "lanh_dao_co_quan",
-        },
-        # Khối Chính quyền & MTTQ
-        {
-            "can_bo_id": "CB-UBND-VP",
-            "ho_ten": "Chánh Văn phòng HĐND & UBND",
-            "chuc_vu": "Chánh Văn phòng HĐND & UBND xã",
-            "co_quan": "Văn phòng HĐND & UBND xã",
-            "co_quan_code": "UBND_VP",
-            "co_quan_loai": "chinh_quyen",
-            "vai_tro": "lanh_dao_co_quan",
-        },
-        {
-            "can_bo_id": "CB-UBND-HCC",
-            "ho_ten": "Giám đốc TT Phục vụ HCC",
-            "chuc_vu": "Phụ trách Trung tâm Phục vụ Hành chính công xã",
-            "co_quan": "Trung tâm Phục vụ Hành chính công",
-            "co_quan_code": "UBND_HCC",
-            "co_quan_loai": "chinh_quyen",
-            "vai_tro": "chuyen_vien",
-        },
-        {
-            "can_bo_id": "CB-MTTQ-01",
-            "ho_ten": "Chủ tịch UBMTTQVN xã",
-            "chuc_vu": "Chủ tịch Uỷ ban MTTQVN xã",
-            "co_quan": "Cơ quan UBMTTQVN xã",
-            "co_quan_code": "MTTQ",
-            "co_quan_loai": "mttq",
-            "vai_tro": "lanh_dao_co_quan",
-        },
+            "is_active": 1,
+        }
     ]
-
-    # Danh mục 08 Thôn chính thức theo Đề án số 03-ĐA/ĐU
-    cac_thon = [
-        ("THON-01", "Bình Tiên", "Chi bộ thôn Bình Tiên", "Bí thư Chi bộ thôn Bình Tiên"),
-        ("THON-02", "Ma Trai", "Chi bộ thôn Ma Trai", "Bí thư Chi bộ thôn Ma Trai"),
-        ("THON-03", "Suối Vang", "Chi bộ thôn Suối Vang", "Bí thư Chi bộ thôn Suối Vang"),
-        ("THON-04", "Phước Chiến", "Chi bộ thôn Phước Chiến", "Bí thư Chi bộ thôn Phước Chiến"),
-        ("THON-05", "Động Thông", "Chi bộ thôn Động Thông", "Bí thư Chi bộ thôn Động Thông"),
-        ("THON-06", "Hiệp Kiết", "Chi bộ thôn Hiệp Kiết", "Bí thư Chi bộ thôn Hiệp Kiết"),
-        ("THON-07", "Kà Rôm", "Chi bộ thôn Kà Rôm", "Bí thư Chi bộ thôn Kà Rôm"),
-        ("THON-08", "Suối Giếng", "Chi bộ thôn Suối Giếng", "Bí thư Chi bộ thôn Suối Giếng"),
-    ]
-
-    for tid, ten_thon, co_quan, chuc_vu in cac_thon:
-        can_bo_list.append({
-            "can_bo_id": f"CB-{tid}",
-            "ho_ten": f"Đ/c Bí thư Chi bộ {ten_thon}",
-            "chuc_vu": chuc_vu,
-            "co_quan": co_quan,
-            "co_quan_code": f"THON_{tid.replace('-', '_')}",
-            "co_quan_loai": "chi_bo_thon",
-            "vai_tro": "bi_thu_chi_bo",
-        })
-
-    # Danh mục các Chi bộ Trường học & LLVT
-    cac_chi_bo_khac = [
-        ("CB-TRUONG-MN", "Bí thư Chi bộ Trường Mầm non Công Hải", "Trường Mầm non Công Hải", "chi_bo_truong"),
-        ("CB-TRUONG-TH", "Bí thư Chi bộ Trường Tiểu học Công Hải", "Trường Tiểu học Công Hải", "chi_bo_truong"),
-        ("CB-TRUONG-THCS", "Bí thư Chi bộ Trường THCS Hùng Vương", "Trường THCS Hùng Vương", "chi_bo_truong"),
-        ("CB-CA-01", "Bí thư Chi bộ Công an xã", "Công an xã Công Hải", "chinh_quyen"),
-        ("CB-QS-01", "Bí thư Chi bộ Quân sự xã", "Ban Chỉ huy Quân sự xã", "chinh_quyen"),
-        ("CB-YT-01", "Bí thư Chi bộ Trạm Y tế", "Trạm Y tế xã Công Hải", "chinh_quyen"),
-    ]
-
-    for cid, ho_ten, co_quan, loai in cac_chi_bo_khac:
-        can_bo_list.append({
-            "can_bo_id": cid,
-            "ho_ten": ho_ten,
-            "chuc_vu": f"Bí thư Chi bộ {co_quan}",
-            "co_quan": co_quan,
-            "co_quan_code": cid.replace("CB-", "").replace("-", "_"),
-            "co_quan_loai": loai,
-            "vai_tro": "bi_thu_chi_bo",
-        })
 
     for cb in can_bo_list:
         add_or_update_can_bo(cb)
 
-    print(f"-> Đã nạp thành công {len(can_bo_list)} cán bộ, lãnh đạo, 08 thôn và các chi bộ trực thuộc.")
+    print(f"-> Đã nạp thành công tài khoản Quản trị viên (Admin). Danh bạ sạch sẽ sẵn sàng cho cơ chế CRUD.")
 
 
 def seed_so_tieu_chi():

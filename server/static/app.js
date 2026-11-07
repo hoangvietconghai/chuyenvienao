@@ -774,29 +774,63 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================================================
-  // 7. ĐIỀU KHIỂN 05 TABS & TẢI DỮ LIỆU QUẢN TRỊ (SỔ VIỆC, KPI, RAG, DANH BẠ)
+  // 7. ĐIỀU HƯỚNG VIEW (CHAT vs ADMIN) & SUBTABS ADMIN
   // ============================================================================
-  const navTabs = document.querySelectorAll('.nav-tab');
-  const tabContents = document.querySelectorAll('.tab-content');
+  const viewChat = document.getElementById('view-chat');
+  const viewAdmin = document.getElementById('view-admin');
+  const adminSwitchBar = document.getElementById('adminSwitchBar');
+  const btnSwitchChat = document.getElementById('btnSwitchChat');
+  const btnSwitchAdmin = document.getElementById('btnSwitchAdmin');
+  const btnBackToChatFromAdmin = document.getElementById('btnBackToChatFromAdmin');
+  const welcomeUserName = document.getElementById('welcomeUserName');
 
-  navTabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetTab = btn.getAttribute('data-tab');
-      navTabs.forEach(b => b.classList.remove('active'));
-      tabContents.forEach(tc => tc.classList.remove('active'));
+  function showView(viewName) {
+    if (viewName === 'admin') {
+      if (!currentCadre || currentCadre.vai_tro !== 'admin') {
+        alert('⚠️ Chỉ Quản trị viên (Admin) mới có quyền truy cập vào Bảng điều hành!');
+        return;
+      }
+      if (viewChat) { viewChat.style.display = 'none'; viewChat.classList.remove('active'); }
+      if (viewAdmin) { viewAdmin.style.display = 'block'; viewAdmin.classList.add('active'); }
+      if (btnSwitchAdmin) btnSwitchAdmin.classList.add('active');
+      if (btnSwitchChat) btnSwitchChat.classList.remove('active');
+      loadAdminDashboard();
+    } else {
+      if (viewAdmin) { viewAdmin.style.display = 'none'; viewAdmin.classList.remove('active'); }
+      if (viewChat) { viewChat.style.display = 'flex'; viewChat.classList.add('active'); }
+      if (btnSwitchChat) btnSwitchChat.classList.add('active');
+      if (btnSwitchAdmin) btnSwitchAdmin.classList.remove('active');
+    }
+  }
 
-      btn.classList.add('active');
-      const activeContent = document.getElementById(targetTab);
-      if (activeContent) activeContent.classList.add('active');
+  if (btnSwitchChat) btnSwitchChat.addEventListener('click', () => showView('chat'));
+  if (btnSwitchAdmin) btnSwitchAdmin.addEventListener('click', () => showView('admin'));
+  if (btnBackToChatFromAdmin) btnBackToChatFromAdmin.addEventListener('click', () => showView('chat'));
 
-      if (targetTab === 'tab-tasks') loadTasks();
-      if (targetTab === 'tab-rag') {
+  // Admin Subtabs switching
+  const adminSubtabs = document.querySelectorAll('.admin-subtab');
+  const adminSubcontents = document.querySelectorAll('.admin-subcontent');
+
+  adminSubtabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetId = tab.getAttribute('data-subtab');
+      adminSubtabs.forEach(t => t.classList.remove('active'));
+      adminSubcontents.forEach(c => c.classList.remove('active'));
+
+      tab.classList.add('active');
+      const targetContent = document.getElementById(targetId);
+      if (targetContent) targetContent.classList.add('active');
+
+      if (targetId === 'subtab-cadres') loadAdminCadres();
+      if (targetId === 'subtab-models') checkStatus();
+      if (targetId === 'subtab-logs') loadAdminChatLogs();
+      if (targetId === 'subtab-tasks') loadTasks();
+      if (targetId === 'subtab-rag') {
         loadRagStats();
         loadRagDocuments();
       }
-      if (targetTab === 'tab-kpis') loadKpis();
-      if (targetTab === 'tab-directory') loadDirectory();
-      if (targetTab === 'tab-admin') loadAdminDashboard();
+      if (targetId === 'subtab-kpis') loadKpis();
+      if (targetId === 'subtab-server') loadAdminServerLogs();
     });
   });
 
@@ -1710,17 +1744,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (authBadgeName) authBadgeName.textContent = cb.ho_ten;
     if (authBadgeIcon) authBadgeIcon.textContent = cb.vai_tro === 'admin' ? '👑' : '👤';
-    if (authBadgeSub) authBadgeSub.textContent = cb.chuc_vu || '';
     if (btnAuthTrigger) btnAuthTrigger.className = 'btn-auth-badge ' + (cb.vai_tro === 'admin' ? 'admin' : 'authenticated');
+    if (welcomeUserName) welcomeUserName.textContent = 'đồng chí ' + cb.ho_ten;
 
     if (cb.vai_tro === 'admin') {
-      if (tabNavAdmin) tabNavAdmin.style.display = 'flex';
+      if (adminSwitchBar) adminSwitchBar.style.display = 'flex';
       if (profileAdminBadge) profileAdminBadge.style.display = 'inline-block';
       if (btnGoToAdminFromModal) btnGoToAdminFromModal.style.display = 'block';
     } else {
-      if (tabNavAdmin) tabNavAdmin.style.display = 'none';
+      if (adminSwitchBar) adminSwitchBar.style.display = 'none';
       if (profileAdminBadge) profileAdminBadge.style.display = 'none';
       if (btnGoToAdminFromModal) btnGoToAdminFromModal.style.display = 'none';
+      showView('chat');
     }
   }
 
@@ -1731,10 +1766,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (authBadgeName) authBadgeName.textContent = 'Chế độ Khách';
     if (authBadgeIcon) authBadgeIcon.textContent = '🕶️';
-    if (authBadgeSub) authBadgeSub.textContent = '(Đóng tab tự xoá)';
     if (btnAuthTrigger) btnAuthTrigger.className = 'btn-auth-badge guest';
+    if (welcomeUserName) welcomeUserName.textContent = 'đồng chí';
 
-    if (tabNavAdmin) tabNavAdmin.style.display = 'none';
+    if (adminSwitchBar) adminSwitchBar.style.display = 'none';
+    if (profileAdminBadge) profileAdminBadge.style.display = 'none';
+    if (btnGoToAdminFromModal) btnGoToAdminFromModal.style.display = 'none';
+    showView('chat');
   }
 
   if (btnAuthTrigger) {
@@ -1742,7 +1780,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentCadre) {
         if (profileName) profileName.textContent = currentCadre.ho_ten;
         if (profileRole) profileRole.textContent = `${currentCadre.chuc_vu} — ${currentCadre.co_quan}`;
-        if (profilePhone) profilePhone.textContent = `SĐT Zalo: ${currentCadre.so_dien_thoai || 'Chưa cập nhật'}`;
+        if (profilePhone) profilePhone.textContent = `Số điện thoại: ${currentCadre.so_dien_thoai || 'Chưa cập nhật'}`;
         if (authStep1) authStep1.style.display = 'none';
         if (authStep2) authStep2.style.display = 'none';
         if (authStepProfile) authStepProfile.style.display = 'block';
@@ -1772,11 +1810,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const displayOtpCode = document.getElementById('displayOtpCode');
+  const btnAutoFillOtp = document.getElementById('btnAutoFillOtp');
+
   if (btnSendOtp && inputAuthPhone) {
     btnSendOtp.addEventListener('click', async () => {
       const phone = inputAuthPhone.value.trim();
       if (!phone) {
-        authNoticePhone.textContent = 'Vui lòng nhập số điện thoại Zalo của đồng chí!';
+        authNoticePhone.textContent = 'Vui lòng nhập số điện thoại của đồng chí!';
         inputAuthPhone.focus();
         return;
       }
@@ -1793,31 +1834,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.detail || 'Không thể gửi mã xác thực');
+          throw new Error(data.detail || 'Không thể tạo mã xác thực');
         }
 
         currentAuthTargetPhone = phone;
         if (displayAuthTargetPhone) displayAuthTargetPhone.textContent = phone;
-        if (authDevOtpHint) {
-          if (data.dev_otp) {
-            authDevOtpHint.textContent = `🔑 Mã xác thực của đồng chí: ${data.dev_otp}`;
-            authDevOtpHint.style.display = 'block';
-          } else {
-            authDevOtpHint.style.display = 'none';
-          }
-        }
+        
+        const code = data.otp || data.dev_otp;
+        if (displayOtpCode) displayOtpCode.textContent = code || '------';
+        if (inputAuthOtp) inputAuthOtp.value = code || '';
 
         authStep1.style.display = 'none';
         authStep2.style.display = 'block';
-        if (inputAuthOtp) {
-          inputAuthOtp.value = '';
-          inputAuthOtp.focus();
+        if (inputAuthOtp) inputAuthOtp.focus();
+
+        if (btnAutoFillOtp) {
+          btnAutoFillOtp.onclick = () => {
+            if (inputAuthOtp) inputAuthOtp.value = code || '';
+            if (btnVerifyOtp) btnVerifyOtp.click();
+          };
         }
       } catch (err) {
         authNoticePhone.textContent = '⚠️ ' + err.message;
       } finally {
         btnSendOtp.disabled = false;
-        btnSendOtp.textContent = '📲 Nhận mã xác thực qua Zalo';
+        btnSendOtp.textContent = '⚡ Lấy mã xác thực OTP';
       }
     });
 
@@ -1865,12 +1906,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         applyCadreLogin(data.can_bo, data.token);
         if (modalAuth) modalAuth.style.display = 'none';
-        alert(`✓ Đăng nhập thành công! Xin chào đồng chí ${data.can_bo.ho_ten} (${data.can_bo.chuc_vu}). Hệ thống sẽ tự động lưu trữ nhật ký công tác.`);
+        alert(`✓ Đăng nhập thành công! Xin chào đồng chí ${data.can_bo.ho_ten} (${data.can_bo.chuc_vu}). Hệ thống đã kích hoạt lưu trữ nhật ký công tác.`);
       } catch (err) {
         authNoticeOtp.textContent = '❌ ' + err.message;
       } finally {
         btnVerifyOtp.disabled = false;
-        btnVerifyOtp.textContent = '✓ Xác nhận đăng nhập';
+        btnVerifyOtp.textContent = '✓ Xác nhận Đăng nhập';
       }
     });
 
@@ -1893,9 +1934,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         applyGuestMode();
         if (modalAuth) modalAuth.style.display = 'none';
-
-        const chatTabBtn = document.querySelector('.nav-tab[data-tab="tab-chat"]');
-        if (chatTabBtn) chatTabBtn.click();
       }
     });
   }
@@ -1903,7 +1941,206 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnGoToAdminFromModal) {
     btnGoToAdminFromModal.addEventListener('click', () => {
       if (modalAuth) modalAuth.style.display = 'none';
-      if (tabNavAdmin) tabNavAdmin.click();
+      showView('admin');
+    });
+  }
+
+  // ============================================================================
+  // 8. QUẢN LÝ DANH BẠ CÁN BỘ (CRUD DÀNH CHO ADMIN)
+  // ============================================================================
+  const cadresTableBody = document.getElementById('cadresTableBody');
+  const inputSearchCadre = document.getElementById('inputSearchCadre');
+  const btnOpenAddCadreModal = document.getElementById('btnOpenAddCadreModal');
+  const modalCadreCrud = document.getElementById('modalCadreCrud');
+  const btnCloseCadreModal = document.getElementById('btnCloseCadreModal');
+  const btnCancelCadreModal = document.getElementById('btnCancelCadreModal');
+  const formCadreCrud = document.getElementById('formCadreCrud');
+  const cadreCrudModalTitle = document.getElementById('cadreCrudModalTitle');
+  const crudCadreId = document.getElementById('crudCadreId');
+  const crudHoTen = document.getElementById('crudHoTen');
+  const crudSoDienThoai = document.getElementById('crudSoDienThoai');
+  const crudChucVu = document.getElementById('crudChucVu');
+  const crudCoQuan = document.getElementById('crudCoQuan');
+  const crudVaiTro = document.getElementById('crudVaiTro');
+  const crudCadreNotice = document.getElementById('crudCadreNotice');
+
+  let adminCadresList = [];
+
+  async function loadAdminCadres() {
+    if (!cadresTableBody) return;
+    cadresTableBody.innerHTML = '<tr><td colspan="7" class="loading-td">Đang tải danh bạ cán bộ...</td></tr>';
+
+    try {
+      const res = await fetch('/api/admin/cadres');
+      if (!res.ok) throw new Error('Không thể tải danh bạ');
+      const data = await res.json();
+      adminCadresList = data.cadres || [];
+      renderAdminCadresTable(adminCadresList);
+      if (statAdminCadres) statAdminCadres.textContent = adminCadresList.length;
+    } catch (err) {
+      cadresTableBody.innerHTML = `<tr><td colspan="7" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  function renderAdminCadresTable(list) {
+    if (!cadresTableBody) return;
+    const filter = (inputSearchCadre ? inputSearchCadre.value.trim().toLowerCase() : '');
+    const filtered = list.filter(c => 
+      !filter || 
+      (c.ho_ten && c.ho_ten.toLowerCase().includes(filter)) || 
+      (c.so_dien_thoai && c.so_dien_thoai.includes(filter)) ||
+      (c.co_quan && c.co_quan.toLowerCase().includes(filter))
+    );
+
+    if (filtered.length === 0) {
+      cadresTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:30px;">Danh bạ chưa có cán bộ nào phù hợp. Bấm "➕ Thêm Cán Bộ Mới" để thêm.</td></tr>';
+      return;
+    }
+
+    cadresTableBody.innerHTML = filtered.map((c, idx) => {
+      const isAdmin = c.vai_tro === 'admin';
+      const roleBadge = isAdmin 
+        ? '<span class="badge-role-admin">👑 Admin</span>' 
+        : '<span class="badge-role-cadre">Cán bộ</span>';
+
+      const isMainAdmin = c.so_dien_thoai === '0327777707';
+
+      return `
+        <tr>
+          <td style="color:#94a3b8; font-size:12px;">${idx + 1}</td>
+          <td><b>${escapeHtml(c.ho_ten || '')}</b></td>
+          <td><code style="color:#38bdf8; font-weight:600;">${escapeHtml(c.so_dien_thoai || 'Chưa có')}</code></td>
+          <td>${escapeHtml(c.chuc_vu || '')}</td>
+          <td>${escapeHtml(c.co_quan || '')}</td>
+          <td>${roleBadge}</td>
+          <td style="text-align: center;">
+            <button class="btn-table-action btn-edit-cadre" data-id="${c.can_bo_id}">✏️ Sửa</button>
+            ${!isMainAdmin ? `<button class="btn-table-action delete btn-delete-cadre" data-id="${c.can_bo_id}" data-name="${escapeHtml(c.ho_ten)}">🗑️ Xoá</button>` : ''}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Gắn sự kiện nút Sửa & Xoá
+    cadresTableBody.querySelectorAll('.btn-edit-cadre').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cid = btn.getAttribute('data-id');
+        const target = adminCadresList.find(x => x.can_bo_id === cid);
+        if (target) openCadreModal(target);
+      });
+    });
+
+    cadresTableBody.querySelectorAll('.btn-delete-cadre').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const cid = btn.getAttribute('data-id');
+        const name = btn.getAttribute('data-name');
+        if (confirm(`Đồng chí có chắc chắn muốn xoá cán bộ "${name}" khỏi danh bạ hệ thống?`)) {
+          try {
+            const res = await fetch(`/api/admin/cadres/${cid}`, { method: 'DELETE' });
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.detail || 'Lỗi khi xoá cán bộ');
+            await loadAdminCadres();
+          } catch (err) {
+            alert('❌ ' + err.message);
+          }
+        }
+      });
+    });
+  }
+
+  if (inputSearchCadre) {
+    inputSearchCadre.addEventListener('input', () => renderAdminCadresTable(adminCadresList));
+  }
+
+  function openCadreModal(target = null) {
+    if (!modalCadreCrud) return;
+    if (crudCadreNotice) crudCadreNotice.textContent = '';
+
+    if (target) {
+      if (cadreCrudModalTitle) cadreCrudModalTitle.textContent = '✏️ Chỉnh Sửa Thông Tin Cán Bộ';
+      if (crudCadreId) crudCadreId.value = target.can_bo_id || '';
+      if (crudHoTen) crudHoTen.value = target.ho_ten || '';
+      if (crudSoDienThoai) crudSoDienThoai.value = target.so_dien_thoai || '';
+      if (crudChucVu) crudChucVu.value = target.chuc_vu || '';
+      if (crudCoQuan) crudCoQuan.value = target.co_quan || '';
+      if (crudVaiTro) crudVaiTro.value = target.vai_tro || 'can_bo';
+    } else {
+      if (cadreCrudModalTitle) cadreCrudModalTitle.textContent = '➕ Thêm Cán Bộ Mới';
+      if (crudCadreId) crudCadreId.value = '';
+      if (crudHoTen) crudHoTen.value = '';
+      if (crudSoDienThoai) crudSoDienThoai.value = '';
+      if (crudChucVu) crudChucVu.value = 'Chuyên viên';
+      if (crudCoQuan) crudCoQuan.value = 'Văn phòng Đảng uỷ';
+      if (crudVaiTro) crudVaiTro.value = 'can_bo';
+    }
+
+    modalCadreCrud.style.display = 'grid';
+    if (crudHoTen) crudHoTen.focus();
+  }
+
+  if (btnOpenAddCadreModal) btnOpenAddCadreModal.addEventListener('click', () => openCadreModal());
+  if (btnCloseCadreModal) btnCloseCadreModal.addEventListener('click', () => modalCadreCrud.style.display = 'none');
+  if (btnCancelCadreModal) btnCancelCadreModal.addEventListener('click', () => modalCadreCrud.style.display = 'none');
+
+  if (formCadreCrud) {
+    formCadreCrud.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const cid = crudCadreId.value.trim();
+      const payload = {
+        ho_ten: crudHoTen.value.trim(),
+        so_dien_thoai: crudSoDienThoai.value.trim(),
+        chuc_vu: crudChucVu.value.trim(),
+        co_quan: crudCoQuan.value.trim(),
+        vai_tro: crudVaiTro.value
+      };
+
+      try {
+        const isEdit = Boolean(cid);
+        const url = isEdit ? `/api/admin/cadres/${cid}` : '/api/admin/cadres';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.detail || 'Lưu cán bộ thất bại');
+
+        modalCadreCrud.style.display = 'none';
+        await loadAdminCadres();
+      } catch (err) {
+        if (crudCadreNotice) crudCadreNotice.textContent = '⚠️ ' + err.message;
+      }
+    });
+  }
+
+  // ============================================================================
+  // 9. QUẢN LÝ MÔ HÌNH AI TRONG ADMIN (GEMINI / DEEPSEEK / OLLAMA)
+  // ============================================================================
+  const cardModelGemini = document.getElementById('cardModelGemini');
+  const cardModelDeepseek = document.getElementById('cardModelDeepseek');
+  const cardModelOllama = document.getElementById('cardModelOllama');
+
+  if (cardModelGemini) {
+    cardModelGemini.addEventListener('click', async () => {
+      await switchActiveModel('gemini-3.5-flash-lite', 'gemini');
+      alert('✓ Đã kích hoạt Google Gemini 3.5 Flash Lite làm Động cơ chính!');
+    });
+  }
+
+  if (cardModelDeepseek) {
+    cardModelDeepseek.addEventListener('click', async () => {
+      await switchActiveModel('deepseek-chat', 'cloud');
+      alert('✓ Đã kích hoạt DeepSeek Cloud (671B) làm Động cơ chính!');
+    });
+  }
+
+  if (cardModelOllama) {
+    cardModelOllama.addEventListener('click', async () => {
+      await switchActiveModel('qwen2.5:3b', 'local');
+      alert('✓ Đã kích hoạt Ollama Local làm Động cơ chính!');
     });
   }
 
@@ -1913,15 +2150,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const statAdminDisk = document.getElementById('statAdminDisk');
   const statAdminAiModel = document.getElementById('statAdminAiModel');
   const chatLogsTableBody = document.getElementById('chatLogsTableBody');
-  const filterLogChannel = document.getElementById('filterLogChannel');
   const inputSearchChatLogs = document.getElementById('inputSearchChatLogs');
   const btnSearchChatLogs = document.getElementById('btnSearchChatLogs');
   const serverLogsPre = document.getElementById('serverLogsPre');
   const btnRefreshServerLogs = document.getElementById('btnRefreshServerLogs');
-  const btnRefreshAdminDashboard = document.getElementById('btnRefreshAdminDashboard');
 
   async function loadAdminDashboard() {
     await Promise.all([
+      loadAdminCadres(),
       loadAdminMetrics(),
       loadAdminChatLogs(),
       loadAdminServerLogs()
@@ -1949,12 +2185,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadAdminChatLogs() {
     if (!chatLogsTableBody) return;
-    chatLogsTableBody.innerHTML = '<tr><td colspan="6" class="loading-td">Đang tải nhật ký hội thoại...</td></tr>';
+    chatLogsTableBody.innerHTML = '<tr><td colspan="5" class="loading-td">Đang tải nhật ký hội thoại...</td></tr>';
 
     try {
-      const ch = filterLogChannel ? filterLogChannel.value : '';
       const kw = inputSearchChatLogs ? inputSearchChatLogs.value.trim() : '';
-      const url = `/api/admin/conversations?channel=${encodeURIComponent(ch)}&search=${encodeURIComponent(kw)}&page=1&page_size=50`;
+      const url = `/api/admin/conversations?search=${encodeURIComponent(kw)}&page=1&page_size=50`;
 
       const res = await fetch(url);
       if (!res.ok) throw new Error('Không thể tải nhật ký');
@@ -1962,22 +2197,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const items = data.items || [];
 
       if (items.length === 0) {
-        chatLogsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:30px;">Chưa có bản ghi hội thoại nào. (Chế độ Khách không lưu trữ vào CSDL)</td></tr>';
+        chatLogsTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:30px;">Chưa có bản ghi hội thoại nào. (Chế độ Khách không lưu trữ vào CSDL)</td></tr>';
         return;
       }
 
       chatLogsTableBody.innerHTML = items.map(it => {
-        const isZalo = it.channel === 'zalo';
-        const chBadge = isZalo
-          ? '<span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">💬 Zalo</span>'
-          : '<span style="background:rgba(16,185,129,0.15); color:#34d399; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">🌐 Web</span>';
-
         const senderDisplay = `<b>${escapeHtml(it.ho_ten || 'Cán bộ')}</b>${it.so_dien_thoai ? `<br><span style="font-size:11px; color:#64748b;">${escapeHtml(it.so_dien_thoai)}</span>` : ''}`;
 
         return `
           <tr>
             <td style="font-size:12px; color:#94a3b8;">${escapeHtml(it.created_at || '')}</td>
-            <td>${chBadge}</td>
             <td>${senderDisplay}</td>
             <td><div style="max-height:80px; overflow-y:auto; font-size:13px;">${escapeHtml(it.message_text)}</div></td>
             <td><div style="max-height:80px; overflow-y:auto; font-size:12.5px; color:#cbd5e1;">${escapeHtml(it.bot_reply?.substring(0, 300) || '')}...</div></td>
@@ -1986,7 +2215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }).join('');
     } catch (err) {
-      chatLogsTableBody.innerHTML = `<tr><td colspan="6" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
+      chatLogsTableBody.innerHTML = `<tr><td colspan="5" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
@@ -2007,10 +2236,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  if (btnRefreshAdminDashboard) btnRefreshAdminDashboard.addEventListener('click', loadAdminDashboard);
   if (btnRefreshServerLogs) btnRefreshServerLogs.addEventListener('click', loadAdminServerLogs);
   if (btnSearchChatLogs) btnSearchChatLogs.addEventListener('click', loadAdminChatLogs);
-  if (filterLogChannel) filterLogChannel.addEventListener('change', loadAdminChatLogs);
   if (inputSearchChatLogs) {
     inputSearchChatLogs.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') loadAdminChatLogs();
