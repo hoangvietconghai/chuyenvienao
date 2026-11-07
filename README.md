@@ -188,11 +188,32 @@ python -m uvicorn server.app:app --host 127.0.0.1 --port 8000 --reload
 - Giao diện cung cấp đầy đủ: Khung chat AI, Đính kèm tài liệu, Xem trước đối soát RAG, Quản lý Sổ Nhiệm vụ và Chỉ tiêu KPI.
 
 ### 3. Khởi động Zalo Bot (Di động 24/7):
+- Zalo Bot hiện đã được tích hợp tự động vào hạt nhân máy chủ FastAPI (`server/app.py`). Khi khởi động Web server, Zalo Bot sẽ tự động kết nối và lắng nghe tin nhắn.
+- Nếu muốn chạy kiểm thử Zalo Bot độc lập ở chế độ Long Polling trên terminal riêng:
 ```powershell
 python scripts/run_zalo_bot.py
 ```
-- Cán bộ gửi lệnh hoặc file Word/PDF trực tiếp từ điện thoại.
-- Bot tự động phản hồi dự thảo tham mưu và trả link Google Drive để tải văn bản ngay lập tức.
+
+### 4. Triển khai & Cập nhật lên Máy chủ VPS Ubuntu (CI/CD):
+
+#### ⚡ Cập nhật nhanh mã nguồn (CI/CD Siêu tốc — Khuyên dùng):
+Sau khi sửa đổi mã nguồn hoặc thêm tính năng mới, chỉ cần chạy một lệnh duy nhất từ máy tính:
+```powershell
+python scripts/deploy_remote.py --update
+```
+- **Tác dụng:** Tự động kết nối SSH vào VPS, kéo mã nguồn mới nhất (`git fetch && git reset --hard origin/main`), cài thư viện bổ sung (nếu có), đối soát CSDL và khởi động lại dịch vụ hệ thống `chuyenvienao.service`.
+- **An toàn tuyệt đối:** Giữ nguyên 100% cơ sở dữ liệu SQLite WAL và các tệp cấu hình `.env` (API Keys, Zalo token).
+- **Thời gian hoàn tất:** Chỉ mất khoảng **3 - 5 giây**.
+
+#### 🛠️ Triển khai mới toàn diện (Reset / Cài đặt sạch môi trường VPS):
+```powershell
+python scripts/deploy_remote.py
+```
+- Dùng khi cài mới máy chủ từ đầu: Tự động xóa trắng các dịch vụ xung đột cũ, chuyển file cấu hình `.env`, cài đặt Python `.venv`, cấu hình Nginx Reverse Proxy (cổng 80) và thiết lập dịch vụ chạy nền Systemd tự khởi động cùng VPS.
+
+#### 🔄 CI/CD Tự động 100% qua GitHub Actions:
+- Kịch bản [.github/workflows/deploy.yml](.github/workflows/deploy.yml) đã được cấu hình sẵn.
+- Cán bộ chỉ cần thêm Secret `VPS_PASSWORD` vào mục **Settings -> Secrets and variables -> Actions** trên GitHub; mỗi khi thực hiện `git push origin main`, GitHub sẽ tự động kích hoạt tiến trình cập nhật thẳng lên VPS mà không cần thao tác thêm.
 
 ---
 *Hệ thống được phát triển chuyên biệt phục vụ công tác tham mưu cấp uỷ tại Văn phòng Đảng uỷ xã Công Hải, tỉnh Khánh Hoà.*
