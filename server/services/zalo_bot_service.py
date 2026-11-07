@@ -109,6 +109,9 @@ async def run_polling_loop():
     # Gỡ Webhook trước để Zalo chuyển sự kiện sang hàng đợi getUpdates
     delete_webhook()
 
+    def _fetch_updates(p):
+        return requests.get(get_updates_url, params=p, timeout=25)
+
     while _is_polling_active:
         try:
             loop = asyncio.get_event_loop()
@@ -116,10 +119,7 @@ async def run_polling_loop():
             if offset > 0:
                 params["offset"] = offset
 
-            resp = await loop.run_in_executor(
-                None,
-                lambda: requests.get(get_updates_url, params=params, timeout=25),
-            )
+            resp = await loop.run_in_executor(None, _fetch_updates, dict(params))
 
             if resp.status_code == 200:
                 data = resp.json()
@@ -127,12 +127,16 @@ async def run_polling_loop():
                     results = data.get("result", [])
                     if isinstance(results, dict):
                         results = [results]
+                    if results:
+                        logger.info(f"📩 Tiếp nhận {len(results)} sự kiện mới từ Zalo Bot!")
                     for item in results:
                         update_id = item.get("update_id")
                         if update_id:
                             offset = max(offset, update_id + 1)
                         # Đẩy xử lý sự kiện qua chat_engine
                         asyncio.create_task(process_zalo_event(item))
+                elif data.get("error_code") != 408 and "timeout" not in str(data.get("description", "")).lower():
+                    logger.warning(f"Zalo getUpdates phản hồi: {data}")
             elif resp.status_code != 200:
                 logger.warning(f"Zalo getUpdates HTTP {resp.status_code}: {resp.text}")
                 await asyncio.sleep(2)
@@ -166,25 +170,19 @@ async def init_zalo_bot():
     bot_id = bot_info.get("id", "")
     logger.info(f"🤖 Đã kết nối Zalo Bot: {bot_name} (ID: {bot_id})")
 
-    # Xác định cơ chế hoạt động: Webhook hay Long Polling
-    zalo_mode = os.getenv("ZALO_MODE", "").lower()
+    # Mặc định sử dụng Long Polling (getUpdates) vì tính ổn định 100%,
+    # hoàn toàn độc lập với cấu hình tên miền, tường lửa, F5 proxy và chứng chỉ SSL.
+    # Chỉ bật Webhook khi cấu hình rõ ràng ZALO_MODE=webhook.
+    zalo_mode = os.getenv("ZALO_MODE", "polling").lower()
 
-    # Nếu người dùng chỉ định rõ Polling hoặc đang chạy localhost
-    is_localhost = SERVER_HOST in ("127.0.0.1", "localhost")
-    target_webhook_url = os.getenv("ZALO_WEBHOOK_URL", "")
+    if zalo_mode == "webhook":
+        target_webhook_url = os.getenv("ZALO_WEBHOOK_URL", "")
+        if not target_webhook_url:
+            if SERVER_DOMAIN and SERVER_DOMAIN.startswith("http"):
+                target_webhook_url = f"{SERVER_DOMAIN.rstrip('/')}/webhook/zalo"
+            else:
+                target_webhook_url = f"http://{SERVER_HOST}/webhook/zalo"
 
-    if not target_webhook_url:
-        if SERVER_DOMAIN and SERVER_DOMAIN.startswith("http"):
-            target_webhook_url = f"{SERVER_DOMAIN.rstrip('/')}/webhook/zalo"
-        elif not is_localhost:
-            target_webhook_url = f"http://{SERVER_HOST}/webhook/zalo"
-
-    # Mặc định ưu tiên Webhook nếu có Webhook URL công khai hợp lệ
-    if zalo_mode == "polling" or (is_localhost and not target_webhook_url):
-        logger.info("Chạy Zalo Bot ở chế độ: LONG POLLING (Phù hợp máy cá nhân/Localhost).")
-        _polling_task = asyncio.create_task(run_polling_loop())
-    else:
-        # Chế độ Webhook
         webhook_info = get_webhook_info()
         current_url = webhook_info.get("url", "") if webhook_info else ""
 
@@ -197,9 +195,12 @@ async def init_zalo_bot():
         elif current_url:
             logger.info(f"✅ Zalo Webhook đang hoạt động tại: {current_url}")
         else:
-            # Nếu không có URL webhook nào, chạy polling
             logger.info("Chưa có Webhook URL công khai, kích hoạt Long Polling tự động.")
             _polling_task = asyncio.create_task(run_polling_loop())
+    else:
+        # Mặc định: Long Polling (Khuyên dùng, hoạt động tức thì mọi môi trường)
+        logger.info("🚀 Kích hoạt Zalo Bot ở chế độ: LONG POLLING (getUpdates — Ổn định 100%, nhận tin tức thì).")
+        _polling_task = asyncio.create_task(run_polling_loop())
 
 
 def stop_zalo_bot():
