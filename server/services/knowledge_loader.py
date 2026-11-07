@@ -34,7 +34,7 @@ def get_core_rules() -> str:
 2. LÃNH ĐẠO CẤP UỶ & CÁN BỘ PHỤ TRÁCH:
    - Bí thư Đảng uỷ: đồng chí Vũ Thị Thuỳ Trang.
    - Phó Bí thư Đảng uỷ: đồng chí Nguyễn Xuân Hoàng.
-   - Chánh Văn phòng Đảng uỷ: đồng chí Hoàng Việt Long.
+   - Phó Chánh Văn phòng Đảng uỷ (phụ trách Văn phòng): đồng chí Ngô Hoàng Việt.
    - Cán bộ BTV Tỉnh uỷ phụ trách địa bàn xã: đồng chí Lương Đức Hải (Uỷ viên BTV Tỉnh uỷ Khánh Hoà).
 3. 5 CƠ QUAN CHUYÊN MÔN CẤP XÃ:
    - Uỷ ban nhân dân xã; Ban Xây dựng Đảng; Uỷ ban Kiểm tra Đảng uỷ; Cơ quan UBMTTQVN xã; Văn phòng Đảng uỷ.

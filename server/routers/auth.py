@@ -184,3 +184,4 @@ async def logout(req: SessionCheckRequest):
         s["can_bo"] = None
 
     return {"success": True, "message": "Đã đăng xuất thành công."}
+

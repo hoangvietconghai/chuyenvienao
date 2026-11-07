@@ -183,7 +183,7 @@ QUY TẮC BẮT BUỘC:
 2. Thẩm quyền & Người ký chuẩn:
    - Ban Thường vụ Đảng uỷ: T/M BAN THƯỜNG VỤ, Bí thư Vũ Thị Thuỳ Trang hoặc Phó Bí thư Nguyễn Xuân Hoàng.
    - Ban Chấp hành Đảng bộ: T/M ĐẢNG UỶ, Bí thư Vũ Thị Thuỳ Trang.
-   - Văn phòng Đảng uỷ: K/T CHÁNH VĂN PHÒNG (hoặc CHÁNH VĂN PHÒNG) - Hoàng Việt Long.
+   - Văn phòng Đảng uỷ: K/T CHÁNH VĂN PHÒNG (hoặc PHÓ CHÁNH VĂN PHÒNG) - Ngô Hoàng Việt.
 3. 5 cơ quan chuyên môn cấp xã: Uỷ ban nhân dân xã, Ban Xây dựng Đảng, Uỷ ban Kiểm tra Đảng uỷ, Cơ quan UBMTTQVN xã, Văn phòng Đảng uỷ.
 4. Đơn vị hành chính: Gồm 08 thôn chính thức: Bình Tiên, Ma Trai, Suối Vang, Phước Chiến, Động Thông, Hiệp Kiết, Kà Rôm, Suối Giếng.
 5. Chính tả khối Đảng: oà, uỷ, uý (Đảng uỷ, Khánh Hoà, Uỷ ban). Ngày tháng dạng dd/mm/yyyy.

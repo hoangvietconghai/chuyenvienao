@@ -74,7 +74,7 @@ def seed_danh_ba_can_bo():
         # Lãnh đạo Văn phòng Đảng uỷ
         {
             "can_bo_id": "CB-VPDU-01",
-            "ho_ten": "Hoàng Việt Long",
+            "ho_ten": "(Đang cập nhật)",
             "chuc_vu": "Chánh Văn phòng Đảng uỷ",
             "co_quan": "Văn phòng Đảng uỷ",
             "co_quan_code": "VPDU",
@@ -88,7 +88,8 @@ def seed_danh_ba_can_bo():
             "co_quan": "Văn phòng Đảng uỷ",
             "co_quan_code": "VPDU",
             "co_quan_loai": "co_quan_dang",
-            "vai_tro": "lanh_dao_co_quan",
+            "vai_tro": "admin",
+            "so_dien_thoai": "0327777707",
         },
         # Lãnh đạo Ban Xây dựng Đảng & UBKT
         {

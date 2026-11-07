@@ -287,11 +287,16 @@ def init_database() -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_log_canbo ON nhat_ky_hoi_thoai(can_bo_id);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_log_channel ON nhat_ky_hoi_thoai(channel, created_at);")
 
-        # Cập nhật số điện thoại Admin cho đồng chí Hoàng Việt Long (CB-VPDU-01)
+        # Cập nhật thông tin cán bộ Văn phòng Đảng uỷ & Admin
         cursor.execute("""
         UPDATE danh_ba_can_bo 
-        SET so_dien_thoai = '0327777707', vai_tro = 'admin' 
+        SET ho_ten = '(Đang cập nhật)', chuc_vu = 'Chánh Văn phòng Đảng uỷ', so_dien_thoai = NULL, vai_tro = 'lanh_dao_co_quan'
         WHERE can_bo_id = 'CB-VPDU-01';
+        """)
+        cursor.execute("""
+        UPDATE danh_ba_can_bo 
+        SET ho_ten = 'Ngô Hoàng Việt', chuc_vu = 'Phó Chánh Văn phòng Đảng uỷ', so_dien_thoai = '0327777707', vai_tro = 'admin' 
+        WHERE can_bo_id = 'CB-VPDU-02';
         """)
 
         logger.info(f"Đã khởi tạo và kết nối thành công CSDL SQLite WAL: {DB_FILE}")
