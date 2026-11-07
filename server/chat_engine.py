@@ -754,7 +754,7 @@ async def handle_chat(session_id: Optional[str], message: str = "", action: str 
             return done(_reply(s, "Đã huỷ dự thảo. Đồng chí cần tôi làm việc gì tiếp theo?"))
 
         if not default_ai_client.is_configured():
-            return done(_reply(s, "⚠️ Chưa cấu hình **DEEPSEEK_API_KEY** trong tệp `.env`. Đồng chí điền key rồi khởi động lại hệ thống."))
+            return done(_reply(s, "⚠️ Chưa cấu hình API Key (**GEMINI_API_KEY** hoặc **DEEPSEEK_API_KEY**) trong tệp `.env`. Đồng chí điền key rồi khởi động lại hệ thống."))
 
         # 2. Nút chạy nghiệp vụ trực tiếp (run:wfX)
         if action.startswith("run:") and action[4:] in WORKFLOWS:

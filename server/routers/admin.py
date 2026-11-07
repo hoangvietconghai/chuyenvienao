@@ -200,7 +200,7 @@ async def handle_workflow_analysis(wf_name: str, payload: WorkflowAnalyzeRequest
     if not default_ai_client.is_configured():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Chưa cấu hình DEEPSEEK_API_KEY trong tệp .env. Vui lòng thêm key để kích hoạt AI.",
+            detail="Chưa cấu hình API Key (GEMINI_API_KEY hoặc DEEPSEEK_API_KEY) trong tệp .env. Vui lòng thêm key để kích hoạt AI.",
         )
 
     text = payload.text.strip()

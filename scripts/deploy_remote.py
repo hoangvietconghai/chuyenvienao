@@ -98,14 +98,25 @@ def main():
 
     try:
         if is_update_mode:
-            # Chế độ cập nhật nhanh
+            # 1. Đồng bộ file cấu hình .env (Gemini, DeepSeek, Zalo tokens) sang VPS
+            if LOCAL_ENV_FILE.exists():
+                print("\n>> [2/4] Đồng bộ tệp cấu hình .env sang VPS...")
+                try:
+                    sftp = ssh.open_sftp()
+                    sftp.put(str(LOCAL_ENV_FILE), f"{REMOTE_APP_DIR}/.env")
+                    sftp.close()
+                    print("✅ Đã đồng bộ tệp .env đầy đủ sang /opt/chuyenvienao/.env!")
+                except Exception as sftp_err:
+                    print(f"⚠️ Lưu ý SFTP: {sftp_err}")
+
+            # 2. Chạy kịch bản cập nhật nhanh
             update_cmd = (
                 "curl -sSL https://raw.githubusercontent.com/hoangvietconghai/chuyenvienao/main/scripts/update_vps.sh "
                 "-o /tmp/update_vps.sh && chmod +x /tmp/update_vps.sh && bash /tmp/update_vps.sh"
             )
-            run_remote_command(ssh, update_cmd, "[2/3] Chạy kịch bản cập nhật nhanh update_vps.sh")
+            run_remote_command(ssh, update_cmd, "[3/4] Chạy kịch bản cập nhật nhanh update_vps.sh")
 
-            print("\n>> [3/3] Kiểm tra phản hồi dịch vụ sau cập nhật...")
+            print("\n>> [4/4] Kiểm tra phản hồi dịch vụ sau cập nhật...")
             stdin, stdout, stderr = ssh.exec_command("curl -s http://127.0.0.1:8000/health")
             health_resp = stdout.read().decode("utf-8", errors="replace").strip()
             print(f"Kết quả Health Check: {health_resp}")
