@@ -49,6 +49,8 @@ def seed_danh_ba_can_bo():
             "co_quan_loai": "co_quan_dang",
             "vai_tro": "admin",
             "so_dien_thoai": "0327777707",
+            "zalo_chat_id": "b0ce7fa772e49bbac2f5",
+            "zalo_user_id": "b0ce7fa772e49bbac2f5",
             "is_active": 1,
         }
     ]

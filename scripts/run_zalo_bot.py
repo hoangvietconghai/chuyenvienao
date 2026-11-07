@@ -47,27 +47,38 @@ async def main():
     get_updates_url = f"https://bot-api.zaloplatforms.com/bot{ZALO_API_TOKEN}/getUpdates"
 
     print("✅ Đang sẵn sàng lắng nghe tin nhắn từ Zalo... (Nhấn Ctrl + C để dừng)\n")
+    offset = 0
 
     while True:
         try:
             # Chạy request trong thread pool để không block asyncio event loop
             loop = asyncio.get_event_loop()
+            params = {"timeout": 20, "limit": 10}
+            if offset > 0:
+                params["offset"] = offset
+
             resp = await loop.run_in_executor(
                 None,
-                lambda: requests.post(get_updates_url, json={"timeout": 25}, timeout=30),
+                lambda: requests.get(get_updates_url, params=params, timeout=25),
             )
 
             if resp.status_code == 200:
                 data = resp.json()
-                if isinstance(data, dict) and data.get("ok") and data.get("result"):
-                    update = data["result"]
-                    # Xử lý sự kiện qua quy trình webhook chuẩn
-                    await process_zalo_event(update)
+                if isinstance(data, dict) and data.get("ok"):
+                    results = data.get("result", [])
+                    if isinstance(results, dict):
+                        results = [results]
+                    for update in results:
+                        update_id = update.get("update_id")
+                        if update_id:
+                            offset = max(offset, update_id + 1)
+                        # Xử lý sự kiện qua quy trình webhook chuẩn
+                        asyncio.create_task(process_zalo_event(update))
             elif resp.status_code != 200:
                 logger.warning(f"Zalo getUpdates HTTP {resp.status_code}: {resp.text}")
                 await asyncio.sleep(2)
 
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.3)
 
         except KeyboardInterrupt:
             print("\nĐã dừng Zalo Bot.")

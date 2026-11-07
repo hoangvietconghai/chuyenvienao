@@ -31,6 +31,9 @@ systemctl stop chuyenvienao caddy apache2 nginx 2>/dev/null || true
 systemctl disable caddy apache2 2>/dev/null || true
 pkill -9 -f uvicorn 2>/dev/null || true
 pkill -9 -f caddy 2>/dev/null || true
+if [ -f "$APP_DIR/.env" ]; then
+    cp "$APP_DIR/.env" /tmp/.env.backup 2>/dev/null || true
+fi
 rm -rf "$APP_DIR"
 rm -f /etc/nginx/sites-enabled/* /etc/nginx/sites-available/chuyenvienao /etc/nginx/sites-available/default
 rm -f /etc/systemd/system/chuyenvienao.service
@@ -66,7 +69,13 @@ fi
 
 # 6. Thiết lập tệp cấu hình môi trường (.env)
 echo -e "${BLUE}[4/7] Thiết lập cấu hình hệ thống (.env)...${NC}"
-if [ ! -f ".env" ]; then
+if [ -f "/tmp/.env.backup" ]; then
+    echo -e "${GREEN}Khôi phục cấu hình .env (Keys & Zalo tokens) từ bản sao lưu...${NC}"
+    cp /tmp/.env.backup .env
+elif [ -f "/tmp/.env" ]; then
+    echo -e "${GREEN}Áp dụng cấu hình .env đã truyền qua SFTP...${NC}"
+    cp /tmp/.env .env
+elif [ ! -f ".env" ]; then
     if [ -f ".env.example" ]; then
         cp .env.example .env
     else

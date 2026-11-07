@@ -30,7 +30,9 @@ from server.routers.admin import router as admin_router
 from server.routers.auth import router as auth_router
 from server.routers.chat import router as chat_router
 from server.routers.knowledge import router as knowledge_router, search_router
+from server.routers.zalo_webhook import router as zalo_router
 from server.services import scheduler_service
+from server.services import zalo_bot_service
 
 logger = get_logger("app")
 
@@ -57,12 +59,15 @@ async def startup_event():
     logger.info("Cấu hình CORS origins được phép: %s", CORS_ORIGINS)
     # Khởi động bộ lập lịch tự động và chạy khởi động bù
     scheduler_service.start_scheduler()
+    # Khởi động Zalo Bot (Webhook hoặc Long Polling tự động)
+    await zalo_bot_service.init_zalo_bot()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Chuyên viên ảo đang tắt hệ thống...")
     scheduler_service.stop_scheduler()
+    zalo_bot_service.stop_zalo_bot()
 
 
 # Đường dẫn tĩnh phục vụ giao diện Web
@@ -77,18 +82,7 @@ app.include_router(chat_router)
 app.include_router(knowledge_router)
 app.include_router(search_router)
 app.include_router(admin_router)
-
-# Zalo Bot Router (mặc định TẮT hoàn toàn, chỉ bật khi cấu hình rõ ràng)
-import os
-if os.getenv("ENABLE_ZALO_BOT", "false").lower() == "true":
-    try:
-        from server.routers.zalo_webhook import router as zalo_router
-        app.include_router(zalo_router)
-        logger.info("Đã kích hoạt Zalo Webhook Router.")
-    except Exception as zerr:
-        logger.warning(f"Không thể khởi động Zalo Bot: {zerr}")
-else:
-    logger.info("Zalo Bot Webhook đang TẮT hoàn toàn theo cấu hình hệ thống.")
+app.include_router(zalo_router)
 
 
 # --- HEALTH CHECK ENDPOINT ---

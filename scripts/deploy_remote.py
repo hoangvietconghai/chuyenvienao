@@ -107,12 +107,12 @@ def main():
 
         # 2. Đồng bộ tệp .env nội bộ từ máy tính sang VPS qua SFTP trước
         if LOCAL_ENV_FILE.exists():
-            print("\n>> [3/5] Đồng bộ tệp cấu hình .env (Gemini & DeepSeek keys) sang VPS...")
+            print("\n>> [3/5] Đồng bộ tệp cấu hình .env (Gemini, DeepSeek & Zalo tokens) sang VPS...")
             try:
                 sftp = ssh.open_sftp()
-                sftp.put(str(LOCAL_ENV_FILE), f"{REMOTE_APP_DIR}/.env")
+                sftp.put(str(LOCAL_ENV_FILE), "/tmp/.env")
                 sftp.close()
-                print("✅ Đã truyền file cấu hình .env an toàn sang VPS!")
+                print("✅ Đã truyền file cấu hình .env an toàn sang VPS (/tmp/.env)!")
             except Exception as sftp_err:
                 print(f"⚠️ Lưu ý SFTP: {sftp_err}")
 
