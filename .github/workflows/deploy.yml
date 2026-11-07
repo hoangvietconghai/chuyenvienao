@@ -25,3 +25,4 @@ jobs:
             echo "Bắt đầu cập nhật mã nguồn Chuyên viên ảo..."
             chmod +x /opt/chuyenvienao/scripts/update_vps.sh
             bash /opt/chuyenvienao/scripts/update_vps.sh
+
