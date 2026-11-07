@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wrap = document.createElement('div');
     wrap.className = 'msg-ai';
     wrap.innerHTML = `
-      <div class="avatar thinking">★</div>
+      <div class="avatar thinking"><img src="/static/assets/logo.png" alt="AI" class="avatar-img" /></div>
       <div class="content">
         <div class="thinking-text">
           <span>Chuyên viên ảo đang phân tích văn bản</span>
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const avatar = document.createElement('div');
     avatar.className = 'avatar';
-    avatar.textContent = '★';
+    avatar.innerHTML = '<img src="/static/assets/logo.png" alt="AI" class="avatar-img" />';
 
     const content = document.createElement('div');
     content.className = 'content';

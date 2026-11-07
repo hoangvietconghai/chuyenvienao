@@ -52,6 +52,7 @@ backups/
 *.zip
 *.7z
 *.png
+!server/static/assets/**
 van_ban_den/*
 !van_ban_den/.gitkeep
 van_ban_du_thao/*

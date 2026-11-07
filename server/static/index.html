@@ -3,537 +3,494 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chuyên viên ảo — Văn phòng Đảng uỷ xã Công Hải</title>
-  <meta name="description" content="Trợ lý AI tham mưu tổng hợp cấp uỷ Đảng uỷ xã Công Hải — Thiết kế hiện đại chuẩn Google Gemini.">
+  <title>Công Hải Số — Chuyên viên ảo Văn phòng Đảng uỷ</title>
+  <meta name="description" content="Hệ thống Trợ lý AI Tham mưu Tổng hợp và Tự động hoá cấp uỷ — Đảng uỷ xã Công Hải, tỉnh Khánh Hoà (ChatCHS).">
+  <link rel="icon" type="image/png" href="/static/assets/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="gemini-theme">
-  <!-- TOPBAR CHUẨN GEMINI: TINH GỌN, SANG TRỌNG -->
-  <header class="topbar">
-    <div class="topbar-left">
-      <div class="brand">
-        <div class="gemini-sparkle-icon" title="Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải">✦</div>
-        <div class="brand-text">
-          <div class="brand-title">Chuyên viên ảo</div>
-          <div class="brand-sub">Văn phòng Đảng uỷ xã Công Hải</div>
+<body>
+  <div class="app-container">
+    <!-- ==================== TOPBAR HEADER CÔNG HẢI SỐ ==================== -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img src="/static/assets/logo.png" alt="Công Hải Số Logo" class="brand-logo-img">
+        <div class="brand-info">
+          <div class="brand-title">
+            CÔNG HẢI SỐ
+            <span class="brand-badge">ChatCHS</span>
+          </div>
+          <div class="brand-subtitle">Văn phòng Đảng uỷ xã Công Hải</div>
         </div>
       </div>
-    </div>
 
-    <!-- KHU VỰC ĐIỀU HƯỚNG ADMIN (CHỈ XUẤT HIỆN KHI ADMIN ĐĂNG NHẬP) -->
-    <div class="admin-switch-bar" id="adminSwitchBar" style="display: none;">
-      <button class="switch-pill active" id="btnSwitchChat" data-target="chat">
-        <span>💬 Trợ lý Chat</span>
-      </button>
-      <button class="switch-pill" id="btnSwitchAdmin" data-target="admin">
-        <span>👑 Bảng Điều Hành Admin</span>
-      </button>
-    </div>
-
-    <div class="topbar-right">
-      <!-- Nút tạo cuộc trò chuyện mới -->
-      <button class="btn-gemini-pill" id="btnNewChat" title="Bắt đầu phiên hội thoại mới">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
-        <span>Chat mới</span>
-      </button>
-
-      <!-- Badge tài khoản Cán bộ / Khách -->
-      <button class="btn-auth-badge guest" id="btnAuthTrigger" title="Nhấn để đăng nhập cán bộ">
-        <span class="auth-badge-icon" id="authBadgeIcon">🕶️</span>
-        <span class="auth-badge-name" id="authBadgeName">Chế độ Khách</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- NỘI DUNG ỨNG DỤNG CHÍNH -->
-  <div class="app-body">
-    <!-- ====================================================================== -->
-    <!-- PHÂN HỆ 1: TRANG CHAT DUY NHẤT DÀNH CHO CÁN BỘ & KHÁCH (GEMINI STYLE)  -->
-    <!-- ====================================================================== -->
-    <section class="main-view active" id="view-chat">
-      <main class="chat-scroll" id="chatScroll">
-        <!-- MÀN HÌNH CHÀO MỪNG CHUẨN GEMINI -->
-        <section class="welcome-gemini" id="welcome">
-          <div class="welcome-header">
-            <h1 class="gemini-greet-title">
-              <span class="gemini-shimmer">Xin chào,</span> <span id="welcomeUserName">đồng chí</span>
-            </h1>
-            <p class="gemini-greet-sub">Tôi có thể hỗ trợ gì cho công tác tham mưu của Văn phòng Đảng uỷ hôm nay?</p>
-          </div>
-
-          <!-- 4 THẺ GỢI Ý NGHIỆP VỤ (GEMINI CARDS) -->
-          <div class="gemini-suggestions">
-            <button class="gemini-card" data-prompt="Tham mưu công văn giao việc từ văn bản chỉ đạo của Tỉnh uỷ Khánh Hoà">
-              <div class="card-content">
-                <span class="card-title">Tham mưu công văn giao việc</span>
-                <span class="card-desc">Bóc tách nhiệm vụ từ văn bản chỉ đạo của Tỉnh uỷ gửi các cơ quan</span>
-              </div>
-              <div class="card-icon-badge blue">📥</div>
-            </button>
-
-            <button class="gemini-card" data-prompt="Tổng hợp dự thảo báo cáo tuần từ báo cáo của UBND và các cơ quan">
-              <div class="card-content">
-                <span class="card-title">Tổng hợp báo cáo tuần</span>
-                <span class="card-desc">Gộp số liệu, rà soát kết quả các ngành và phương hướng tuần tới</span>
-              </div>
-              <div class="card-icon-badge purple">📊</div>
-            </button>
-
-            <button class="gemini-card" data-prompt="Soạn thông báo kết luận cuộc họp Thường trực Đảng uỷ xã">
-              <div class="card-content">
-                <span class="card-title">Thông báo kết luận cuộc họp</span>
-                <span class="card-desc">Chuẩn hoá ý kiến chỉ đạo của Thường trực theo công thức giao việc 5 Rõ</span>
-              </div>
-              <div class="card-icon-badge amber">🏛️</div>
-            </button>
-
-            <button class="gemini-card" data-prompt="Thẩm định dự thảo kế hoạch của UBND xã theo thể thức Đảng">
-              <div class="card-content">
-                <span class="card-title">Thẩm định dự thảo văn bản</span>
-                <span class="card-desc">Kiểm tra lỗi thể thức HD 05-HD/VPTW và đối soát chỉ tiêu số liệu</span>
-              </div>
-              <div class="card-icon-badge emerald">🔍</div>
-            </button>
-          </div>
-        </section>
-
-        <!-- DANH SÁCH TIN NHẮN (MESSAGE STREAM) -->
-        <div class="messages-stream" id="messages"></div>
-      </main>
-
-      <!-- KHUNG NHẬP LIỆU NỔI (FLOATING COMPOSER CHUẨN GEMINI) -->
-      <footer class="composer-container">
-        <div class="composer-pill" id="composer">
-          <div class="attach-list" id="attachList"></div>
-          <div class="composer-main-row">
-            <button class="icon-attach-btn" id="btnAttach" title="Đính kèm tệp văn bản (Word, PDF, TXT)">
-              <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16.5 6v11.5a4 4 0 0 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 0 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 0 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6z"/></svg>
-            </button>
-            <textarea id="input" rows="1" placeholder="Hỏi Chuyên viên ảo hoặc yêu cầu soạn thảo văn bản tham mưu..."></textarea>
-            <button class="send-spark-btn" id="btnSend" title="Gửi tin nhắn (Enter)" disabled>
-              <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3.4 20.4 21.85 12 3.4 3.6 3.39 10.2 16.5 12 3.39 13.8z"/></svg>
-            </button>
-          </div>
-          <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.md" hidden>
-        </div>
-        <div class="composer-disclaimer">
-          Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải — Tham mưu chính xác, bảo mật và chuẩn hoá thể thức cấp uỷ.
-        </div>
-        <div class="drop-overlay" id="dropOverlay">Thả tệp vào đây để đính kèm vào phiên chat</div>
-      </footer>
-    </section>
-
-    <!-- ====================================================================== -->
-    <!-- PHÂN HỆ 2: BẢNG ĐIỀU HÀNH ADMIN TOÀN DIỆN (CHỈ DÀNH CHO ADMIN)          -->
-    <!-- ====================================================================== -->
-    <section class="main-view" id="view-admin" style="display: none;">
-      <div class="admin-wrapper">
-        <!-- Header Bảng điều hành Admin -->
-        <div class="admin-top-nav">
-          <div class="admin-title-box">
-            <h2 class="admin-page-title">👑 Trung Tâm Điều Hành Quản Trị Hệ Thống</h2>
-            <p class="admin-page-desc">Dành riêng cho Quản trị viên Văn phòng Đảng uỷ: Quản lý danh bạ cán bộ (CRUD), Động cơ AI, Hội thoại và Máy chủ.</p>
-          </div>
-          <div class="admin-top-actions">
-            <button class="btn-gemini-pill" id="btnBackToChatFromAdmin">
-              <span>← Trở lại Trợ lý Chat</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- MENU PHÂN HỆ CON CỦA ADMIN (PILL TABS) -->
-        <div class="admin-subtabs">
-          <button class="admin-subtab active" data-subtab="subtab-cadres">👥 Quản Lý Danh Bạ Cán Bộ</button>
-          <button class="admin-subtab" data-subtab="subtab-models">🤖 Quản Trị Mô Hình AI</button>
-          <button class="admin-subtab" data-subtab="subtab-logs">💬 Giám Sát Hội Thoại Hệ Thống</button>
-          <button class="admin-subtab" data-subtab="subtab-tasks">📋 Sổ Nhiệm Vụ</button>
-          <button class="admin-subtab" data-subtab="subtab-rag">📚 Kho Văn Bản RAG</button>
-          <button class="admin-subtab" data-subtab="subtab-kpis">🎯 Chỉ Tiêu KPI</button>
-          <button class="admin-subtab" data-subtab="subtab-server">🖥️ Sức Khoẻ VPS & Logs</button>
-        </div>
-
-        <!-- 4 THẺ METRICS NHANH -->
-        <div class="admin-stats-grid">
-          <div class="admin-stat-card">
-            <div class="stat-icon">👥</div>
-            <div>
-              <div class="stat-number" id="statAdminCadres">1</div>
-              <div class="stat-title">Cán bộ trong danh bạ</div>
-            </div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="stat-icon">💬</div>
-            <div>
-              <div class="stat-number" id="statAdminMessages">0</div>
-              <div class="stat-title">Hội thoại đã lưu trữ</div>
-            </div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="stat-icon">⚡</div>
-            <div>
-              <div class="stat-number" id="statAdminAiModel" style="font-size: 16px;">Gemini 3.5 Flash Lite</div>
-              <div class="stat-title">Động cơ AI chính</div>
-            </div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="stat-icon">🖥️</div>
-            <div>
-              <div class="stat-number" id="statAdminDisk">-</div>
-              <div class="stat-title">Dung lượng ổ đĩa VPS</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ==================== SUBTAB 1: QUẢN LÝ DANH BẠ CÁN BỘ (CRUD) ==================== -->
-        <div class="admin-subcontent active" id="subtab-cadres">
-          <div class="subcontent-header">
-            <div>
-              <h3 class="subcontent-title">Danh Bạ Cán Bộ Có Quyền Đăng Nhập</h3>
-              <p class="subcontent-sub">Chỉ những cán bộ có trong danh bạ mới có thể đăng nhập bằng Số điện thoại và lưu trữ lịch sử trao đổi.</p>
-            </div>
-            <div class="subcontent-actions">
-              <input type="text" id="inputSearchCadre" class="admin-search-input" placeholder="Tìm theo tên hoặc số điện thoại...">
-              <button class="btn-primary" id="btnOpenAddCadreModal">➕ Thêm Cán Bộ Mới</button>
-            </div>
-          </div>
-
-          <div class="admin-table-card">
-            <table class="gemini-table" id="cadresTable">
-              <thead>
-                <tr>
-                  <th width="70">STT</th>
-                  <th>Họ và Tên</th>
-                  <th width="140">Số Điện Thoại</th>
-                  <th>Chức Vụ</th>
-                  <th>Cơ Quan / Chi Bộ</th>
-                  <th width="120">Vai Trò</th>
-                  <th width="140" style="text-align: center;">Thao Tác</th>
-                </tr>
-              </thead>
-              <tbody id="cadresTableBody">
-                <tr><td colspan="7" class="loading-td">Đang tải danh bạ cán bộ...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ==================== SUBTAB 2: QUẢN TRỊ MÔ HÌNH AI ==================== -->
-        <div class="admin-subcontent" id="subtab-models">
-          <div class="subcontent-header">
-            <div>
-              <h3 class="subcontent-title">Cấu Hình Động Cơ AI Trí Tuệ Nhân Tạo</h3>
-              <p class="subcontent-sub">Hệ thống áp dụng cơ chế Động cơ Kép (Failover): Tự động dự phòng khi mạng quá tải.</p>
-            </div>
-          </div>
-
-          <div class="ai-models-grid" id="adminAiModelsGrid">
-            <!-- Thẻ 1: Google Gemini -->
-            <div class="ai-engine-card primary active" id="cardModelGemini">
-              <div class="engine-badge primary">ĐỘNG CƠ CHÍNH (KHUYÊN DÙNG)</div>
-              <h4 class="engine-name">Google Gemini 3.5 Flash Lite</h4>
-              <p class="engine-desc">Siêu tốc độ, xử lý ngữ cảnh cực lớn (1M tokens), miễn phí 500 yêu cầu/ngày. Tối ưu cho soạn thảo và thẩm định văn bản.</p>
-              <div class="engine-meta">
-                <span>Trạng thái: <b style="color: #34d399;">Sẵn sàng (200 OK)</b></span>
-                <span>Nhà cung cấp: <b>Google AI Studio</b></span>
-              </div>
-            </div>
-
-            <!-- Thẻ 2: DeepSeek Cloud -->
-            <div class="ai-engine-card fallback" id="cardModelDeepseek">
-              <div class="engine-badge fallback">ĐỘNG CƠ DỰ PHÒNG</div>
-              <h4 class="engine-name">DeepSeek-V3 Cloud (671B)</h4>
-              <p class="engine-desc">Mô hình suy luận lớn 671 tỷ tham số. Tự động kích hoạt khi Gemini chạm hạn ngạch hoặc mạng gặp sự cố.</p>
-              <div class="engine-meta">
-                <span>Trạng thái: <b style="color: #38bdf8;">Dự phòng tự động</b></span>
-                <span>Nhà cung cấp: <b>DeepSeek API</b></span>
-              </div>
-            </div>
-
-            <!-- Thẻ 3: Ollama Local -->
-            <div class="ai-engine-card local" id="cardModelOllama">
-              <div class="engine-badge local">NỘI BỘ OFFLINE</div>
-              <h4 class="engine-name">Ollama Local (Qwen 2.5)</h4>
-              <p class="engine-desc">Chạy trực tiếp trên GPU máy tính hoặc máy chủ nội bộ. Hoạt động 100% khi mất kết nối Internet.</p>
-              <div class="engine-meta">
-                <span>Trạng thái: <b id="adminOllamaStatusText">Đang kiểm tra...</b></span>
-                <span>Cổng: <b>localhost:11434</b></span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ==================== SUBTAB 3: GIÁM SÁT HỘI THOẠI TOÀN HỆ THỐNG ==================== -->
-        <div class="admin-subcontent" id="subtab-logs">
-          <div class="subcontent-header">
-            <div>
-              <h3 class="subcontent-title">Nhật Ký Hội Thoại Toàn Hệ Thống</h3>
-              <p class="subcontent-sub">Theo dõi các yêu cầu nghiệp vụ và bản thảo đã tạo của cán bộ có tài khoản chính thức.</p>
-            </div>
-            <div class="subcontent-actions">
-              <input type="text" id="inputSearchChatLogs" class="admin-search-input" placeholder="Tìm theo tên cán bộ, nội dung...">
-              <button class="btn-primary" id="btnSearchChatLogs">🔍 Lọc</button>
-            </div>
-          </div>
-
-          <div class="admin-table-card">
-            <table class="gemini-table" id="chatLogsTable">
-              <thead>
-                <tr>
-                  <th width="140">Thời Gian</th>
-                  <th width="160">Cán Bộ Gửi Lệnh</th>
-                  <th>Yêu Cầu Tham Mưu</th>
-                  <th>Phản Hồi / Văn Bản Sinh Ra</th>
-                  <th width="120">Mô Hình AI</th>
-                </tr>
-              </thead>
-              <tbody id="chatLogsTableBody">
-                <tr><td colspan="5" class="loading-td">Đang tải nhật ký hội thoại...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ==================== SUBTAB 4: SỔ NHIỆM VỤ CƠ QUAN ==================== -->
-        <div class="admin-subcontent" id="subtab-tasks">
-          <div class="subcontent-header">
-            <div>
-              <h3 class="subcontent-title">Sổ Nhiệm Vụ 5 Rõ Của Cấp Uỷ</h3>
-              <p class="subcontent-sub">Rõ người, rõ việc, rõ thời gian, rõ trách nhiệm, rõ sản phẩm kết quả.</p>
-            </div>
-            <div class="subcontent-actions">
-              <select id="filterTaskUnit" class="admin-search-input" style="width: auto;">
-                <option value="">Tất cả cơ quan</option>
-                <option value="UBND">UBND xã</option>
-                <option value="BXDD">Ban Xây dựng Đảng</option>
-                <option value="UBKT">Cơ quan UBKT</option>
-                <option value="VPDU">Văn phòng Đảng uỷ</option>
-                <option value="MTTQ">Cơ quan UBMTTQ</option>
-              </select>
-              <button class="btn-gemini-pill" id="btnRefreshTasks">🔄 Tải lại</button>
-            </div>
-          </div>
-
-          <div class="admin-table-card">
-            <table class="gemini-table" id="tasksTable">
-              <thead>
-                <tr>
-                  <th width="120">Số Hiệu / Mã</th>
-                  <th width="130">Cơ Quan Chủ Trì</th>
-                  <th>Nội Dung Nhiệm Vụ</th>
-                  <th width="110">Hạn Chót</th>
-                  <th width="130">Trạng Thái</th>
-                  <th width="90">Thao Tác</th>
-                </tr>
-              </thead>
-              <tbody id="tasksTableBody">
-                <tr><td colspan="6" class="loading-td">Đang tải dữ liệu Sổ nhiệm vụ...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ==================== SUBTAB 5: KHO VĂN BẢN RAG ==================== -->
-        <div class="admin-subcontent" id="subtab-rag">
-          <div class="subcontent-header">
-            <div>
-              <h3 class="subcontent-title">Kho Tri Thức Văn Bản Hybrid RAG</h3>
-              <p class="subcontent-sub">Quản trị kho tài liệu phục vụ tra cứu chính xác, chống ảo giác số liệu.</p>
-            </div>
-            <div class="subcontent-actions">
-              <button class="btn-primary" id="btnUploadForRag">📤 Nạp Văn Bản Mới</button>
-              <input type="file" id="ragFileInput" accept=".pdf,.docx,.doc,.txt,.md" hidden>
-            </div>
-          </div>
-
-          <!-- Khu vực Drag & Drop RAG -->
-          <div class="rag-dropzone" id="ragDropZone">
-            <div class="rag-dropzone-content">
-              <div class="rag-dropzone-icon">📥</div>
-              <div class="rag-dropzone-text">
-                <span class="rag-dropzone-title">Kéo & Thả văn bản Word / PDF vào đây</span>
-                <span class="rag-dropzone-subtitle">Tự động bóc tách chuyên đề và đánh chỉ mục FTS5 BM25</span>
-              </div>
-              <button type="button" class="btn-gemini-pill" id="btnBrowseDropzone">📂 Chọn tệp từ máy tính</button>
-            </div>
-            <div class="rag-dropzone-loading" id="ragDropLoading" style="display: none;">
-              <div class="spinner-small"></div>
-              <span>⏳ Đang xử lý bóc tách văn bản...</span>
-            </div>
-          </div>
-
-          <div class="rag-search-bar" style="margin-top: 16px;">
-            <input type="text" id="ragSearchInput" class="admin-search-input" style="flex: 1;" placeholder="Tra cứu đối soát FTS5 (VD: 140-BC/ĐU, chuyển đổi số, Đề án 06)...">
-            <button id="btnRagSearch" class="btn-primary">🔍 Tìm kiếm</button>
-          </div>
-          <div class="rag-results-wrap" id="ragResultsWrap"></div>
-          <div id="ragDocsListWrap" style="margin-top: 20px;"></div>
-        </div>
-
-        <!-- ==================== SUBTAB 6: CHỈ TIÊU KPI ==================== -->
-        <div class="admin-subcontent" id="subtab-kpis">
-          <div class="subcontent-header">
-            <div>
-              <h3 class="subcontent-title">Giám Sát 20 Chỉ Tiêu Đại Hội & 19 Chỉ Tiêu CĐS (NQ57)</h3>
-              <p class="subcontent-sub">Theo dõi các mốc mục tiêu Nghị quyết của Đảng bộ xã Công Hải đến năm 2030.</p>
-            </div>
-          </div>
-          <div class="kpis-grid" id="kpisGrid">
-            <div class="loading-state">Đang nạp hệ thống chỉ tiêu...</div>
-          </div>
-        </div>
-
-        <!-- ==================== SUBTAB 7: SỨC KHOẺ VPS & LOGS ==================== -->
-        <div class="admin-subcontent" id="subtab-server">
-          <div class="subcontent-header">
-            <div>
-              <h3 class="subcontent-title">Tình Trạng VPS & Nhật Ký Máy Chủ Trực Tiếp</h3>
-              <p class="subcontent-sub">Theo dõi tài nguyên VPS Ubuntu và kiểm tra lỗi hệ thống theo thời gian thực.</p>
-            </div>
-            <div class="subcontent-actions">
-              <button class="btn-gemini-pill" id="btnRefreshServerLogs">🔄 Tải lại Logs</button>
-            </div>
-          </div>
-
-          <div class="server-logs-box">
-            <pre id="serverLogsPre">Đang đọc nhật ký máy chủ...</pre>
-          </div>
-        </div>
+      <!-- ĐIỀU HƯỚNG QUẢN TRỊ ADMIN (CHỈ XUẤT HIỆN KHI ADMIN ĐĂNG NHẬP) -->
+      <div class="admin-switch-bar" id="adminSwitchBar" style="display: none;">
+        <button class="switch-pill active" id="btnSwitchChat" data-target="chat">
+          <span>💬 Trợ lý AI (ChatCHS)</span>
+        </button>
+        <button class="switch-pill" id="btnSwitchAdmin" data-target="admin">
+          <span>👑 Bảng Điều Hành Admin</span>
+        </button>
       </div>
-    </section>
+
+      <div class="topbar-right">
+        <!-- Nút tạo cuộc trò chuyện mới -->
+        <button class="btn-chs-outline" id="btnNewChat" title="Bắt đầu phiên hội thoại mới">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+          <span>Chat mới</span>
+        </button>
+
+        <!-- Trạng thái Đăng nhập Cán bộ / Khách -->
+        <button class="btn-auth-card" id="btnAuthTrigger" title="Nhấn để đăng nhập hoặc xem thông tin cán bộ">
+          <div class="auth-user-avatar" id="authBadgeIcon">👤</div>
+          <div class="auth-user-info">
+            <span class="auth-greeting">Tài khoản</span>
+            <span class="auth-name" id="authBadgeName">Chế độ Khách</span>
+          </div>
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== THÂN ỨNG DỤNG ==================== -->
+    <div class="app-body">
+      <!-- ====================================================================== -->
+      <!-- PHÂN HỆ 1: TRANG CHAT DUY NHẤT (CHATCHS) CHUẨN CÔNG HẢI SỐ              -->
+      <!-- ====================================================================== -->
+      <section class="main-view active" id="view-chat">
+        <div class="chat-container">
+          <!-- HÌNH NỀN TRỐNG ĐỒNG ĐÔNG SƠN CHÌM -->
+          <div class="trong-dong-watermark"></div>
+
+          <!-- VÙNG CUỘN TIN NHẮN -->
+          <main class="chat-scroll" id="chatScroll">
+            <!-- MÀN HÌNH CHÀO MỪNG CHATCHS -->
+            <section class="welcome-chs" id="welcome">
+              <div class="welcome-logo-wrap">
+                <img src="/static/assets/logo.png" alt="Công Hải Số Logo" class="welcome-logo-lg">
+              </div>
+              <h1 class="welcome-title-chs">ChatCHS</h1>
+              <h2 class="welcome-title-sub">Trợ lý AI Công Hải Số — Văn phòng Đảng uỷ</h2>
+              <div style="font-size: 14.5px; font-weight: 600; color: var(--primary-red); margin-bottom: 8px;">Xin chào, <span id="welcomeUserName">đồng chí</span></div>
+              <p class="welcome-desc">
+                Hệ thống tham mưu tổng hợp, chuẩn hoá thể thức Hướng dẫn số 05-HD/VPTW năm 2026, đối soát số liệu địa phương và hỗ trợ cán bộ cấp uỷ 24/7.
+              </p>
+
+              <!-- 4 THẺ GỢI Ý NGHIỆP VỤ -->
+              <div class="chs-suggestions-grid">
+                <div class="chs-card suggest" data-prompt="Tham mưu công văn giao việc từ văn bản chỉ đạo của Tỉnh uỷ Khánh Hoà">
+                  <div>
+                    <span class="chs-card-title">Tham mưu công văn giao việc</span>
+                    <span class="chs-card-desc">Bóc tách nhiệm vụ từ văn bản của Tỉnh uỷ gửi các cơ quan chuyên môn cấp xã</span>
+                  </div>
+                  <div class="chs-card-badge">📥</div>
+                </div>
+
+                <div class="chs-card suggest" data-prompt="Tổng hợp dự thảo báo cáo tuần từ báo cáo của UBND và các cơ quan chuyên môn">
+                  <div>
+                    <span class="chs-card-title">Tổng hợp báo cáo tuần</span>
+                    <span class="chs-card-desc">Gộp số liệu, rà soát kết quả các ngành và phương hướng tuần tới</span>
+                  </div>
+                  <div class="chs-card-badge">📊</div>
+                </div>
+
+                <div class="chs-card suggest" data-prompt="Soạn thông báo kết luận cuộc họp Thường trực Đảng uỷ xã Công Hải">
+                  <div>
+                    <span class="chs-card-title">Thông báo kết luận cuộc họp</span>
+                    <span class="chs-card-desc">Chuẩn hoá ý kiến chỉ đạo của Thường trực theo công thức giao việc 5 Rõ</span>
+                  </div>
+                  <div class="chs-card-badge">🏛️</div>
+                </div>
+
+                <div class="chs-card suggest" data-prompt="Thẩm định dự thảo kế hoạch của UBND xã theo thể thức văn bản Đảng HD 05">
+                  <div>
+                    <span class="chs-card-title">Thẩm định dự thảo văn bản</span>
+                    <span class="chs-card-desc">Kiểm tra lỗi thể thức HD 05-HD/VPTW và đối soát chỉ tiêu số liệu</span>
+                  </div>
+                  <div class="chs-card-badge">🔍</div>
+                </div>
+              </div>
+            </section>
+
+            <!-- DANH SÁCH TIN NHẮN (MESSAGE STREAM) -->
+            <div class="messages-stream" id="messages"></div>
+          </main>
+
+          <!-- KHUNG NHẬP LIỆU CỐ ĐỊNH Ở ĐÁY -->
+          <footer class="composer-fixed-wrap">
+            <div class="composer-card" id="composer">
+              <div class="attach-chips-box" id="attachList"></div>
+              <div class="composer-inner-row">
+                <button class="composer-btn-attach" id="btnAttach" title="Đính kèm tệp văn bản (Word, PDF, TXT)">
+                  <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16.5 6v11.5a4 4 0 0 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 0 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 0 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6z"/></svg>
+                </button>
+                <textarea id="input" class="composer-textarea" rows="1" placeholder="Đặt câu hỏi hoặc yêu cầu soạn thảo văn bản cho Trợ lý AI..."></textarea>
+                <button class="composer-btn-send" id="btnSend" title="Gửi tin nhắn (Enter)" disabled>
+                  <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3.4 20.4 21.85 12 3.4 3.6 3.39 10.2 16.5 12 3.39 13.8z"/></svg>
+                </button>
+              </div>
+              <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.md" hidden>
+            </div>
+            <div class="composer-footer-note">
+              Hệ thống Công Hải Số (ChatCHS) — Văn phòng Đảng uỷ xã Công Hải, tỉnh Khánh Hoà
+            </div>
+            <div class="drop-overlay" id="dropOverlay">Thả tệp vào đây để đính kèm vào phiên chat</div>
+          </footer>
+        </div>
+      </section>
+
+      <!-- ====================================================================== -->
+      <!-- PHÂN HỆ 2: BẢNG ĐIỀU HÀNH ADMIN TOÀN DIỆN (CHỈ DÀNH CHO ADMIN)          -->
+      <!-- ====================================================================== -->
+      <section class="main-view" id="view-admin" style="display: none;">
+        <div class="admin-scroll">
+          <div class="admin-wrapper">
+            <!-- Header Bảng điều hành Admin -->
+            <div class="admin-header-box">
+              <div>
+                <h2 class="admin-title">👑 Trung Tâm Điều Hành Quản Trị Hệ Thống</h2>
+                <p class="admin-desc">Dành riêng cho Quản trị viên: Quản lý danh bạ cán bộ (CRUD), Động cơ AI, Sổ nhiệm vụ, Chỉ tiêu KPI và Máy chủ.</p>
+              </div>
+              <button class="btn-chs-outline" id="btnBackToChatFromAdmin">
+                <span>← Trở lại Trợ lý Chat</span>
+              </button>
+            </div>
+
+            <!-- MENU PHÂN HỆ CON (TABS) -->
+            <div class="admin-subtabs-row">
+              <button class="admin-subtab active" data-subtab="subtab-cadres">👥 Quản Lý Danh Bạ Cán Bộ</button>
+              <button class="admin-subtab" data-subtab="subtab-models">🤖 Quản Trị Mô Hình AI</button>
+              <button class="admin-subtab" data-subtab="subtab-logs">💬 Giám Sát Hội Thoại Hệ Thống</button>
+              <button class="admin-subtab" data-subtab="subtab-tasks">📋 Sổ Nhiệm Vụ</button>
+              <button class="admin-subtab" data-subtab="subtab-rag">📚 Kho Văn Bản RAG</button>
+              <button class="admin-subtab" data-subtab="subtab-kpis">🎯 Chỉ Tiêu KPI</button>
+              <button class="admin-subtab" data-subtab="subtab-server">🖥️ Sức Khoẻ VPS & Logs</button>
+            </div>
+
+            <!-- 4 THẺ THỐNG KÊ NHANH -->
+            <div class="admin-stats-row">
+              <div class="stat-card-chs">
+                <div class="stat-icon-wrap">👥</div>
+                <div>
+                  <div class="stat-value" id="statAdminCadres">1</div>
+                  <div class="stat-label">Cán bộ trong danh bạ</div>
+                </div>
+              </div>
+              <div class="stat-card-chs">
+                <div class="stat-icon-wrap">💬</div>
+                <div>
+                  <div class="stat-value" id="statAdminMessages">0</div>
+                  <div class="stat-label">Hội thoại đã lưu</div>
+                </div>
+              </div>
+              <div class="stat-card-chs">
+                <div class="stat-icon-wrap">⚡</div>
+                <div>
+                  <div class="stat-value" id="statAdminAiModel" style="font-size: 16px;">Gemini 3.5 Flash Lite</div>
+                  <div class="stat-label">Động cơ AI chính</div>
+                </div>
+              </div>
+              <div class="stat-card-chs">
+                <div class="stat-icon-wrap">🖥️</div>
+                <div>
+                  <div class="stat-value" id="statAdminDisk">-</div>
+                  <div class="stat-label">Dung lượng ổ đĩa VPS</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ==================== SUBTAB 1: DANH BẠ CÁN BỘ (CRUD) ==================== -->
+            <div class="admin-subcontent active" id="subtab-cadres">
+              <div class="admin-card-table">
+                <div class="table-header-bar">
+                  <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Danh Bạ Cán Bộ Có Quyền Đăng Nhập</h3>
+                    <p style="font-size: 12.5px; color: var(--text-muted);">Cán bộ có tên trong danh bạ mới có thể đăng nhập bằng Số điện thoại.</p>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="inputSearchCadre" class="form-input-chs" style="width: 260px; padding: 7px 12px;" placeholder="Tìm theo tên hoặc số điện thoại...">
+                    <button class="btn-chs-outline" id="btnOpenAddCadreModal" style="background-color: var(--primary-red); color: white; border: none;">➕ Thêm Cán Bộ</button>
+                  </div>
+                </div>
+
+                <table class="chs-table" id="cadresTable">
+                  <thead>
+                    <tr>
+                      <th width="60">STT</th>
+                      <th>Họ và Tên</th>
+                      <th width="140">Số Điện Thoại</th>
+                      <th>Chức Vụ</th>
+                      <th>Cơ Quan / Đơn Vị</th>
+                      <th width="120">Vai Trò</th>
+                      <th width="140" style="text-align: center;">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cadresTableBody">
+                    <tr><td colspan="7" style="text-align: center; padding: 20px;">Đang tải danh bạ cán bộ...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ==================== SUBTAB 2: QUẢN TRỊ MÔ HÌNH AI ==================== -->
+            <div class="admin-subcontent" id="subtab-models" style="display: none;">
+              <div class="ai-models-grid" id="adminAiModelsGrid">
+                <div class="ai-engine-card active" id="cardModelGemini">
+                  <span style="font-size: 11px; font-weight: 700; color: var(--primary-red); background: var(--red-100); padding: 3px 8px; border-radius: 4px;">ĐỘNG CƠ CHÍNH</span>
+                  <h4 style="font-size: 17px; font-weight: 800; margin: 8px 0 4px 0;">Google Gemini 3.5 Flash Lite</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">Tốc độ siêu tốc, cửa sổ ngữ cảnh 1 triệu tokens, miễn phí 500 yêu cầu/ngày. Tối ưu xuất sắc cho soạn thảo và thẩm định văn bản.</p>
+                  <div style="margin-top: 12px; font-size: 12px; color: #16a34a; font-weight: 600;">● Đang hoạt động (200 OK)</div>
+                </div>
+
+                <div class="ai-engine-card" id="cardModelDeepseek">
+                  <span style="font-size: 11px; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 3px 8px; border-radius: 4px;">ĐỘNG CƠ DỰ PHÒNG</span>
+                  <h4 style="font-size: 17px; font-weight: 800; margin: 8px 0 4px 0;">DeepSeek-V3 Cloud (671B)</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">Mô hình suy luận lớn 671 tỷ tham số. Tự động kích hoạt dự phòng khi Gemini quá tải hoặc mạng gián đoạn.</p>
+                  <div style="margin-top: 12px; font-size: 12px; color: #0284c7; font-weight: 600;">● Dự phòng tự động (Failover)</div>
+                </div>
+
+                <div class="ai-engine-card" id="cardModelOllama">
+                  <span style="font-size: 11px; font-weight: 700; color: #7c3aed; background: #ede9fe; padding: 3px 8px; border-radius: 4px;">OFFLINE NỘI BỘ</span>
+                  <h4 style="font-size: 17px; font-weight: 800; margin: 8px 0 4px 0;">Ollama Local (Qwen 2.5 / DeepSeek-R1)</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">Chạy trực tiếp trên máy chủ cơ quan, bảo mật 100% tài liệu nội bộ khi mất Internet.</p>
+                  <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);" id="ollamaIndicator">○ Chế độ dự phòng Offline</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ==================== SUBTAB 3: NHẬT KÝ HỘI THOẠI ==================== -->
+            <div class="admin-subcontent" id="subtab-logs" style="display: none;">
+              <div class="admin-card-table">
+                <div class="table-header-bar">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Lịch Sử Hội Thoại Cán Bộ (Kênh Web & Zalo)</h3>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="inputSearchChatLogs" class="form-input-chs" style="width: 260px; padding: 7px 12px;" placeholder="Tìm theo người gửi hoặc nội dung...">
+                    <button class="btn-chs-outline" id="btnSearchChatLogs">🔍 Tìm kiếm</button>
+                  </div>
+                </div>
+                <table class="chs-table">
+                  <thead>
+                    <tr>
+                      <th width="150">Thời Gian</th>
+                      <th width="100">Kênh</th>
+                      <th width="180">Cán Bộ</th>
+                      <th>Nội Dung Người Dùng</th>
+                      <th>Phản Hồi AI</th>
+                    </tr>
+                  </thead>
+                  <tbody id="chatLogsTableBody">
+                    <tr><td colspan="5" style="text-align: center; padding: 20px;">Đang tải nhật ký hội thoại...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ==================== SUBTAB 4: SỔ NHIỆM VỤ ==================== -->
+            <div class="admin-subcontent" id="subtab-tasks" style="display: none;">
+              <div class="admin-card-table">
+                <div class="table-header-bar">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Sổ Theo Dõi Nhiệm Vụ Giao Việc</h3>
+                  <div style="display: flex; gap: 8px;">
+                    <select id="filterTaskStatus" class="form-input-chs" style="width: 150px; padding: 7px 10px;">
+                      <option value="">Tất cả trạng thái</option>
+                      <option value="Chưa thực hiện">Chưa thực hiện</option>
+                      <option value="Đang thực hiện">Đang thực hiện</option>
+                      <option value="Đã hoàn thành">Đã hoàn thành</option>
+                      <option value="Quá hạn">Quá hạn</option>
+                    </select>
+                    <button class="btn-chs-outline" id="btnRefreshTasks">🔄 Làm mới</button>
+                  </div>
+                </div>
+                <table class="chs-table">
+                  <thead>
+                    <tr>
+                      <th width="60">STT</th>
+                      <th>Nội Dung Nhiệm Vụ</th>
+                      <th width="160">Cơ Quan Chủ Trì</th>
+                      <th width="120">Hạn Chót</th>
+                      <th width="130">Trạng Thái</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tasksTableBody">
+                    <tr><td colspan="5" style="text-align: center; padding: 20px;">Đang tải sổ nhiệm vụ...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ==================== SUBTAB 5: KHO VĂN BẢN RAG ==================== -->
+            <div class="admin-subcontent" id="subtab-rag" style="display: none;">
+              <div class="admin-card-table">
+                <div class="table-header-bar">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Kho Văn Bản Tri Thức & Pháp Quy Cấp Uỷ</h3>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="ragSearchInput" class="form-input-chs" style="width: 260px; padding: 7px 12px;" placeholder="Tìm nhanh trong kho RAG...">
+                    <button class="btn-chs-outline" id="btnRagSearch">🔍 Tìm</button>
+                    <button class="btn-chs-outline" id="btnRefreshRagDocs">🔄 Làm mới</button>
+                  </div>
+                </div>
+                <div id="ragResultsWrap" style="padding: 12px; display: none;"></div>
+                <table class="chs-table">
+                  <thead>
+                    <tr>
+                      <th width="60">STT</th>
+                      <th width="130">Số Hiệu</th>
+                      <th>Trích Yếu Nội Dung</th>
+                      <th width="140">Cơ Quan</th>
+                      <th width="100">Ngày Ban Hành</th>
+                      <th width="80" style="text-align: center;">Chunks</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ragDocsTableBody">
+                    <tr><td colspan="6" style="text-align: center; padding: 20px;">Đang nạp danh mục văn bản RAG...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ==================== SUBTAB 6: CHỈ TIÊU KPI ==================== -->
+            <div class="admin-subcontent" id="subtab-kpis" style="display: none;">
+              <div class="admin-card-table">
+                <div class="table-header-bar">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">20 Chỉ Tiêu Đại Hội Đảng Bộ Xã & NQ57 Chuyển Đổi Số</h3>
+                </div>
+                <div id="kpisGrid" style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+                  Đang tải chỉ tiêu...
+                </div>
+              </div>
+            </div>
+
+            <!-- ==================== SUBTAB 7: MÁY CHỦ VPS & LOGS ==================== -->
+            <div class="admin-subcontent" id="subtab-server" style="display: none;">
+              <div class="admin-card-table">
+                <div class="table-header-bar">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Nhật Ký Máy Chủ VPS (Systemd Journal)</h3>
+                  <button class="btn-chs-outline" id="btnRefreshServerLogs">🔄 Tải log mới</button>
+                </div>
+                <pre id="serverLogsPre" style="padding: 16px; background-color: #0f172a; color: #38bdf8; font-family: monospace; font-size: 12.5px; max-height: 400px; overflow-y: auto; border-radius: 0 0 12px 12px;">Đang đọc log máy chủ...</pre>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <!-- ====================================================================== -->
-  <!-- MODAL 1: ĐĂNG NHẬP CÁN BỘ BẰNG SỐ ĐIỆN THOẠI & HIỂN THỊ OTP NGAY DƯỚI   -->
-  <!-- ====================================================================== -->
+  <!-- ==================== MODAL ĐĂNG NHẬP (CHUẨN CÔNG HẢI SỐ) ==================== -->
   <div class="modal-backdrop" id="modalAuth" style="display: none;">
-    <div class="gemini-modal-card" style="max-width: 440px;">
-      <div class="modal-header">
-        <div class="modal-title">🔐 Đăng Nhập Cán Bộ</div>
-        <button class="modal-close-btn" id="btnCloseAuthModal">✕</button>
-      </div>
-
-      <div class="modal-body">
-        <!-- Bước 1: Nhập Số Điện Thoại -->
-        <div id="authStep1">
-          <p class="modal-desc-text">
-            Nhập <b>Số điện thoại</b> đã đăng ký trong danh bạ cán bộ xã Công Hải để lưu trữ lịch sử tham mưu và truy cập quyền điều hành.
-          </p>
-
-          <div class="form-group-gemini">
-            <label>Số điện thoại cán bộ (*):</label>
-            <input type="tel" id="inputAuthPhone" placeholder="Ví dụ: 0327777707" autofocus>
-          </div>
-
-          <div id="authNoticePhone" class="modal-error-text"></div>
-
-          <button class="btn-gemini-primary full-width" id="btnSendOtp">
-            ⚡ Lấy mã xác thực OTP
-          </button>
-
-          <div class="modal-security-note">
-            🛡️ <b>Bảo mật tuyệt đối:</b> Hệ thống sử dụng số điện thoại làm định danh nội bộ, tuyệt đối không gửi số điện thoại hay thông tin cá nhân lên AI đám mây.
-          </div>
+    <div class="modal-chs-card" style="position: relative;">
+      <button id="btnCloseAuthModal" style="position: absolute; top: 12px; right: 14px; font-size: 20px; color: var(--text-muted); cursor: pointer; border: none; background: none;">✕</button>
+      <div class="modal-chs-body">
+        <div class="login-header-chs">
+          <img src="/static/assets/logo.png" alt="Công Hải Số" class="login-logo-img">
+          <h2 class="login-title-chs">CÔNG HẢI SỐ</h2>
+          <h3 class="login-sub-chs">VĂN PHÒNG ĐẢNG UỶ XÃ CÔNG HẢI</h3>
         </div>
 
-        <!-- Bước 2: Hiển thị OTP ngay bên dưới & Xác nhận đăng nhập -->
-        <div id="authStep2" style="display: none;">
-          <p class="modal-desc-text">
-            Mã xác thực đã được tạo cho số <b id="displayAuthTargetPhone" style="color: #60a5fa;">-</b>:
-          </p>
-
-          <!-- KHỐI HIỂN THỊ MÃ OTP NỔI BẬT CHUẨN YÊU CẦU -->
-          <div class="otp-highlight-box" id="otpHighlightBox">
-            <div class="otp-box-label">MÃ XÁC THỰC CỦA ĐỒNG CHÍ:</div>
-            <div class="otp-box-code" id="displayOtpCode">------</div>
-            <button type="button" class="btn-gemini-autofill" id="btnAutoFillOtp">⚡ Tự động điền mã này</button>
+        <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI -->
+        <div id="authStep1">
+          <div class="form-group-chs">
+            <label class="form-label-chs">Số điện thoại cán bộ</label>
+            <input type="tel" id="inputAuthPhone" class="form-input-chs" placeholder="Ví dụ: 0327777707" autofocus>
           </div>
-
-          <div class="form-group-gemini" style="margin-top: 16px;">
-            <label>Mã xác thực 6 số:</label>
-            <input type="text" id="inputAuthOtp" maxlength="6" placeholder="______" style="font-size: 20px; text-align: center; letter-spacing: 6px; font-weight: 700;">
-          </div>
-
-          <div id="authNoticeOtp" class="modal-error-text"></div>
-
-          <button class="btn-gemini-primary full-width" id="btnVerifyOtp" style="margin-top: 12px;">
-            ✓ Xác nhận Đăng nhập
+          <div id="authNoticePhone" style="font-size: 13px; color: var(--primary-red); margin-bottom: 12px;"></div>
+          <button class="btn-chs-submit" id="btnSendOtp">
+            <span>Tiếp tục nhận mã OTP</span>
           </button>
+        </div>
 
-          <button class="btn-gemini-ghost full-width" id="btnBackToStep1" style="margin-top: 8px;">
+        <!-- BƯỚC 2: MÃ OTP TRỰC QUAN -->
+        <div id="authStep2" style="display: none;">
+          <p style="font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 12px;">
+            Mã xác thực gửi tới số: <b id="displayAuthTargetPhone" style="color: var(--primary-red);"></b>
+          </p>
+          <div class="otp-highlight-box" id="authDevOtpHint">
+            <span style="font-size: 12px; font-weight: 700; color: var(--red-700); text-transform: uppercase;">Mã OTP xác thực trực tiếp:</span>
+            <div class="otp-number-display" id="displayOtpCode">------</div>
+            <button class="btn-autofill-otp" id="btnAutoFillOtp">⚡ Tự động điền mã</button>
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Nhập 6 chữ số OTP</label>
+            <input type="text" id="inputAuthOtp" class="form-input-chs" placeholder="6 chữ số OTP" maxlength="6" style="text-align: center; letter-spacing: 4px; font-size: 20px; font-weight: 700;">
+          </div>
+          <div id="authNoticeOtp" style="font-size: 13px; color: var(--primary-red); margin-bottom: 12px;"></div>
+          <button class="btn-chs-submit" id="btnVerifyOtp">
+            <span>Xác nhận đăng nhập</span>
+          </button>
+          <button id="btnBackToStep1" style="width: 100%; text-align: center; margin-top: 10px; font-size: 13px; color: var(--text-muted); cursor: pointer;">
             ← Đổi số điện thoại khác
           </button>
         </div>
 
-        <!-- Bước 3: Hồ sơ cán bộ đã đăng nhập -->
-        <div id="authStepProfile" style="display: none;">
-          <div class="profile-card-center">
-            <div class="profile-avatar">👤</div>
-            <h3 id="profileName" class="profile-name">Họ và Tên</h3>
-            <div id="profileRole" class="profile-role">Chức vụ - Cơ quan</div>
-            <div id="profilePhone" class="profile-phone">SĐT: -</div>
-            <div id="profileAdminBadge" class="profile-badge-admin" style="display: none;">👑 Quản trị viên cấp uỷ (Admin)</div>
+        <!-- BƯỚC 3: HỒ SƠ ĐÃ ĐĂNG NHẬP -->
+        <div id="authStepProfile" style="display: none; text-align: center;">
+          <div class="auth-user-avatar" style="width: 60px; height: 60px; margin: 0 auto 12px auto; font-size: 24px;">👤</div>
+          <h3 id="profileName" style="font-size: 18px; font-weight: 800; color: var(--primary-red);">Đồng chí</h3>
+          <p id="profilePhone" style="font-size: 14px; color: var(--text-muted); margin: 2px 0;"></p>
+          <p id="profileRole" style="font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 16px;"></p>
+          <div id="profileAdminBadge" style="display: none; margin-bottom: 16px;">
+            <button class="btn-chs-submit" id="btnGoToAdminFromModal" style="background-color: #1e293b;">
+              <span>👑 Mở Bảng Điều Hành Quản Trị</span>
+            </button>
           </div>
-
-          <div class="profile-actions-row">
-            <button class="btn-gemini-primary" id="btnGoToAdminFromModal" style="display: none; flex: 1;">👑 Mở Bảng Admin</button>
-            <button class="btn-gemini-danger" id="btnLogout" style="flex: 1;">Đăng xuất</button>
-          </div>
+          <button class="btn-chs-outline" id="btnLogout" style="width: 100%; justify-content: center;">
+            <span>Đăng xuất tài khoản</span>
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ====================================================================== -->
-  <!-- MODAL 2: THÊM / SỬA CÁN BỘ TRONG DANH BẠ (CRUD CHO ADMIN)               -->
-  <!-- ====================================================================== -->
+  <!-- ==================== MODAL THÊM / SỬA CÁN BỘ (CRUD) ==================== -->
   <div class="modal-backdrop" id="modalCadreCrud" style="display: none;">
-    <div class="gemini-modal-card" style="max-width: 480px;">
-      <div class="modal-header">
-        <div class="modal-title" id="cadreCrudModalTitle">➕ Thêm Cán Bộ Mới</div>
-        <button class="modal-close-btn" id="btnCloseCadreModal">✕</button>
+    <div class="modal-chs-card wide">
+      <div class="modal-chs-header">
+        <h3 class="modal-chs-title" id="cadreCrudModalTitle">Thêm Cán Bộ Mới Vào Danh Bạ</h3>
+        <button id="btnCloseCadreModal" style="font-size: 20px; color: var(--text-muted); cursor: pointer;">✕</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-chs-body">
         <form id="formCadreCrud">
           <input type="hidden" id="crudCadreId">
-          <div class="form-group-gemini">
-            <label>Họ và Tên cán bộ (*):</label>
-            <input type="text" id="crudHoTen" required placeholder="Ví dụ: Nguyễn Văn A">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group-chs">
+              <label class="form-label-chs">Họ và tên cán bộ (*)</label>
+              <input type="text" id="crudHoTen" class="form-input-chs" required placeholder="Ví dụ: Nguyễn Văn A">
+            </div>
+            <div class="form-group-chs">
+              <label class="form-label-chs">Số điện thoại đăng nhập (*)</label>
+              <input type="tel" id="crudSoDienThoai" class="form-input-chs" required placeholder="Ví dụ: 0912345678">
+            </div>
+            <div class="form-group-chs">
+              <label class="form-label-chs">Chức vụ cụ thể</label>
+              <input type="text" id="crudChucVu" class="form-input-chs" placeholder="Ví dụ: Chuyên viên Văn phòng">
+            </div>
+            <div class="form-group-chs">
+              <label class="form-label-chs">Cơ quan / Chi bộ (*)</label>
+              <input type="text" id="crudCoQuan" class="form-input-chs" required placeholder="Ví dụ: Văn phòng Đảng uỷ">
+            </div>
+            <div class="form-group-chs" style="grid-column: span 2;">
+              <label class="form-label-chs">Vai trò phân quyền (*)</label>
+              <select id="crudVaiTro" class="form-input-chs">
+                <option value="can_bo">Cán bộ thông thường (Chỉ sử dụng Chat)</option>
+                <option value="lanh_dao">Lãnh đạo cấp uỷ (Xem chỉ đạo, duyệt dự thảo)</option>
+                <option value="admin">Quản trị viên Admin (Toàn quyền quản trị hệ thống)</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group-gemini">
-            <label>Số điện thoại Zalo (*):</label>
-            <input type="tel" id="crudSoDienThoai" required placeholder="Ví dụ: 0912345678">
-          </div>
-          <div class="form-group-gemini">
-            <label>Chức vụ:</label>
-            <input type="text" id="crudChucVu" placeholder="Ví dụ: Chuyên viên Văn phòng Đảng uỷ">
-          </div>
-          <div class="form-group-gemini">
-            <label>Cơ quan / Đơn vị:</label>
-            <input type="text" id="crudCoQuan" placeholder="Ví dụ: Văn phòng Đảng uỷ">
-          </div>
-          <div class="form-group-gemini">
-            <label>Phân quyền (Vai trò):</label>
-            <select id="crudVaiTro">
-              <option value="can_bo">Cán bộ thông thường</option>
-              <option value="lanh_dao_co_quan">Lãnh đạo cơ quan</option>
-              <option value="lanh_dao_thuong_truc">Lãnh đạo Thường trực Đảng uỷ</option>
-              <option value="admin">Quản trị viên Cấp uỷ (Admin)</option>
-            </select>
-          </div>
-          <div id="crudCadreNotice" class="modal-error-text"></div>
-          <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button type="button" class="btn-gemini-ghost" id="btnCancelCadreModal" style="flex: 1;">Huỷ</button>
-            <button type="submit" class="btn-gemini-primary" style="flex: 1;">💾 Lưu Cán Bộ</button>
+          <div id="crudCadreNotice" style="font-size: 13px; color: var(--primary-red); margin-bottom: 14px;"></div>
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+            <button type="button" class="btn-chs-outline" id="btnCancelCadreModal">Huỷ bỏ</button>
+            <button type="submit" class="btn-chs-submit" style="width: auto; padding: 10px 24px;">Lưu cán bộ</button>
           </div>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- SCRIPT HẠT NHÂN -->
+  <!-- NẠP JAVASCRIPT HẠT NHÂN -->
   <script src="/static/app.js"></script>
 </body>
 </html>

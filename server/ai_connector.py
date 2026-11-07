@@ -383,10 +383,24 @@ class DeepSeekClient:
         # LUỒNG 2: MÔ HÌNH ĐÁM MÂY (GEMINI CHÍNH HOẶC DEEPSEEK CLOUD DỰ PHÒNG)
         # ----------------------------------------------------------------------
         primary_provider = "gemini" if self.is_gemini() else "cloud"
-        active_key = self.api_key if self._has_valid_key(self.api_key) else (
-            self.gemini_key if primary_provider == "gemini" else self.deepseek_key
+
+        # Tự động điều hướng thông minh nếu provider được chọn chưa có Key nhưng provider kia có Key
+        if primary_provider == "cloud" and not self._has_valid_key(self.api_key) and not self._has_valid_key(self.deepseek_key):
+            if self._has_valid_key(self.gemini_key):
+                logger.info("Chưa có DEEPSEEK_API_KEY, tự động chuyển hướng sang Google Gemini...")
+                primary_provider = "gemini"
+                selected_model = self.gemini_model
+        elif primary_provider == "gemini" and not self._has_valid_key(self.api_key) and not self._has_valid_key(self.gemini_key):
+            if self._has_valid_key(self.deepseek_key):
+                logger.info("Chưa có GEMINI_API_KEY, tự động chuyển hướng sang DeepSeek Cloud...")
+                primary_provider = "cloud"
+                selected_model = self.deepseek_model
+
+        active_key = (
+            self.gemini_key if primary_provider == "gemini"
+            else (self.deepseek_key if self._has_valid_key(self.deepseek_key) else self.api_key)
         )
-        active_base = self.base_url
+        active_base = self.gemini_base_url if primary_provider == "gemini" else self.deepseek_base_url
 
         # Danh sách model thử nghiệm cho Gemini (nếu model mới 3.5 chưa sẵn sàng thì thử 3.1, 2.5, 2.0)
         gemini_candidate_models = [selected_model]
