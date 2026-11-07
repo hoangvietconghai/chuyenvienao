@@ -21,27 +21,43 @@ PLAN_REGISTRY_FILE = WORKSPACE_ROOT / "references" / "so_ke_hoach_chi_dao.json"
 
 
 def get_indicator_registry() -> Dict[str, Any]:
-    """Tải toàn bộ cơ sở dữ liệu chỉ tiêu nhiệm kỳ 2025 - 2030 (Ưu tiên SQLite DB)."""
+    """Tải toàn bộ cơ sở dữ liệu chỉ tiêu nhiệm kỳ 2025 - 2030 (Ưu tiên SQLite DB kết hợp từ khoá đầy đủ)."""
+    # 1. Đọc trước từ JSON để lấy danh sách từ khoá nhận diện phong phú
+    json_lookup = {}
+    if INDICATOR_FILE.exists():
+        try:
+            with open(INDICATOR_FILE, "r", encoding="utf-8") as f:
+                json_data = json.load(f)
+                for item in json_data.get("danh_sach_chi_tieu", []):
+                    json_lookup[item.get("ma_chi_tieu")] = item
+        except Exception as ex:
+            logger.warning(f"Lỗi khi đọc file JSON chi_tieu_nhiem_ky: {ex}")
+
+    # 2. Đọc từ SQLite DB để lấy số liệu thực tế cập nhật mới nhất
     try:
         from server.services import db_service
         kpis = db_service.get_all_kpis(nguon_nghi_quyet="NQ_DAI_HOI_I")
         if kpis:
             indicators = []
             for k in kpis:
+                ma = k["kpi_id"].replace("KPI-DH-", "")
+                json_item = json_lookup.get(ma, {})
+                # Giữ nguyên danh sách từ khoá nhận diện chuẩn từ JSON
+                tu_khoa = json_item.get("tu_khoa") or [k["ten_chi_tieu"].lower()]
                 indicators.append({
-                    "ma_chi_tieu": k["kpi_id"].replace("KPI-DH-", ""),
+                    "ma_chi_tieu": ma,
                     "nhom": k["nhom_chi_tieu"],
                     "ten_chi_tieu": k["ten_chi_tieu"],
                     "gia_tri_chuan": k["bieu_thuc_chi_tiet"] or f"{k['chi_tieu_nam_2026'] or ''} {k['don_vi_tinh']}".strip(),
                     "don_vi": k["don_vi_tinh"],
                     "muc_tieu_so": k["chi_tieu_nam_2026"],
-                    "trich_dan_nguyen_van": k.get("ghi_chu_vuong_mac", ""),
-                    "co_quan_chu_tri": k.get("co_quan_phu_trach", "UBND xã"),
-                    "tu_khoa": [k["ten_chi_tieu"].lower()]
+                    "trich_dan_nguyen_van": k.get("ghi_chu_vuong_mac") or json_item.get("trich_dan_nguyen_van", ""),
+                    "co_quan_chu_tri": k.get("co_quan_phu_trach") or json_item.get("co_quan_chu_tri", "UBND xã"),
+                    "tu_khoa": tu_khoa
                 })
             return {"danh_sach_chi_tieu": indicators, "source": "sqlite"}
-    except Exception:
-        pass
+    except Exception as ex:
+        logger.warning(f"Lỗi khi nạp KPI từ SQLite DB: {ex}")
 
     if not INDICATOR_FILE.exists():
         return {"danh_sach_chi_tieu": [], "cac_khau_dot_pha": []}

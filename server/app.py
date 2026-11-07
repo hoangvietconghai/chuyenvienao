@@ -679,21 +679,43 @@ async def commit_rag_endpoint(req: RagCommitRequest):
     }
 
 
+ALLOWED_DOWNLOAD_DIR = VAN_BAN_DU_THAO_DIR.resolve()
+ALLOWED_EXTENSIONS = {".docx", ".pdf"}
+
+
 @app.get("/api/download")
 async def download_file(file_path: str):
-    """Tải tệp Word đã xuất về máy tính của cán bộ."""
-    full_path = (BASE_DIR / file_path).resolve()
-    # Kiểm tra bảo mật: file phải nằm trong thư mục dự án
-    if not str(full_path).startswith(str(BASE_DIR.resolve())):
-        raise HTTPException(status_code=403, detail="Đường dẫn không hợp lệ.")
+    """Tải tệp văn bản dự thảo đã tạo, có chốt chặn bảo mật chống Path Traversal."""
+    target_path = (BASE_DIR / file_path).resolve() if not Path(file_path).is_absolute() else Path(file_path).resolve()
 
-    if not full_path.exists():
-        raise HTTPException(status_code=404, detail="Không tìm thấy tệp yêu cầu.")
+    # Chốt chặn 1: Bắt buộc phải nằm trong thư mục van_ban_du_thao/
+    if not str(target_path).startswith(str(ALLOWED_DOWNLOAD_DIR)):
+        logger.warning(f"Cảnh báo bảo mật: Truy cập tệp ngoài phạm vi cho phép: {file_path}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Truy cập bị từ chối: Chỉ được phép tải tệp từ thư mục dự thảo.",
+        )
+
+    # Chốt chặn 2: Bắt buộc đuôi tệp phải là .docx hoặc .pdf
+    if target_path.suffix.lower() not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Định dạng tệp không được phép tải về.",
+        )
+
+    if not target_path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy tệp yêu cầu.")
+
+    media_type = (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        if target_path.suffix.lower() == ".docx"
+        else "application/pdf"
+    )
 
     return FileResponse(
-        path=str(full_path),
-        filename=full_path.name,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        path=str(target_path),
+        filename=target_path.name,
+        media_type=media_type,
     )
 
 

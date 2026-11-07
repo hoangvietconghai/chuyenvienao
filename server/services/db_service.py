@@ -14,6 +14,7 @@ Quản lý 07 bảng nghiệp vụ:
 """
 
 import json
+import re
 import sqlite3
 import hashlib
 from contextlib import contextmanager
@@ -188,6 +189,7 @@ def init_database() -> None:
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_link_nguon ON van_ban_lien_ket(vb_nguon_so_hieu);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_link_dich ON van_ban_lien_ket(vb_dich_so_hieu);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_lienket_nguon_id ON van_ban_lien_ket(vb_nguon_doc_id);")
 
         # 7. Bảng Phân đoạn Văn bản (Chunks) & Bảng ảo FTS5
         cursor.execute("""
@@ -203,6 +205,8 @@ def init_database() -> None:
             FOREIGN KEY (doc_id) REFERENCES so_van_ban(doc_id) ON DELETE CASCADE
         );
         """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_chunks_doc_id ON van_ban_chunks(doc_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_chunks_type ON van_ban_chunks(chunk_type);")
 
         # Bảng ảo FTS5 sử dụng unicode61 hỗ trợ tiếng Việt có dấu và ký hiệu văn bản "-/."
         cursor.execute("""
@@ -757,9 +761,20 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
         if not safe_q:
             return []
 
-        # Thử tìm khớp nguyên cụm hoặc từng từ
-        words = [w for w in safe_q.split() if len(w) > 1]
-        fts_query = f'"{safe_q}"' if len(words) <= 3 else " OR ".join(f'"{w}"' for w in words)
+        # Tách và làm sạch các từ khoá tìm kiếm
+        clean_words = [re.sub(r'[^A-Za-z0-9À-Ỹà-ỹ\-\/\.]', '', w) for w in safe_q.split()]
+        words = [w for w in clean_words if len(w) > 0]
+
+        if not words:
+            return []
+
+        # Ghép query FTS5 chuẩn xác: AND kết hợp prefix matching ở từ cuối
+        if len(words) == 1:
+            fts_query = f'"{words[0]}"*'
+        elif len(words) <= 3:
+            fts_query = " AND ".join(f'"{w}"' for w in words[:-1]) + f' AND "{words[-1]}"*'
+        else:
+            fts_query = " AND ".join(f'"{w}"' for w in words[:5]) + f' AND "{words[5]}"*' if len(words) > 5 else " AND ".join(f'"{w}"' for w in words[:-1]) + f' AND "{words[-1]}"*'
 
         try:
             cursor.execute("""
