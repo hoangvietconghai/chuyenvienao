@@ -115,3 +115,4 @@ def normalize_party_doc_type(raw: str) -> str:
     if "CTR" in r or "CHƯƠNG TRÌNH" in r:
         return "CTR"
     return "CV"
+

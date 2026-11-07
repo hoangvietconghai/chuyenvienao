@@ -30,6 +30,7 @@ from server.routers.admin import router as admin_router
 from server.routers.chat import router as chat_router
 from server.routers.knowledge import router as knowledge_router, search_router
 from server.routers.zalo_webhook import router as zalo_router
+from server.services import scheduler_service
 
 logger = get_logger("app")
 
@@ -54,6 +55,14 @@ app.add_middleware(
 async def startup_event():
     logger.info("Chuyên viên ảo khởi động thành công trên http://%s:%s", SERVER_HOST, SERVER_PORT)
     logger.info("Cấu hình CORS origins được phép: %s", CORS_ORIGINS)
+    # Khởi động bộ lập lịch tự động và chạy khởi động bù
+    scheduler_service.start_scheduler()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Chuyên viên ảo đang tắt hệ thống...")
+    scheduler_service.stop_scheduler()
 
 
 # Đường dẫn tĩnh phục vụ giao diện Web

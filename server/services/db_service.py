@@ -328,6 +328,24 @@ def get_can_bo_by_unit(co_quan_code: str) -> List[Dict[str, Any]]:
         return [dict(row) for row in cursor.fetchall()]
 
 
+def get_cadres_by_agency(co_quan_code: str) -> List[Dict[str, Any]]:
+    """Alias cho get_can_bo_by_unit."""
+    return get_can_bo_by_unit(co_quan_code)
+
+
+def get_leadership_cadres() -> List[Dict[str, Any]]:
+    """Lấy danh sách cán bộ lãnh đạo Thường trực Đảng uỷ và Trưởng các cơ quan."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT * FROM danh_ba_can_bo 
+        WHERE vai_tro IN ('lanh_dao_thuong_truc', 'lanh_dao_co_quan') 
+          AND is_active = 1
+        ORDER BY can_bo_id ASC;
+        """)
+        return [dict(row) for row in cursor.fetchall()]
+
+
 # ==============================================================================
 # 2. CÁC HÀM CRUD CHO SỔ TIÊU CHÍ (`so_tieu_chi`)
 # ==============================================================================
