@@ -72,6 +72,11 @@ NEED_INPUT_HINT = {
 CONFIRM_RE = re.compile(r"^(ok|oke|được|đồng ý|duyệt|xuất|xuất word|xuất file|giữ nguyên|tiếp tục|chốt)\b", re.IGNORECASE)
 CANCEL_RE = re.compile(r"^(huỷ|hủy|thôi|bỏ qua|không cần)\b", re.IGNORECASE)
 
+from server.utils.text_processing import normalize_party_doc_type as _normalize_doc_type
+
+SESSION_TTL_SECONDS = 4 * 3600  # 4 giờ
+MAX_SESSIONS = 50
+
 SESSIONS: Dict[str, Dict[str, Any]] = {}
 
 
@@ -79,10 +84,37 @@ SESSIONS: Dict[str, Dict[str, Any]] = {}
 # QUẢN LÝ PHIÊN
 # ==============================================================================
 
+def _cleanup_old_sessions() -> None:
+    """Tự động dọn dẹp các session quá hạn để chống rò rỉ RAM."""
+    now = datetime.now().timestamp()
+    expired = [
+        sid for sid, s in SESSIONS.items()
+        if now - s.get("last_active", now) > SESSION_TTL_SECONDS
+    ]
+    for sid in expired:
+        del SESSIONS[sid]
+
+    # Nếu vẫn vượt quá MAX_SESSIONS, xoá bớt các session cũ nhất
+    if len(SESSIONS) > MAX_SESSIONS:
+        sorted_sids = sorted(SESSIONS.keys(), key=lambda k: SESSIONS[k].get("last_active", 0))
+        for sid in sorted_sids[:(len(SESSIONS) - MAX_SESSIONS)]:
+            del SESSIONS[sid]
+
+
 def get_session(session_id: Optional[str]) -> Tuple[str, Dict[str, Any]]:
+    _cleanup_old_sessions()
+    now_ts = datetime.now().timestamp()
     if not session_id or session_id not in SESSIONS:
         session_id = session_id or uuid.uuid4().hex
-        SESSIONS[session_id] = {"history": [], "attachments": [], "pending": None, "awaiting": None}
+        SESSIONS[session_id] = {
+            "history": [],
+            "attachments": [],
+            "pending": None,
+            "awaiting": None,
+            "last_active": now_ts,
+        }
+    else:
+        SESSIONS[session_id]["last_active"] = now_ts
     return session_id, SESSIONS[session_id]
 
 
@@ -189,29 +221,7 @@ QUY TẮC BẮT BUỘC:
 """
 
 
-def _normalize_doc_type(raw: str) -> str:
-    r = (raw or "").upper().strip()
-    if "CV" in r or "CÔNG VĂN" in r or "GIAO VIỆC" in r:
-        return "CV"
-    if "KH" in r or "KẾ HOẠCH" in r:
-        return "KH"
-    if "TB" in r or "THÔNG BÁO" in r:
-        return "TB"
-    if "KL" in r or "KẾT LUẬN" in r:
-        return "KL"
-    if "BC" in r or "BÁO CÁO" in r:
-        return "BC"
-    if "TTR" in r or "TỜ TRÌNH" in r:
-        return "TTr"
-    if "QĐ" in r or "QD" in r or "QUYẾT ĐỊNH" in r:
-        return "QD"
-    if "NQ" in r or "NGHỊ QUYẾT" in r:
-        return "NQ"
-    if "CT" in r or "CHỈ THỊ" in r:
-        return "CT"
-    if "CTR" in r or "CHƯƠNG TRÌNH" in r:
-        return "CTR"
-    return "CV"
+# _normalize_doc_type đã được import từ server.utils.text_processing
 
 
 def _keyword_intent(message: str, new_atts: List[Dict], has_pending: bool) -> str:
