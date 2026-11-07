@@ -1,148 +1,198 @@
-# HỆ THỐNG TRỢ LÝ AI THAM MƯU TỔNG HỢP & SOẠN THẢO VĂN BẢN ĐẢNG UỶ XÃ CÔNG HẢI
-*(Chuẩn thể thức Hướng dẫn số 05-HD/VPTW năm 2026 của Văn phòng Trung ương Đảng & Quy chế làm việc Đảng bộ xã)*
-
-Hệ thống được thiết kế theo **Mô hình Hạt nhân & Kỹ năng Chuyên sâu Đa tầng (Core & Multi-Tier Advisory Skills)**, đóng vai trò là **Trợ lý Tham mưu Tổng hợp Toàn diện** cho Thường trực Đảng uỷ, Ban Thường vụ Đảng uỷ và Ban Chấp hành Đảng bộ xã Công Hải, tỉnh Khánh Hoà (trực thuộc trực tiếp Tỉnh uỷ Khánh Hoà theo mô hình chính quyền địa phương 02 cấp từ 01/7/2025).
-
----
-
-## 🚀 3 KÊNH GIAO TIẾP & TƯƠNG TÁC CỦA HỆ THỐNG
-
-Hệ thống hỗ trợ 03 phương án tương tác linh hoạt, đồng bộ:
-
-```
-                  ┌──────────────────────────────────────────────┐
-                  │    CHUYÊN VIÊN ẢO VĂN PHÒNG ĐẢNG UỶ          │
-                  │   (Lõi xử lý quy chuẩn Hướng dẫn 05-HD/VPTW)  │
-                  └──────┬───────────────┬──────────────┬────────┘
-                         │               │              │
-       ┌─────────────────┴─┐   ┌─────────┴────────┐   ┌─┴────────────────┐
-       │ 1. Antigravity IDE │   │  2. Giao diện Web │   │ 3. Zalo Chatbot  │
-       │    (Cán bộ kỹ thuật│   │   (Localhost:8000│   │    (Di động 24/7,│
-       │     & Lập trình)   │   │    Văn phòng làm)│   │    đám mây Drive)│
-       └───────────────────┘   └──────────────────┘   └──────────────────┘
-```
-
-1. **Chat trực tiếp với Google Antigravity:** Dành cho cán bộ quản trị hệ thống, làm việc chuyên sâu trong môi trường phát triển và kiểm thử văn bản.
-2. **Giao diện Web Chuyên nghiệp (`http://localhost:8000`):** Giao diện đồ hoạ cho cán bộ Văn phòng Đảng uỷ: tải tệp drag-and-drop, bóc tách 5 Rõ, đối soát số liệu, duyệt dự thảo và xuất Word (.docx).
-3. **Chatbot Zalo Di động 24/7 (`scripts/run_zalo_bot.py`):**
-   - Tiếp nhận lệnh chỉ đạo và văn bản đính kèm trực tiếp từ điện thoại của cán bộ.
-   - Nhận diện ý định và tự động soạn thảo dự thảo chuẩn Hướng dẫn 05-HD/VPTW.
-   - **Đẩy tệp trực tiếp lên Google Drive đám mây:** Tự động upload tệp Word qua Google Apps Script Web App và trả liên kết xem/tải trực tiếp về Zalo (không phụ thuộc ổ đĩa ánh xạ cục bộ).
-   - **Chủ động nhắc việc & gửi tin nhắn:** Tự động gửi tin nhắn riêng cho từng cán bộ hoặc vào Nhóm Zalo cơ quan khi đến hạn báo cáo, lịch họp hoặc đôn đốc nhiệm vụ.
+# HỆ THỐNG TRỢ LÝ AI THAM MƯU TỔNG HỢP & TỰ ĐỘNG HOÁ CẤP UỶ
+## VĂN PHÒNG ĐẢNG UỶ XÃ CÔNG HẢI, TỈNH KHÁNH HOÀ
+*(Phiên bản 2.1.0 — Chuẩn thể thức Hướng dẫn số 05-HD/VPTW năm 2026 của Văn phòng Trung ương Đảng & Mô hình Chính quyền địa phương 02 cấp)*
 
 ---
 
-## 📂 SƠ ĐỒ CẤU TRÚC THƯ MỤC HỆ THỐNG
+Hệ thống được thiết kế theo **Mô hình Hạt nhân & Kỹ năng Chuyên sâu Đa tầng (Core & Multi-Tier Advisory Skills)**, kết hợp cùng **Hệ thống Tìm kiếm Lai Thực thụ (Hybrid RAG: FTS5 BM25 + Vector Embedding)** và **Bộ Hẹn Giờ Tự Động Chủ Động (Autonomous Administrative Scheduler)**. 
+
+Hệ thống đóng vai trò là **Chuyên viên Ảo Tham mưu Tổng hợp Toàn năng** cho Thường trực Đảng uỷ, Ban Thường vụ Đảng uỷ và Ban Chấp hành Đảng bộ xã Công Hải, tỉnh Khánh Hoà (trực thuộc trực tiếp Tỉnh uỷ Khánh Hoà từ ngày 01/7/2025).
+
+---
+
+## 🚀 3 KÊNH TƯƠNG TÁC ĐỒNG BỘ CỦA HỆ THỐNG
+
+```text
+                  ┌────────────────────────────────────────────────────────┐
+                  │          CHUYÊN VIÊN ẢO VĂN PHÒNG ĐẢNG UỶ              │
+                  │   (Hạt nhân điều phối, Hybrid RAG & HD 05-HD/VPTW)     │
+                  └───────────┬────────────────┬────────────────┬──────────┘
+                              │                │                │
+            ┌─────────────────┴─┐    ┌─────────┴────────┐    ┌──┴───────────────┐
+            │ 1. Antigravity IDE │    │  2. Giao diện Web │    │ 3. Zalo Bot Di Động│
+            │    (Cán bộ kỹ thuật│    │   (localhost:8000│    │    (Nhắc việc 24/7│
+            │     & Lập trình)   │    │    Văn phòng làm)│    │     & Cloud Drive)│
+            └───────────────────┘    └──────────────────┘    └──────────────────┘
+```
+
+1. **Google Antigravity IDE (Workspace chuyên sâu):** Dành cho cán bộ quản trị hệ thống, nghiên cứu, kiểm thử và mở rộng kho 15 Skills kỹ năng tham mưu.
+2. **Giao diện Web Chuyên nghiệp (`http://localhost:8000`):** Bàn làm việc đồ hoạ cho Văn phòng Đảng uỷ:
+   - Tải tệp drag-and-drop, bóc tách "5 Rõ", đối soát sai lệch số liệu tự động.
+   - Quy trình nạp RAG có kiểm duyệt **Human-in-the-Loop** (Xem trước trích yếu, số hiệu, chunks $\rightarrow$ duyệt $\rightarrow$ nạp CSDL).
+   - Quản trị Sổ Nhiệm vụ, Giám sát Chỉ tiêu Nghị quyết (Đèn giao thông Xanh - Vàng - Đỏ).
+3. **Chatbot Zalo Tự Động 24/7 (`scripts/run_zalo_bot.py`):**
+   - Tiếp nhận lệnh chỉ đạo và văn bản đính kèm trực tiếp từ điện thoại cán bộ.
+   - **Tự động đẩy tệp lên Google Drive đám mây:** Cung cấp liên kết tải trực tiếp tệp Word (.docx) chuẩn thể thức ngay trong tin nhắn Zalo.
+   - **Chủ động nhắc việc (Proactive Reminder):** Gửi tin nhắn đôn đốc buổi sáng (07h30), cảnh báo quá hạn buổi chiều (16h30) và nhắc nộp báo cáo tuần sáng thứ Sáu.
+
+---
+
+## 🏛️ 4 TRỤ CỘT NĂNG LỰC TOÀN NĂNG (CORE PILLARS)
+
+### 1. Thể thức Văn bản Đảng Chuẩn Tuyệt đối (HD 05-HD/VPTW)
+- Căn lề chuẩn: Trái 30mm, Phải 15mm, Trên 20mm, Dưới 20mm (Khổ A4).
+- Spacing & Giãn dòng: Before 6pt, After 6pt, Line spacing Exactly 18pt, Font Times New Roman 14.
+- Thụt đầu dòng: Mọi đoạn văn, mục lớn, tiểu mục, gạch (-) hoặc cộng (+) đều thụt đúng **1cm (10mm)**.
+- Đường kẻ tiêu ngữ: Chiều dài 192pt, độ dày 3/4pt (0.75pt).
+- Ô chữ ký chuẩn: Thẩm quyền in hoa đậm (`T/M BAN THƯỜNG VỤ`), chức vụ viết hoa không đậm (`BÍ THƯ`), khoảng cách ký 5 dòng 14pt.
+- Bắt buộc chính tả Khối Đảng: `oà`, `uỷ`, `uý` (Đảng uỷ, Khánh Hoà, Ban Thường vụ, Uỷ ban). Ngày tháng dạng `dd/mm/yyyy`.
+
+### 2. Hệ thống Tìm kiếm Lai Thực thụ (Hybrid RAG Engine)
+- **Vector Embedding Cục bộ:** Tích hợp mô hình `nomic-embed-text` qua Ollama local API, nén vector float32 thành nhị phân (BLOB) lưu trong SQLite.
+- **Tính toán Cosine Similarity trên RAM:** Truy vấn vector cực nhanh trong < 2ms bằng NumPy / Python thuần mà không cần cài đặt Vector DB cồng kềnh.
+- **Sliding Window Chunking:** Cắt đoạn 400 từ với **80 từ gối đầu (Overlap)**, chống đứt gãy ngữ cảnh điều khoản pháp lý và bảo toàn tiêu đề bảng biểu (Table Row Contextualization).
+- **Thuật toán Dung hợp Điểm RRF (Reciprocal Rank Fusion):**
+  $$RRF\_Score = \frac{1}{60 + Rank_{BM25}} + \frac{1}{60 + Rank_{Vector}}$$
+- **Chiến lược "Giỏ Ngữ Cảnh 2 - 4 - 2":** Tự động phân bổ tối đa 8 đoạn trích tinh hoa:
+  - *Slot 1–2 (Nền tảng):* Nghị quyết Đại hội, Quy chế làm việc.
+  - *Slot 3–6 (Chuyên đề):* Báo cáo, Kế hoạch mới nhất.
+  - *Slot 7–8 (Đồ thị Căn cứ):* 1-Hop Citation lần theo các văn bản gốc năm trước.
+
+### 3. Bộ Lập Lịch & Nhắc Việc Chủ Động (Autonomous Scheduler)
+- **Cơ chế Khởi động bù (`catch_up_missed_jobs`):** Nếu máy tính văn phòng tắt qua đêm và bật lên lúc 08h30 sáng, hệ thống tự động kiểm tra CSDL và gửi bù các thông báo nhắc việc bị bỏ lỡ.
+- **Ma trận Lịch hẹn hành chính:**
+  - *07h30 Hàng ngày:* Quét nhiệm vụ đến hạn hôm nay & ngày mai $\rightarrow$ gửi tin nhắc đôn đốc (Digest gom nhóm theo cơ quan).
+  - *16h30 Hàng ngày:* Quét nhiệm vụ quá hạn $\rightarrow$ gửi báo cáo cảnh báo cho Chánh Văn phòng & Thường trực Đảng uỷ.
+  - *08h00 Sáng Thứ Sáu:* Đôn đốc UBND xã và 08 Chi bộ thôn nộp Báo cáo tuần trước 11h00.
+  - *08h00 Ngày 23 hàng tháng:* Nhắc Bộ phận CĐS cập nhật số liệu `theodoinq.dcs.vn` và `pakn.nq57.vn` trước hạn ngày 25.
+- **Chống spam Zalo:** Khoá `acquire_remind_lock` trong SQLite WAL bảo đảm không bao giờ gửi lặp tin nhắn trong cùng 1 ngày.
+
+### 4. Quản lý Nhiệm vụ & Giám sát Chỉ tiêu (KPI Monitor)
+- **Khử trùng lặp Nhiệm vụ (Task Deduplication):** Sử dụng mã băm `task_fingerprint = md5(co_quan + noi_dung)`. Khi công việc trượt tiến độ từ tháng này sang tháng sau (như trong Chương trình 42, 48, 55-CTr/ĐU), hệ thống tự động cập nhật hạn mới và chuyển trạng thái `"Chuyển tiếp tháng sau"`, **không tạo bản ghi trùng lặp**.
+- **Đối soát Chỉ tiêu Đại hội (Deterministic Verification):** Kiểm tra chặt chẽ 20 chỉ tiêu Đại hội Đảng bộ xã lần I (`01-NQ/ĐH`) và 19 chỉ tiêu NQ57, cảnh báo ngay khi dự thảo viết sai số liệu (như chỉ tiêu mức độ hài lòng `XH_04` là tăng 5%, không phải đạt 100%).
+
+---
+
+## 📂 SƠ ĐỒ CẤU TRÚC HỆ THỐNG MÃ NGUỒN
 
 ```text
 e:\Viet Design\Chuyên viên ảo\
 │
-├── 📜 AGENTS.md                             # QUY TẮC VẬN HÀNH MẶC ĐỊNH (auto-load khi mở workspace)
-├── 📖 SETUP.md                              # HƯỚNG DẪN CÀI ĐẶT & TRIỂN KHAI TRÊN MÁY TÍNH MỚI
-├── 📋 CHECKLIST_TIEN_DO.md                  # BẢNG TIẾN ĐỘ THỰC HIỆN TOÀN HỆ THỐNG
-├── 📌 KE_HOACH_SO_NHIEM_VU_VA_HEN_GIO.md    # KẾ HOẠCH SỔ NHIỆM VỤ, TIÊU CHÍ & BỘ HẸN GIỜ TỰ ĐỘNG
+├── 📜 AGENTS.md                             # QUY TẮC VẬN HÀNH MẶC ĐỊNH (auto-load)
+├── 📖 README.md                             # TÀI LIỆU TỔNG QUAN HỆ THỐNG (File này)
+├── 📖 SETUP.md                              # HƯỚNG DẪN CÀI ĐẶT MÁY CHỦ TỪ ĐẦU
+├── 📋 requirements.txt                      # DANH MỤC THƯ VIỆN PYTHON ĐẦY ĐỦ
+├── 🔑 .env.example                          # MẪU BIẾN MÔI TRƯỜNG CẤU HÌNH
 │
-├── 🔌 .agents/                              # HỆ THỐNG SKILLS ANTIGRAVITY (auto-discovery)
-│   └── skills/
-│       ├── quy-chuan-nen-tang/SKILL.md      # Quy chuẩn nền tảng thể thức văn bản Đảng toàn diện
-│       ├── bao-cao/SKILL.md                 # Kỹ năng soạn Báo cáo của cấp uỷ (-BC/ĐU)
-│       ├── to-trinh/SKILL.md                # Kỹ năng soạn Tờ trình xin chủ trương & trình duyệt (-TTr)
-│       ├── ke-hoach/SKILL.md                # Kỹ năng soạn Kế hoạch cấp uỷ (-KH/ĐU) theo nguyên tắc "5 Rõ"
-│       ├── nghi-quyet/SKILL.md              # Kỹ năng soạn Nghị quyết (-NQ/ĐU) (tuyệt đối không chia Điều)
-│       ├── quyet-dinh/SKILL.md              # Kỹ năng soạn Quyết định (-QĐ/ĐU) (bắt buộc chia Điều)
-│       ├── chi-thi/SKILL.md                 # Kỹ năng soạn Chỉ thị (-CT/ĐU) & Chương trình hành động (-CTr)
-│       ├── thong-bao/SKILL.md               # Kỹ năng soạn Thông báo Kết luận họp BTV & Thường trực (-TB/ĐU)
-│       ├── ket-luan/SKILL.md                # Kỹ năng soạn Kết luận Hội nghị Ban Chấp hành (-KL/ĐU)
-│       ├── cong-van/SKILL.md                # Kỹ năng soạn Công văn giao việc/chỉ đạo & Lấy ý kiến BTV (-CV/ĐU)
-│       ├── tham-muu-chuyen-doi-so/SKILL.md  # Kỹ năng Tham mưu Chuyển đổi số, Đề án 06, Ban Chỉ đạo 57
-│       └── tham-dinh-van-ban/SKILL.md       # Kỹ năng Thẩm định văn bản & Đối soát tiếp thu
+├── 🔌 .agents/skills/                       # HỆ THỐNG 15 SKILLS THAM MƯU CHUYÊN SÂU
+│   ├── quy-chuan-nen-tang/SKILL.md          # Thể thức văn bản Đảng & nguyên tắc nền tảng
+│   ├── bao-cao/SKILL.md                     # Báo cáo công tác định kỳ & chuyên đề (-BC/ĐU)
+│   ├── bao-cao-thang/SKILL.md               # Báo cáo tháng chuyên sâu gửi Tỉnh uỷ
+│   ├── ke-hoach/SKILL.md                    # Kế hoạch công tác theo nguyên tắc "5 Rõ" (-KH/ĐU)
+│   ├── cong-van/SKILL.md                    # Công văn chỉ đạo & lấy ý kiến BTV (-CV/ĐU)
+│   ├── thong-bao/SKILL.md                   # Thông báo Kết luận họp Thường trực/BTV (-TB/ĐU)
+│   ├── ket-luan/SKILL.md                    # Kết luận Hội nghị Ban Chấp hành (-KL/ĐU)
+│   ├── nghi-quyet/SKILL.md                  # Nghị quyết chuyên đề & nhiệm vụ năm (-NQ/ĐU)
+│   ├── quyet-dinh/SKILL.md                  # Quyết định cấp uỷ chia Điều (-QĐ/ĐU)
+│   ├── to-trinh/SKILL.md                    # Tờ trình xin chủ trương & trình duyệt (-TTr/ĐU)
+│   ├── chi-thi/SKILL.md                     # Chỉ thị & Chương trình hành động (-CT/ĐU, -CTr)
+│   ├── tham-dinh-van-ban/SKILL.md           # Thẩm định dự thảo 2 tầng & đối soát tiếp thu
+│   └── tham-muu-chuyen-doi-so/SKILL.md      # Tham mưu CĐS, Đề án 06 và Ban Chỉ đạo 57
 │
-├── ⚙️ server/                                # MÁY CHỦ BACKEND & BỘ ĐIỀU PHỐI THÔNG MINH
-│   ├── app.py                               # FastAPI application & Web server
-│   ├── chat_engine.py                       # Bộ điều phối hội thoại & xử lý nghiệp vụ trung tâm
-│   ├── ai_connector.py                      # Kết nối DeepSeek API chuyên sâu, tự động sửa JSON
-│   ├── config.py                            # Quản lý biến môi trường (.env)
-│   ├── prompts/
-│   │   ├── chat_mode.py                     # Prompt chế độ trò chuyện & dữ liệu thường trực
-│   │   └── intent_router.py                 # Bộ phân loại câu lệnh & phân luồng nghiệp vụ
-│   ├── services/
-│   │   ├── knowledge_loader.py              # BỘ NẠP TRI THỨC & KỸ NĂNG CHỌN LỌC (Selective Context Injection)
-│   │   ├── gdrive_service.py                # Dịch vụ upload Google Drive đám mây (Cloud Network Upload)
-│   │   └── zalo_api.py                      # Zalo Bot API wrapper (gửi tin, làm sạch URL, tải tệp)
-│   ├── routers/
-│   │   └── zalo_webhook.py                  # Endpoint tiếp nhận sự kiện Zalo Webhook / Background Tasks
-│   ├── workflows/                           # 4 Luồng tham mưu cốt lõi (WF1, WF2, WF3, WF4)
-│   └── static/                              # Giao diện Web (HTML5, CSS3, JS giao diện Đảng)
+├── ⚙️ server/                                # MÁY CHỦ BACKEND FASTAPI MODULAR
+│   ├── app.py                               # Ứng dụng hạt nhân FastAPI (~80 dòng tinh gọn)
+│   ├── chat_engine.py                       # Điều phối hội thoại, phiên làm việc (TTL 4h)
+│   ├── ai_connector.py                      # Kết nối DeepSeek/Ollama, bộ tự sửa JSON Repair
+│   ├── config.py                            # Cấu hình biến môi trường và thư mục
+│   ├── logger.py                            # Hệ thống ghi nhật ký xoay vòng UTF-8
+│   │
+│   ├── routers/                             # CÁC ROUTER CHUYÊN TRÁCH (MODULAR ARCHITECTURE)
+│   │   ├── chat.py                          # Endpoint chat, upload file, tải file an toàn
+│   │   ├── knowledge.py                     # Quản trị kho RAG, preview, commit, FTS5 search
+│   │   ├── admin.py                         # Quản lý AI Model, 4 Workflows, Tasks, KPIs, Danh bạ
+│   │   └── zalo_webhook.py                  # Tiếp nhận sự kiện Webhook Zalo
+│   │
+│   ├── services/                            # CÁC DỊCH VỤ HỆ THỐNG
+│   │   ├── db_service.py                    # CSDL SQLite WAL: 7 bảng nghiệp vụ + Indexes
+│   │   ├── rag_service.py                   # Lõi Hybrid RAG: Cửa sổ trượt, RRF Fusion, Giỏ 2-4-2
+│   │   ├── embedding_service.py             # Sinh Vector nomic-embed-text, Cosine trên RAM
+│   │   ├── scheduler_service.py             # Bộ lập lịch hẹn giờ, khởi động bù & Digest reminder
+│   │   ├── knowledge_loader.py              # Bộ nạp tri thức chọn lọc 3 lớp (Selective Injection)
+│   │   ├── zalo_api.py                      # Wrapper gửi tin Zalo, clean Markdown & split msg
+│   │   └── gdrive_service.py                # Upload Google Drive đám mây qua Apps Script
+│   │
+│   ├── utils/                               # TIỆN ÍCH DÙNG CHUNG (DRY REFACTOR)
+│   │   └── text_processing.py               # Chuẩn hoá chính tả Khối Đảng (oà, uỷ, uý), ngày tháng
+│   │
+│   ├── workflows/                           # 4 QUY TRÌNH THAM MƯU TỰ ĐỘNG
+│   │   ├── wf1_synthesizer.py               # WF1: Tổng hợp Báo cáo tuần (-BC/VPĐU)
+│   │   ├── wf2_conclusions.py               # WF2: Thông báo Kết luận họp Thường trực (-TB/ĐU)
+│   │   ├── wf3_dispatch.py                  # WF3: Công văn Giao việc từ VB Tỉnh (-CV/ĐU)
+│   │   └── wf4_appraisal.py                 # WF4: Thẩm định 2 Tầng & Xuất hồ sơ BTV
+│   │
+│   └── static/                              # Giao diện Web HTML5/CSS3/JS
 │
-├── ⚙️ scripts/                              # BỘ CÔNG CỤ TỰ ĐỘNG HÓA VĂN THƯ & RUNNER
-│   ├── run_zalo_bot.py                      # Runner Zalo Bot cơ chế Long Polling (chạy độc lập localhost)
-│   ├── gdrive_appscript_setup.js            # Mã Google Apps Script Web App triển khai tải tệp lên Drive
-│   ├── export_docx.py                       # Engine sinh tệp Word (.docx) chuẩn hóa tự động HD 05
-│   └── doc_reader.py                        # Trích xuất và đọc văn bản Office (.docx, .doc, .pdf)
+├── ⚙️ scripts/                              # CÔNG CỤ TỰ ĐỘNG HOÁ & RUNNER
+│   ├── export_docx.py                       # Engine sinh file Word (.docx) chuẩn HD 05
+│   ├── doc_reader.py                        # Trích xuất văn bản (.docx, .doc, .pdf)
+│   ├── run_zalo_bot.py                      # Runner Zalo Bot (Long Polling độc lập)
+│   └── gdrive_appscript_setup.js            # Mã Google Apps Script triển khai Web App Drive
 │
 ├── 📥 van_ban_den/                          # KHO TIẾP NHẬN TÀI LIỆU ĐẦU VÀO
-│   └── 2026/                                # Văn bản chỉ đạo cấp trên (Tỉnh uỷ, Trung ương) theo năm
+│   └── 2026/                                # Phân loại theo cơ quan cấp trên & năm
 │
-├── 📤 van_ban_du_thao/                      # KHO LƯU TRỮ VĂN BẢN SOẠN THẢO ĐẦU RA
-│   └── 2026/                                # Quản lý theo năm công tác và theo từng thể loại
+├── 📤 van_ban_du_thao/                      # KHO LƯU TRỮ DỰ THẢO ĐẦU RA (.DOCX)
+│   └── 2026/                                # Phân mục theo thể loại (Cong_van, Bao_cao...)
 │
-└── 📚 references/                           # TÀI LIỆU TRA CỨU & QUY PHẠM ĐỊA PHƯƠNG
-    ├── tong_quan_xa_cong_hai.md             # Tri thức, mục tiêu Đại hội Đảng bộ xã lần I, 08 thôn
-    └── Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md # Cẩm nang tra cứu thẩm quyền, SLA, phân vai 5 cơ quan
+└── 📚 references/                           # TRI THỨC ĐỊA PHƯƠNG & QUY PHẠM
+    ├── tong_quan_xa_cong_hai.md             # Tri thức xã Công Hải, 08 thôn, 21 chi bộ
+    ├── chi_tieu_nhiem_ky.json               # 20 chỉ tiêu Đại hội Đảng bộ xã khoá I
+    └── Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md # Thẩm quyền, SLA, chức năng 5 cơ quan
 ```
 
 ---
 
-## 🧠 BỘ NẠP TRI THỨC CHỌN LỌC (SELECTIVE KNOWLEDGE INJECTION)
+## 🔒 NGUYÊN TẮC AN TOÀN & BẢO MẬT (SECURITY FIRST)
 
-Để AI nắm bắt sâu sắc tình hình xã Công Hải mà không làm phình to chi phí token:
-- **Cơ chế 3 lớp (3 Decision Layers):**
-  1. *Lớp Phân loại Ý định (Intent Router):* Phân tích câu lệnh của cán bộ để xác định đúng thể loại văn bản cần xử lý (`CV`, `KH`, `BC`, `TB`, `KL`, `QD`, `NQ`, `TTr`, `CT`).
-  2. *Lớp Quy chuẩn Nền tảng Bắt buộc (Core Rules):* Tự động nạp: mô hình 02 cấp (không còn cấp huyện), 08 thôn, lãnh đạo thường trực, thể thức HD 05, chính tả khối Đảng (`oà`, `uỷ`, `uý`, ngày `dd/mm/yyyy`).
-  3. *Lớp Kỹ năng Chuyên sâu:* Chỉ nạp đúng nội dung tệp `SKILL.md` của thể loại đó (chỉ tiêu tăng trưởng 11-12%, ngân sách 12%, không còn hộ nghèo đến 2030, NTM nâng cao, hồ Sông Trâu 800ha...).
-- **Hiệu quả:** Mỗi yêu cầu chỉ tiêu thụ **3.600 – 3.900 tokens** (tiết kiệm 93% chi phí so với nạp toàn bộ 55.000 tokens), phản hồi trong 3 – 5 giây.
-
----
-
-## ☁️ CƠ CHẾ GOOGLE DRIVE ĐÁM MÂY (CLOUD UPLOAD)
-
-Hệ thống tải tệp trực tuyến qua Internet, **hoàn toàn không dùng ổ đĩa ánh xạ cục bộ (`G:\`)**:
-1. **Google Apps Script Web App:** Sử dụng mã [scripts/gdrive_appscript_setup.js](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/scripts/gdrive_appscript_setup.js) triển khai trên tài khoản của Cán bộ (chỉ cấp quyền 1 lần duy nhất).
-2. **Quyền riêng tư & Tiện ích:** Các cán bộ khác trong cơ quan chỉ cần nhận link tải qua Zalo là xem và tải được văn bản ngay lập tức, không cần cấp quyền thêm.
-3. **Chống lỗi định dạng link:** Tự động mã hoá ký tự gạch dưới (`%5F`) trong liên kết Google Drive để tránh bị bộ đọc Markdown của Zalo biến thành chữ in nghiêng gây lỗi 404.
-
----
-
-## 🎯 CÁC NGUYÊN TẮC NGHIỆP VỤ BẮT BUỘC TUÂN THỦ
-
-1. **Mô hình Chính quyền 2 cấp địa phương (Tỉnh $\Rightarrow$ Xã):**
-   * Vận hành từ ngày **01/7/2025**, hoàn toàn không còn cấp huyện.
-   * Cấp trên trực tiếp của xã là **Tỉnh uỷ Khánh Hoà** và **UBND tỉnh Khánh Hoà**.
-   * Khi phát hiện còn sót cấp huyện trong dự thảo, chỉ ghi ngắn gọn: *"không còn cấp huyện nữa"*.
-2. **Quy chuẩn Thể thức Hướng dẫn số 05-HD/VPTW:**
-   * Căn lề: Trái 30mm, Phải 15mm, Trên 20mm, Dưới 20mm (Khổ A4).
-   * Spacing & Giãn dòng: Before 6pt, After 6pt, Line spacing cố định Exactly 18pt, Font Times New Roman 14.
-   * Thụt đầu dòng: Mọi đoạn văn, mục lớn, tiểu mục, gạch đầu dòng (-) hoặc cộng (+) đều thụt đúng 1cm (10mm).
-   * Đường kẻ dưới tiêu ngữ ĐCSVN: Dài 192pt, độ dày 3/4pt (0.75pt).
-   * Ô chữ ký: Dòng 1 thẩm quyền in hoa đậm (`T/M BAN THƯỜNG VỤ`); Dòng 2 chức vụ in hoa đứng thường (`BÍ THƯ`, `PHÓ BÍ THƯ`); Tên người ký cách chức danh 5 dòng 14pt, in thường đậm.
+1. **Chống Path Traversal tại `/api/download`:** 
+   - Tuyệt đối cấm tải các tệp ngoài thư mục `van_ban_du_thao/`.
+   - Bắt buộc kiểm tra phần mở rộng tệp: Chỉ cho phép tải `.docx` và `.pdf`. Ngăn chặn hoàn toàn nguy cơ lộ file `.env` hoặc CSDL SQLite.
+2. **Chốt chặn Độ mật (Secret Document Gatekeeper):**
+   - Quét từ khóa đóng dấu độ mật (`MẬT`, `TỐI MẬT`, `TUYỆT MẬT`). Nếu phát hiện, hệ thống **lập tức từ chối xử lý và không gửi lên AI**, tuân thủ nghiêm ngặt Quyết định 37-QĐ/ĐU và Nghị định 63/2026/NĐ-CP.
 3. **Cơ chế An toàn Human-in-the-Loop:**
-   * Tuyệt đối không lưu, không hỏi mật khẩu.
-   * Mọi văn bản AI tạo ra là **Dự thảo Tham mưu**. Thao tác ký số, ban hành do Cán bộ tự tay thực hiện.
-4. **Quy tắc Tiết kiệm Token:**
-   * Tuyệt đối không in lại toàn văn văn bản vào chat khi đã xuất tệp Word (.docx). Chỉ tóm tắt Bảng phân công/đối soát, Lưu ý nghiệp vụ và Link tải tệp.
+   - Tuyệt đối không tự ý ký số, ban hành hay gửi văn bản. Mọi văn bản AI tạo ra là **bản dự thảo tham mưu**. Cán bộ có toàn quyền xem trước, chỉnh sửa và bấm duyệt.
+4. **Không hỏi, không lưu trữ mật khẩu** của cán bộ dưới bất kỳ hình thức nào.
 
 ---
 
-## 🛠️ HƯỚNG DẪN VẬN HÀNH NHANH
+## 🛠️ HƯỚNG DẪN KHỞI ĐỘNG VÀ VẬN HÀNH
 
-### 1. Khởi động Web Server (Giao diện cán bộ):
+### 1. Cài đặt môi trường (Lần đầu tiên):
+```powershell
+# 1. Cài đặt thư viện Python
+pip install -r requirements.txt
+
+# 2. Tải mô hình Vector Embedding cục bộ qua Ollama (miễn phí, nhanh):
+ollama pull nomic-embed-text
+
+# 3. Tạo file cấu hình môi trường .env (từ mẫu .env.example)
+copy .env.example .env
+# Điền DEEPSEEK_API_KEY hoặc bật chế độ OLLAMA_LOCAL
+```
+
+### 2. Khởi động Máy chủ Web Backend (Văn phòng làm việc):
 ```powershell
 python -m uvicorn server.app:app --host 127.0.0.1 --port 8000 --reload
 ```
-Truy cập: `http://localhost:8000`
+- Mở trình duyệt truy cập: `http://localhost:8000`
+- Giao diện cung cấp đầy đủ: Khung chat AI, Đính kèm tài liệu, Xem trước đối soát RAG, Quản lý Sổ Nhiệm vụ và Chỉ tiêu KPI.
 
-### 2. Khởi động Bot Zalo (Long Polling di động):
+### 3. Khởi động Zalo Bot (Di động 24/7):
 ```powershell
 python scripts/run_zalo_bot.py
 ```
-Cán bộ mở Zalo, nhắn lệnh chỉ đạo hoặc gửi tệp đính kèm để Bot xử lý và trả về link Google Drive ngay lập tức.
+- Cán bộ gửi lệnh hoặc file Word/PDF trực tiếp từ điện thoại.
+- Bot tự động phản hồi dự thảo tham mưu và trả link Google Drive để tải văn bản ngay lập tức.
+
+---
+*Hệ thống được phát triển chuyên biệt phục vụ công tác tham mưu cấp uỷ tại Văn phòng Đảng uỷ xã Công Hải, tỉnh Khánh Hoà.*

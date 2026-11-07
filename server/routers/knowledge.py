@@ -191,3 +191,4 @@ async def search_documents_endpoint(q: str):
     """Tìm kiếm nhanh toàn văn FTS5 BM25 trong kho văn bản."""
     results = await run_in_threadpool(db_service.search_fts_bm25, query=q, limit=20)
     return {"query": q, "results": results, "total": len(results)}
+

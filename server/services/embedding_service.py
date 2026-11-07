@@ -83,3 +83,4 @@ def cosine_similarity(v1: List[float], v2: List[float]) -> float:
     if norm_a == 0.0 or norm_b == 0.0:
         return 0.0
     return dot_product / (norm_a * norm_b)
+

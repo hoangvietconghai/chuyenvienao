@@ -275,3 +275,4 @@ def stop_scheduler():
         _SCHEDULER_TASK.cancel()
         _SCHEDULER_TASK = None
         logger.info("[Scheduler] Đã dừng Bộ hẹn giờ tự động.")
+

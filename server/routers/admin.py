@@ -335,3 +335,4 @@ async def list_directory():
     """Lấy danh bạ cán bộ, lãnh đạo, 08 thôn và 21 chi bộ xã Công Hải."""
     directory = await run_in_threadpool(db_service.get_all_can_bo, only_active=True)
     return {"directory": directory, "total": len(directory)}
+
