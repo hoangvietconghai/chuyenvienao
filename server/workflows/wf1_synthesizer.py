@@ -22,8 +22,20 @@ from server.prompts.wf1_tong_hop_bao_cao import get_wf1_messages
 
 
 async def analyze_weekly_reports(reports_text: str, week_number: str = "...") -> Dict[str, Any]:
-    """Phân tích các báo cáo cơ sở bằng DeepSeek và sinh payload dự thảo."""
+    """Phân tích các báo cáo cơ sở bằng DeepSeek kết hợp dữ liệu thực chứng RAG."""
     messages = get_wf1_messages(reports_text, week_number)
+    try:
+        from server.services.rag_service import retrieve_hybrid_context
+        query = f"báo cáo tuần {week_number} " + reports_text[:250]
+        rag_res = retrieve_hybrid_context(query, max_slots=4)
+        if rag_res.get("context_text"):
+            messages.insert(1, {
+                "role": "system",
+                "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản cấp uỷ (RAG):\n{rag_res['context_text']}"
+            })
+    except Exception:
+        pass
+
     result = await default_ai_client.call_chat_async(messages, temperature=0.1, json_mode=True)
     return result["data"]
 

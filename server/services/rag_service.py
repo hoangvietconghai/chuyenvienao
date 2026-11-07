@@ -352,6 +352,10 @@ def preview_document_for_review(file_path: str) -> Tuple[bool, str, Dict[str, An
         return False, f"Lỗi phân tích văn bản: {str(ex)}", {}
 
 
+CHUNK_WORD_LIMIT = 400
+CHUNK_OVERLAP_WORDS = 80
+
+
 def generate_chunks_preview(
     so_hieu: str,
     trich_yeu: str,
@@ -359,7 +363,10 @@ def generate_chunks_preview(
     ngay_iso: str,
     full_text: str
 ) -> List[Dict[str, Any]]:
-    """Tạo trước danh sách các đoạn trích (chunks) để hiển thị đối soát."""
+    """
+    Tạo danh sách các đoạn trích (chunks) theo cửa sổ trượt (Sliding Window Overlap 80 từ)
+    và bảo toàn ngữ cảnh bảng biểu, chủ thể cá nhân, phân cấp đề mục.
+    """
     lines = full_text.split("\n")
     chunks: List[Dict[str, Any]] = []
 
@@ -367,29 +374,39 @@ def generate_chunks_preview(
     current_section = "Phần mở đầu"
     buffer: List[str] = []
     word_count = 0
+    table_header_context = ""
 
     for line in lines:
         line_strip = line.strip()
         if not line_strip:
             continue
 
+        # Nhận diện chủ thể kiểm điểm cá nhân
         ca_nhan_match = re.search(r'(?:B\.\s+ĐỐI\s+VỚI\s+CÁ\s+NHÂN|BÁO\s+CÁO\s+KIỂM\s+ĐIỂM\s+CÁ\s+NHÂN|Họ\s+và\s+tên\s*:\s*([A-Za-zÀ-Ỹà-ỹ\s]+))', line_strip, re.IGNORECASE)
         if ca_nhan_match:
             name = ca_nhan_match.group(1).strip() if ca_nhan_match.group(1) else "Cán bộ lãnh đạo"
             current_owner = f"CA_NHAN: {name}"
             current_section = f"Kiểm điểm cá nhân: {name}"
 
+        # Nhận diện đề mục văn bản La Mã
         heading_match = re.match(r'^(I|II|III|IV|V|VI|Phần\s+[A-Z]|Mục\s+[0-9]+)\.?\s+(.+)', line_strip)
         if heading_match:
             current_section = f"{heading_match.group(1)}. {heading_match.group(2)[:60]}"
 
+        # Nhận diện và lưu tiêu đề bảng biểu
         is_table = line_strip.startswith("|") or "[BẢNG BIỂU]" in line_strip
+        if is_table and not table_header_context and ("STT" in line_strip or "Nội dung" in line_strip or "Chỉ tiêu" in line_strip):
+            table_header_context = line_strip[:120]
+
         buffer.append(line_strip)
         word_count += len(line_strip.split())
 
-        if word_count >= 450:
+        # Khi vượt quá ngưỡng 400 từ -> flush chunk kèm 80 từ gối đầu
+        if word_count >= CHUNK_WORD_LIMIT:
             chunk_body = "\n".join(buffer)
-            context_hdr = f"[Văn bản: {so_hieu} | {co_quan} | Ngày: {ngay_iso} | Chủ thể: {current_owner} | {current_section}]"
+            table_extra = f" | Tiêu đề bảng: {table_header_context}" if is_table and table_header_context else ""
+            context_hdr = f"[Văn bản: {so_hieu} | {co_quan} | Ngày: {ngay_iso} | Chủ thể: {current_owner} | {current_section}{table_extra}]"
+            
             chunks.append({
                 "sub_doc_owner": current_owner,
                 "section_path": current_section,
@@ -397,12 +414,17 @@ def generate_chunks_preview(
                 "context_header": context_hdr,
                 "chunk_text": f"{context_hdr}\n{chunk_body}"
             })
-            buffer = []
-            word_count = 0
+
+            # Cơ chế cửa sổ trượt (Sliding Window Overlap): Giữ lại 80 từ cuối cho đoạn tiếp theo
+            all_words = chunk_body.split()
+            overlap_words = all_words[-CHUNK_OVERLAP_WORDS:] if len(all_words) > CHUNK_OVERLAP_WORDS else []
+            buffer = [" ".join(overlap_words)] if overlap_words else []
+            word_count = len(overlap_words)
 
     if buffer:
         chunk_body = "\n".join(buffer)
-        context_hdr = f"[Văn bản: {so_hieu} | {co_quan} | Ngày: {ngay_iso} | Chủ thể: {current_owner} | {current_section}]"
+        table_extra = f" | Tiêu đề bảng: {table_header_context}" if table_header_context else ""
+        context_hdr = f"[Văn bản: {so_hieu} | {co_quan} | Ngày: {ngay_iso} | Chủ thể: {current_owner} | {current_section}{table_extra}]"
         chunks.append({
             "sub_doc_owner": current_owner,
             "section_path": current_section,
@@ -486,10 +508,13 @@ def commit_reviewed_document(reviewed: Dict[str, Any]) -> Tuple[bool, str, Dict[
                     c.get("ghi_chu", "")
                 )
 
-        # Cắt chunks và đánh chỉ mục FTS5
+        # Cắt chunks và đánh chỉ mục FTS5 kèm Vector Embedding
+        from server.services import embedding_service
         chunks = generate_chunks_preview(so_hieu, trich_yeu, co_quan_name, ngay_ban_hanh, full_text)
         saved_chunks = 0
         for ch in chunks:
+            # Tự động sinh vector embedding nhị phân qua Ollama (nếu sẵn sàng)
+            emb_blob = embedding_service.get_embedding(ch["chunk_text"], timeout=3.0)
             db_service.insert_chunk(
                 doc_id=doc_id,
                 so_hieu_vb=so_hieu,
@@ -499,7 +524,7 @@ def commit_reviewed_document(reviewed: Dict[str, Any]) -> Tuple[bool, str, Dict[
                 chunk_text=ch["chunk_text"],
                 sub_doc_owner=ch["sub_doc_owner"],
                 chunk_type=ch["chunk_type"],
-                embedding_blob=None
+                embedding_blob=emb_blob
             )
             saved_chunks += 1
 
@@ -531,12 +556,53 @@ def retrieve_hybrid_context(
     - Slot 3–6 (04 đoạn Chuyên đề mới nhất THEMATIC_CASE): Lấy từ Kế hoạch, Báo cáo gần nhất.
     - Slot 7–8 (02 đoạn Kéo theo từ Đồ thị Căn cứ 1-Hop Citation): Lấy từ văn bản gốc được viện dẫn.
     """
+    empty_resp = {
+        "context_text": "",
+        "citations": [],
+        "total_slots": 0,
+        "slot_breakdown": {"core_directive": 0, "thematic_case": 0, "citation_linked": 0}
+    }
     if not query.strip():
-        return {"context_text": "", "citations": [], "total_slots": 0}
+        return empty_resp
 
     candidates = db_service.search_fts_bm25(query=query, limit=40)
     if not candidates:
-        return {"context_text": "", "citations": [], "total_slots": 0}
+        return empty_resp
+
+    # BƯỚC 2: RERANKING BẰNG RRF (RECIPROCAL RANK FUSION) VỚI VECTOR EMBEDDING
+    from server.services import embedding_service
+    query_emb_blob = embedding_service.get_embedding(query, timeout=2.0)
+    query_vec = embedding_service.unpack_embedding(query_emb_blob) if query_emb_blob else []
+
+    bm25_ranks = {c["chunk_id"]: idx + 1 for idx, c in enumerate(candidates)}
+    vector_ranks = {}
+
+    if query_vec:
+        scored_vecs = []
+        for c in candidates:
+            c_blob = c.get("embedding")
+            c_vec = embedding_service.unpack_embedding(c_blob) if c_blob else []
+            sim = embedding_service.cosine_similarity(query_vec, c_vec) if c_vec else 0.0
+            scored_vecs.append((c["chunk_id"], sim))
+
+        scored_vecs.sort(key=lambda x: x[1], reverse=True)
+        vector_ranks = {cid: idx + 1 for idx, (cid, sim) in enumerate(scored_vecs)}
+
+    for c in candidates:
+        cid = c["chunk_id"]
+        r_bm25 = bm25_ranks.get(cid, 60)
+        r_vec = vector_ranks.get(cid, 60) if vector_ranks else r_bm25
+        c["rrf_score"] = (1.0 / (60.0 + r_bm25)) + (1.0 / (60.0 + r_vec))
+
+    # Tái sắp xếp ứng viên theo RRF score
+    candidates.sort(key=lambda x: x.get("rrf_score", 0.0), reverse=True)
+
+    # Phân bổ động số lượng slot theo max_slots
+    core_limit = 2 if max_slots >= 6 else 1
+    thematic_limit = 4 if max_slots >= 8 else (3 if max_slots >= 6 else 2)
+    citation_limit = max_slots - (core_limit + thematic_limit)
+    if citation_limit <= 0:
+        citation_limit = 1
 
     slot_core: List[Dict[str, Any]] = []
     slot_thematic: List[Dict[str, Any]] = []
@@ -546,28 +612,28 @@ def retrieve_hybrid_context(
         vong_doi = cand.get("nhom_vong_doi", "THEMATIC_CASE")
         doc_id = cand["doc_id"]
 
-        if vong_doi == "CORE_DIRECTIVE" and len(slot_core) < 2:
+        if vong_doi == "CORE_DIRECTIVE" and len(slot_core) < core_limit:
             slot_core.append(cand)
             selected_doc_ids.add(doc_id)
-        elif vong_doi == "THEMATIC_CASE" and len(slot_thematic) < 4:
+        elif vong_doi == "THEMATIC_CASE" and len(slot_thematic) < thematic_limit:
             slot_thematic.append(cand)
             selected_doc_ids.add(doc_id)
 
-        if len(slot_core) >= 2 and len(slot_thematic) >= 4:
+        if len(slot_core) >= core_limit and len(slot_thematic) >= thematic_limit:
             break
 
     for cand in candidates:
         if cand not in slot_core and cand not in slot_thematic:
-            if len(slot_thematic) < 4:
+            if len(slot_thematic) < thematic_limit:
                 slot_thematic.append(cand)
                 selected_doc_ids.add(cand["doc_id"])
-            elif len(slot_core) < 2:
+            elif len(slot_core) < core_limit:
                 slot_core.append(cand)
                 selected_doc_ids.add(cand["doc_id"])
 
-    # Slot 7–8: Kéo theo từ Đồ thị Căn cứ (1-Hop Citation Expansion)
+    # Kéo theo từ Đồ thị Căn cứ (1-Hop Citation Expansion)
     slot_citations: List[Dict[str, Any]] = []
-    for item in (slot_thematic + slot_core)[:4]:
+    for item in (slot_thematic + slot_core)[:core_limit + thematic_limit]:
         so_hieu = item.get("so_hieu_vb")
         if so_hieu:
             links = db_service.get_linked_documents(so_hieu)
@@ -575,14 +641,14 @@ def retrieve_hybrid_context(
                 linked_so = l["vb_dich_so_hieu"]
                 linked_chunks = db_service.search_fts_bm25(query=linked_so, limit=2)
                 for lc in linked_chunks:
-                    if lc["doc_id"] not in selected_doc_ids and len(slot_citations) < 2:
+                    if lc["doc_id"] not in selected_doc_ids and len(slot_citations) < citation_limit:
                         slot_citations.append(lc)
                         selected_doc_ids.add(lc["doc_id"])
                         break
-        if len(slot_citations) >= 2:
+        if len(slot_citations) >= citation_limit:
             break
 
-    final_slots = slot_core[:2] + slot_thematic[:4] + slot_citations[:2]
+    final_slots = (slot_core[:core_limit] + slot_thematic[:thematic_limit] + slot_citations[:citation_limit])[:max_slots]
 
     context_lines = ["=== KHO TRI THỨC VÀ CĂN CỨ VĂN BẢN ĐÃ ĐỐI SOÁT (HYBRID RAG) ==="]
     citations = []

@@ -21,8 +21,19 @@ from server.prompts.wf3_giao_viec import get_wf3_messages
 
 
 async def analyze_provincial_directive(doc_text: str) -> Dict[str, Any]:
-    """Phân tích văn bản chỉ đạo của Tỉnh uỷ và phân luồng 5 khối cơ quan xã."""
+    """Phân tích văn bản chỉ đạo của Tỉnh uỷ và phân luồng 5 khối cơ quan xã kết hợp RAG."""
     messages = get_wf3_messages(doc_text)
+    try:
+        from server.services.rag_service import retrieve_hybrid_context
+        rag_res = retrieve_hybrid_context(doc_text[:300], max_slots=4)
+        if rag_res.get("context_text"):
+            messages.insert(1, {
+                "role": "system",
+                "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản cấp uỷ (RAG):\n{rag_res['context_text']}"
+            })
+    except Exception:
+        pass
+
     result = await default_ai_client.call_chat_async(messages, temperature=0.1, json_mode=True)
     return result["data"]
 

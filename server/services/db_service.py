@@ -789,6 +789,7 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
                 c.context_header,
                 c.sub_doc_owner,
                 c.chunk_type,
+                c.embedding,
                 vb.nhom_vong_doi,
                 vb.trang_thai_hieu_luc,
                 vb.ngay_ban_hanh,
@@ -809,6 +810,7 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
                 c.chunk_id, c.doc_id, vb.so_hieu_vb, vb.trich_yeu,
                 c.section_path, c.chunk_text, 0.0 AS bm25_rank,
                 c.context_header, c.sub_doc_owner, c.chunk_type,
+                c.embedding,
                 vb.nhom_vong_doi, vb.trang_thai_hieu_luc, vb.ngay_ban_hanh, vb.trong_so_tham_quyen
             FROM van_ban_chunks c
             JOIN so_van_ban vb ON c.doc_id = vb.doc_id

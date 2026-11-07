@@ -21,8 +21,20 @@ from server.prompts.wf2_thong_bao_ket_luan import get_wf2_messages
 
 
 async def analyze_meeting_notes(meeting_notes: str, meeting_title: str = "Họp giao ban Thường trực") -> Dict[str, Any]:
-    """Bóc tách ý kiến cuộc họp bằng DeepSeek theo nguyên tắc 5 RÕ."""
+    """Bóc tách ý kiến cuộc họp bằng DeepSeek theo nguyên tắc 5 RÕ kết hợp RAG."""
     messages = get_wf2_messages(meeting_notes, meeting_title)
+    try:
+        from server.services.rag_service import retrieve_hybrid_context
+        query = f"kết luận {meeting_title} " + meeting_notes[:250]
+        rag_res = retrieve_hybrid_context(query, max_slots=4)
+        if rag_res.get("context_text"):
+            messages.insert(1, {
+                "role": "system",
+                "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản cấp uỷ (RAG):\n{rag_res['context_text']}"
+            })
+    except Exception:
+        pass
+
     result = await default_ai_client.call_chat_async(messages, temperature=0.1, json_mode=True)
     return result["data"]
 
