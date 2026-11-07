@@ -90,11 +90,19 @@ def main():
         sys.exit(1)
 
     try:
-        # 1. Dọn dẹp và chuẩn bị môi trường
+        # 1. Dọn dẹp và chuẩn bị môi trường sạch 100%
+        clean_cmd = (
+            "apt-get update -y && apt-get install -y git curl && "
+            "systemctl stop chuyenvienao caddy apache2 nginx 2>/dev/null || true; "
+            "pkill -9 -f uvicorn 2>/dev/null || true; "
+            "pkill -9 -f caddy 2>/dev/null || true; "
+            "rm -rf /opt/chuyenvienao; "
+            "mkdir -p /opt/chuyenvienao"
+        )
         run_remote_command(
             ssh,
-            "apt-get update -y && apt-get install -y git curl && mkdir -p /opt/chuyenvienao",
-            "[2/5] Cập nhật Ubuntu và kiểm tra công cụ Git/Curl",
+            clean_cmd,
+            "[2/5] Dọn dẹp môi trường cũ, dừng dịch vụ xung đột (Caddy/Apache) và chuẩn bị Ubuntu",
         )
 
         # 2. Đồng bộ tệp .env nội bộ từ máy tính sang VPS qua SFTP trước

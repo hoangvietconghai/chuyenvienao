@@ -25,11 +25,16 @@ fi
 APP_DIR="/opt/chuyenvienao"
 REPO_URL="https://github.com/hoangvietconghai/chuyenvienao.git"
 
-# 2. Dừng dịch vụ cũ nếu đang chạy
-if systemctl is-active --quiet chuyenvienao; then
-    echo -e "${YELLOW}Dừng dịch vụ chuyenvienao đang chạy...${NC}"
-    systemctl stop chuyenvienao
-fi
+# 2. Dọn sạch và xoá trắng toàn bộ dịch vụ cũ (Caddy, Apache, uvicorn cũ)
+echo -e "${YELLOW}[DỌN SẠCH] Xoá trắng cấu hình cũ, dừng dịch vụ xung đột (Caddy, Apache, uvicorn)...${NC}"
+systemctl stop chuyenvienao caddy apache2 nginx 2>/dev/null || true
+systemctl disable caddy apache2 2>/dev/null || true
+pkill -9 -f uvicorn 2>/dev/null || true
+pkill -9 -f caddy 2>/dev/null || true
+rm -rf "$APP_DIR"
+rm -f /etc/nginx/sites-enabled/* /etc/nginx/sites-available/chuyenvienao /etc/nginx/sites-available/default
+rm -f /etc/systemd/system/chuyenvienao.service
+systemctl daemon-reload
 
 # 3. Cập nhật hệ điều hành và cài đặt các gói phụ thuộc
 echo -e "${BLUE}[1/7] Cập nhật Ubuntu & cài đặt các gói hệ thống cần thiết...${NC}"
