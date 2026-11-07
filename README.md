@@ -102,7 +102,7 @@ e:\Viet Design\Chuyên viên ảo\
 ├── ⚙️ server/                                # MÁY CHỦ BACKEND FASTAPI MODULAR
 │   ├── app.py                               # Ứng dụng hạt nhân FastAPI (~80 dòng tinh gọn)
 │   ├── chat_engine.py                       # Điều phối hội thoại, phiên làm việc (TTL 4h)
-│   ├── ai_connector.py                      # Kết nối DeepSeek/Ollama, bộ tự sửa JSON Repair
+│   ├── ai_connector.py                      # Động cơ kép Dual-Engine (Gemini Chính, DeepSeek Dự phòng, Ollama Local)
 │   ├── config.py                            # Cấu hình biến môi trường và thư mục
 │   ├── logger.py                            # Hệ thống ghi nhật ký xoay vòng UTF-8
 │   │
@@ -177,7 +177,7 @@ ollama pull nomic-embed-text
 
 # 3. Tạo file cấu hình môi trường .env (từ mẫu .env.example)
 copy .env.example .env
-# Điền DEEPSEEK_API_KEY hoặc bật chế độ OLLAMA_LOCAL
+# Điền GEMINI_API_KEY (Động cơ chính - Miễn phí) hoặc DEEPSEEK_API_KEY (Động cơ dự phòng)
 ```
 
 ### 2. Khởi động Máy chủ Web Backend (Văn phòng làm việc):

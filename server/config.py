@@ -21,45 +21,85 @@ if ENV_FILE.exists():
 else:
     load_dotenv()
 
-# --- CẤU HÌNH AI & OLLAMA LOCAL / CLOUD ---
-AI_PROVIDER = os.getenv("AI_PROVIDER", "local").lower()  # "local" (Ollama) hoặc "cloud" (DeepSeek API)
+# --- CẤU HÌNH AI: GOOGLE GEMINI (CHÍNH), DEEPSEEK (DỰ PHÒNG) & OLLAMA LOCAL ---
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai")
+DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+GEMINI_MODEL = DEFAULT_GEMINI_MODEL
+
+CLOUD_DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+CLOUD_DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+CLOUD_DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+CLOUD_DEEPSEEK_REASONER_MODEL = os.getenv("DEEPSEEK_REASONER_MODEL", "deepseek-reasoner")
+
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
 OLLAMA_EXE_PATH = os.getenv("OLLAMA_EXE_PATH", r"C:\Users\Viet_Long\AppData\Local\Programs\Ollama\ollama.exe")
 DEFAULT_LOCAL_MODEL = os.getenv("DEFAULT_LOCAL_MODEL", "qwen2.5:7b")
 
-CLOUD_DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-CLOUD_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
-CLOUD_DEEPSEEK_MODEL = "deepseek-chat"
-CLOUD_DEEPSEEK_REASONER_MODEL = "deepseek-reasoner"
-
-if AI_PROVIDER == "local":
-    DEEPSEEK_API_KEY = "ollama"
-    DEEPSEEK_BASE_URL = OLLAMA_BASE_URL
-    DEEPSEEK_MODEL = DEFAULT_LOCAL_MODEL
-    DEEPSEEK_REASONER_MODEL = "deepseek-r1:7b"
+# Xác định nhà cung cấp AI ưu tiên: "gemini" (Chính), "cloud" (DeepSeek), hoặc "local" (Ollama)
+_raw_provider = os.getenv("AI_PROVIDER", "").lower()
+if _raw_provider in ("gemini", "google"):
+    AI_PROVIDER = "gemini"
+elif _raw_provider in ("cloud", "deepseek"):
+    AI_PROVIDER = "cloud"
+elif _raw_provider == "local":
+    AI_PROVIDER = "local"
 else:
-    DEEPSEEK_API_KEY = CLOUD_DEEPSEEK_API_KEY
-    DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", CLOUD_DEEPSEEK_BASE_URL)
-    DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", CLOUD_DEEPSEEK_MODEL)
-    DEEPSEEK_REASONER_MODEL = os.getenv("DEEPSEEK_REASONER_MODEL", CLOUD_DEEPSEEK_REASONER_MODEL)
+    # Tự động nhận diện: Nếu có GEMINI_API_KEY thì ưu tiên Gemini làm Chính
+    if GEMINI_API_KEY and len(GEMINI_API_KEY.strip()) > 5 and not GEMINI_API_KEY.startswith("your_"):
+        AI_PROVIDER = "gemini"
+    elif CLOUD_DEEPSEEK_API_KEY and len(CLOUD_DEEPSEEK_API_KEY.strip()) > 5 and not CLOUD_DEEPSEEK_API_KEY.startswith("your_"):
+        AI_PROVIDER = "cloud"
+    else:
+        AI_PROVIDER = "local"
+
+if AI_PROVIDER == "gemini":
+    ACTIVE_API_KEY = GEMINI_API_KEY
+    ACTIVE_BASE_URL = GEMINI_BASE_URL
+    ACTIVE_MODEL = DEFAULT_GEMINI_MODEL
+    ACTIVE_PROVIDER = "gemini"
+elif AI_PROVIDER == "cloud":
+    ACTIVE_API_KEY = CLOUD_DEEPSEEK_API_KEY
+    ACTIVE_BASE_URL = CLOUD_DEEPSEEK_BASE_URL
+    ACTIVE_MODEL = CLOUD_DEEPSEEK_MODEL
+    ACTIVE_PROVIDER = "cloud"
+else:
+    ACTIVE_API_KEY = "ollama"
+    ACTIVE_BASE_URL = OLLAMA_BASE_URL
+    ACTIVE_MODEL = DEFAULT_LOCAL_MODEL
+    ACTIVE_PROVIDER = "local"
+
+# Biến tương thích ngược cho các module cũ
+DEEPSEEK_API_KEY = ACTIVE_API_KEY
+DEEPSEEK_BASE_URL = ACTIVE_BASE_URL
+DEEPSEEK_MODEL = ACTIVE_MODEL
+DEEPSEEK_REASONER_MODEL = CLOUD_DEEPSEEK_REASONER_MODEL
 
 # Danh mục các mô hình được tối ưu hoá cho Văn phòng Đảng uỷ xã Công Hải
 SUPPORTED_MODELS = [
     {
-        "id": "qwen2.5:3b",
-        "name": "Qwen 2.5 (3B) — Siêu nhẹ",
-        "provider": "local",
-        "ram": "8GB RAM",
-        "badge": "🟢 Local (RAM 8GB)",
-        "desc": "Tốc độ nhanh nhất, phù hợp máy văn phòng không card đồ hoạ",
+        "id": "gemini-3.5-flash-lite",
+        "name": "Gemini 3.5 Flash Lite (Google)",
+        "provider": "gemini",
+        "ram": "Cloud API (Free 500 RPD)",
+        "badge": "⚡ Gemini (Chính - Miễn phí)",
+        "desc": "Tốc độ siêu tốc, context 1M token, miễn phí 500 lượt/ngày (Khuyên dùng)",
     },
     {
-        "id": "qwen2.5:7b",
-        "name": "Qwen 2.5 (7B) — Tiêu chuẩn",
-        "provider": "local",
-        "ram": "16GB RAM",
-        "badge": "🔵 Local (RAM 16GB)",
-        "desc": "Chất lượng văn phong hành chính xuất sắc, cân bằng nhất",
+        "id": "gemini-3.1-flash-lite",
+        "name": "Gemini 3.1 Flash Lite (Google)",
+        "provider": "gemini",
+        "ram": "Cloud API (Free 500 RPD)",
+        "badge": "⚡ Gemini 3.1 Flash Lite",
+        "desc": "Tốc độ nhanh, ổn định, miễn phí 500 lượt/ngày",
+    },
+    {
+        "id": "deepseek-chat",
+        "name": "DeepSeek Cloud (671B)",
+        "provider": "cloud",
+        "ram": "Cloud API",
+        "badge": "☁️ DeepSeek (Dự phòng)",
+        "desc": "Văn phong chính trị sắc bén, tự động kích hoạt dự phòng khi cần",
     },
     {
         "id": "deepseek-r1:7b",
@@ -70,20 +110,28 @@ SUPPORTED_MODELS = [
         "desc": "Mô hình suy luận phản biện, cực mạnh phát hiện mâu thuẫn số liệu",
     },
     {
+        "id": "qwen2.5:7b",
+        "name": "Qwen 2.5 (7B) — Tiêu chuẩn",
+        "provider": "local",
+        "ram": "16GB RAM",
+        "badge": "🔵 Local (RAM 16GB)",
+        "desc": "Chất lượng văn phong hành chính xuất sắc, cân bằng nhất",
+    },
+    {
+        "id": "qwen2.5:3b",
+        "name": "Qwen 2.5 (3B) — Siêu nhẹ",
+        "provider": "local",
+        "ram": "8GB RAM",
+        "badge": "🟢 Local (RAM 8GB)",
+        "desc": "Tốc độ nhanh nhất, phù hợp máy văn phòng không card đồ hoạ",
+    },
+    {
         "id": "qwen2.5:14b",
         "name": "Qwen 2.5 (14B) — Chuyên sâu",
         "provider": "local",
         "ram": "GPU 12GB / RAM 32GB",
         "badge": "🟠 Local (14B Khuyên dùng)",
         "desc": "Độ thông minh vượt trội, tư duy sắc bén, tối ưu hoàn hảo cho RTX 3060",
-    },
-    {
-        "id": "deepseek-chat",
-        "name": "DeepSeek Cloud (671B)",
-        "provider": "cloud",
-        "ram": "Mọi cấu hình",
-        "badge": "☁️ Cloud API",
-        "desc": "Siêu mô hình đám mây, dùng khi xử lý tài liệu công khai lớn",
     },
 ]
 

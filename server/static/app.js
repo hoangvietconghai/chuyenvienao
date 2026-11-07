@@ -61,6 +61,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function getModelIcon(m) {
+    if (!m) return '⚡';
+    if (m.provider === 'gemini') return '⚡';
+    if (m.provider === 'local') {
+      if (m.id && m.id.includes('3b')) return '🟢';
+      if (m.id && m.id.includes('r1')) return '🟣';
+      return '🔵';
+    }
+    return '☁️';
+  }
+
   function renderModelSelector() {
     if (!modelList) return;
     modelList.innerHTML = '';
@@ -68,19 +79,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeObj = availableModels.find(m => m.id === currentActiveModel);
     if (activeObj) {
       currentModelName.textContent = activeObj.name.split('—')[0].trim();
-      currentModelIcon.textContent = activeObj.provider === 'local' ? (activeObj.id.includes('3b') ? '🟢' : (activeObj.id.includes('r1') ? '🟣' : '🔵')) : '☁️';
+      currentModelIcon.textContent = getModelIcon(activeObj);
     }
 
     availableModels.forEach(m => {
       const item = document.createElement('button');
       item.type = 'button';
       item.className = 'model-item' + (m.id === currentActiveModel ? ' active' : '');
-      const icon = m.provider === 'local' ? (m.id.includes('3b') ? '🟢' : (m.id.includes('r1') ? '🟣' : '🔵')) : '☁️';
+      const icon = getModelIcon(m);
 
       item.innerHTML = `
         <div class="model-item-top">
           <span class="model-item-title">${icon} ${m.name}</span>
-          <span class="model-item-badge">${m.ram || (m.provider === 'local' ? 'Local' : 'Cloud')}</span>
+          <span class="model-item-badge">${m.ram || (m.provider === 'local' ? 'Local' : (m.provider === 'gemini' ? 'Gemini Free' : 'Cloud'))}</span>
         </div>
         <div class="model-item-desc">${m.desc} ${m.provider === 'local' && !m.is_installed ? '<span style="color:var(--gold)">(Chưa tải)</span>' : ''}</div>
       `;
@@ -140,8 +151,10 @@ document.addEventListener('DOMContentLoaded', () => {
           aiStatus.className = 'ai-status ok';
           if (data.is_local) {
             aiStatusText.textContent = `Local AI (${data.model_in_use})`;
+          } else if (data.is_gemini || data.provider === 'gemini') {
+            aiStatusText.textContent = `Google Gemini (${data.model_in_use}) [Chính]`;
           } else {
-            aiStatusText.textContent = `DeepSeek Cloud (${data.model_in_use || 'chat'})`;
+            aiStatusText.textContent = `DeepSeek Cloud (${data.model_in_use || 'chat'}) [Dự phòng]`;
           }
         } else {
           aiStatus.className = 'ai-status warn';

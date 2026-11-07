@@ -124,7 +124,12 @@ def repair_and_parse_json(text: str) -> Union[Dict[str, Any], List[Any]]:
 
 
 class DeepSeekClient:
-    """Khách hàng kết nối AI chuyên trách (Hỗ trợ cả DeepSeek Cloud và Ollama Local)."""
+    """
+    Bộ điều phối AI đa tầng thông minh (Multi-Provider AI Orchestrator):
+    - Động cơ chính (Primary Engine): Google Gemini (Gemini 3.5 Flash Lite / 2.5 Flash) — Siêu tốc, 1M context, miễn phí 500 RPD.
+    - Động cơ dự phòng (Fallback Engine): DeepSeek Cloud (deepseek-chat / 671B) — Tự động kích hoạt khi Gemini chạm hạn ngạch hoặc quá tải.
+    - Động cơ nội bộ (Local Offline Engine): Ollama Local (Qwen 2.5 / DeepSeek-R1) — Bảo mật 100% khi không có Internet.
+    """
 
     def __init__(
         self,
@@ -133,41 +138,147 @@ class DeepSeekClient:
         model: Optional[str] = None,
         timeout: float = 180.0,
     ):
+        from server.config import (
+            ACTIVE_PROVIDER,
+            DEEPSEEK_API_KEY,
+            DEEPSEEK_BASE_URL,
+            DEEPSEEK_MODEL,
+            DEEPSEEK_REASONER_MODEL,
+            GEMINI_API_KEY,
+            GEMINI_BASE_URL,
+            DEFAULT_GEMINI_MODEL,
+            CLOUD_DEEPSEEK_API_KEY,
+            CLOUD_DEEPSEEK_BASE_URL,
+            CLOUD_DEEPSEEK_MODEL,
+            CLOUD_DEEPSEEK_REASONER_MODEL,
+            OLLAMA_BASE_URL,
+            DEFAULT_LOCAL_MODEL,
+        )
+
+        self.provider = ACTIVE_PROVIDER
         self.api_key = api_key or DEEPSEEK_API_KEY
         self.base_url = (base_url or DEEPSEEK_BASE_URL).rstrip("/")
         self.model = model or DEEPSEEK_MODEL
         self.timeout = timeout
 
+        # Cấu hình cụ thể cho từng nhà cung cấp
+        self.gemini_key = GEMINI_API_KEY
+        self.gemini_base_url = GEMINI_BASE_URL.rstrip("/")
+        self.gemini_model = DEFAULT_GEMINI_MODEL
+
+        self.deepseek_key = CLOUD_DEEPSEEK_API_KEY
+        self.deepseek_base_url = CLOUD_DEEPSEEK_BASE_URL.rstrip("/")
+        self.deepseek_model = CLOUD_DEEPSEEK_MODEL
+        self.deepseek_reasoner_model = CLOUD_DEEPSEEK_REASONER_MODEL
+
+        self.ollama_base_url = OLLAMA_BASE_URL.rstrip("/")
+        self.ollama_model = DEFAULT_LOCAL_MODEL
+
+    def _has_valid_key(self, key: Optional[str]) -> bool:
+        """Kiểm tra tính hợp lệ của API Key."""
+        return bool(key and len(key.strip()) > 5 and not key.strip().startswith("your_"))
+
     def is_local(self) -> bool:
         """Kiểm tra xem đang kết nối với máy chủ Local (Ollama/vLLM) hay Cloud."""
         url = self.base_url.lower()
-        return "11434" in url or "localhost" in url or "127.0.0.1" in url
+        return self.provider == "local" or "11434" in url or "localhost" in url or "127.0.0.1" in url
+
+    def is_gemini(self) -> bool:
+        """Kiểm tra xem mô hình hiện tại có thuộc Google Gemini hay không."""
+        return (
+            self.provider == "gemini"
+            or "gemini" in self.model.lower()
+            or "generativelanguage" in self.base_url.lower()
+        )
 
     def is_configured(self) -> bool:
-        """Kiểm tra xem API key hoặc Local Ollama đã sẵn sàng hoạt động chưa."""
+        """Kiểm tra xem hệ thống đã có ít nhất một mô hình AI sẵn sàng (Gemini, DeepSeek hoặc Local Ollama)."""
         if self.is_local():
             return True
-        return bool(self.api_key and len(self.api_key.strip()) > 5 and not self.api_key.startswith("your_"))
+        if self.is_gemini():
+            if self._has_valid_key(self.api_key or self.gemini_key):
+                return True
+            return self._has_valid_key(self.deepseek_key)
+        # DeepSeek Cloud
+        if self._has_valid_key(self.api_key or self.deepseek_key):
+            return True
+        return self._has_valid_key(self.gemini_key)
 
     def switch_model(self, model_id: str, provider: Optional[str] = None) -> Dict[str, Any]:
         """Chuyển đổi mô hình đang chạy động ngay trong thời gian thực."""
-        from server.config import OLLAMA_BASE_URL, CLOUD_DEEPSEEK_BASE_URL as CLOUD_URL, CLOUD_DEEPSEEK_API_KEY as CLOUD_KEY
+        from server.config import (
+            OLLAMA_BASE_URL,
+            CLOUD_DEEPSEEK_BASE_URL as CLOUD_URL,
+            CLOUD_DEEPSEEK_API_KEY as CLOUD_KEY,
+            GEMINI_BASE_URL,
+            GEMINI_API_KEY,
+        )
 
         self.model = model_id
-        if provider == "local" or (provider is None and ("qwen" in model_id or "r1" in model_id or "oss" in model_id or "ollama" in model_id)):
-            self.base_url = OLLAMA_BASE_URL.rstrip("/")
-            if not self.api_key:
-                self.api_key = "ollama"
-        elif provider == "cloud" or "deepseek-chat" in model_id:
-            self.base_url = CLOUD_URL.rstrip("/")
-            self.api_key = CLOUD_KEY
+        mid = model_id.lower()
 
-        logger.info(f"Đã chuyển đổi sang mô hình: {self.model} (Base URL: {self.base_url})")
+        if provider == "gemini" or (provider is None and "gemini" in mid):
+            self.provider = "gemini"
+            self.base_url = GEMINI_BASE_URL.rstrip("/")
+            self.api_key = GEMINI_API_KEY or self.gemini_key
+        elif provider == "local" or (provider is None and ("qwen" in mid or "r1" in mid or "oss" in mid or "ollama" in mid)):
+            self.provider = "local"
+            self.base_url = OLLAMA_BASE_URL.rstrip("/")
+            self.api_key = "ollama"
+        else:
+            self.provider = "cloud"
+            self.base_url = CLOUD_URL.rstrip("/")
+            self.api_key = CLOUD_KEY or self.deepseek_key
+
+        logger.info(f"Đã chuyển đổi sang mô hình: {self.model} (Provider: {self.provider}, Base URL: {self.base_url})")
         return {
             "model": self.model,
+            "provider": self.provider,
             "base_url": self.base_url,
             "is_local": self.is_local(),
+            "is_gemini": self.is_gemini(),
         }
+
+    async def _execute_openai_call(
+        self,
+        client: httpx.AsyncClient,
+        base_url: str,
+        api_key: str,
+        model: str,
+        messages: List[Dict[str, str]],
+        temperature: float,
+        max_tokens: int,
+        json_mode: bool,
+    ) -> Tuple[str, Dict[str, Any], Optional[str]]:
+        """Gửi request chuẩn OpenAI-compatible tới endpoint `/chat/completions`."""
+        endpoint = f"{base_url.rstrip('/')}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key.strip()}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if json_mode:
+            payload["response_format"] = {"type": "json_object"}
+
+        response = await client.post(endpoint, headers=headers, json=payload)
+        if response.status_code == 200:
+            data = response.json()
+            choice = data["choices"][0]
+            raw_content = choice["message"]["content"] or ""
+            finish_reason = choice.get("finish_reason")
+            usage = data.get("usage", {})
+            return raw_content, usage, finish_reason
+
+        raise httpx.HTTPStatusError(
+            message=f"HTTP {response.status_code}: {response.text[:300]}",
+            request=response.request,
+            response=response,
+        )
 
     async def call_chat_async(
         self,
@@ -177,30 +288,28 @@ class DeepSeekClient:
         json_mode: bool = True,
         use_reasoner: bool = False,
     ) -> Dict[str, Any]:
-        """Gọi DeepSeek API bất đồng bộ (dùng trong FastAPI endpoint)."""
+        """
+        Gọi AI API bất đồng bộ với cơ chế Failover Động cơ Kép (Dual-Engine):
+        1. Ưu tiên gọi mô hình đã chọn (mặc định Gemini Flash Lite).
+        2. Nếu gặp lỗi quá tải / chạm hạn ngạch (429, 503, timeout), tự động chuyển sang Động cơ dự phòng (DeepSeek Cloud).
+        """
         if not self.is_configured():
             raise ValueError(
-                "Máy chủ AI cục bộ (Ollama) chưa sẵn sàng hoặc chưa cấu hình DEEPSEEK_API_KEY. "
-                "Vui lòng khởi động Ollama hoặc điền API key trong tệp .env."
+                "Chưa cấu hình API Key cho Chuyên viên Ảo. "
+                "Đồng chí vui lòng điền GEMINI_API_KEY hoặc DEEPSEEK_API_KEY trong tệp .env."
             )
 
-        auth_token = self.api_key.strip() if self.api_key else ("ollama" if self.is_local() else "")
-        headers = {
-            "Authorization": f"Bearer {auth_token}",
-            "Content-Type": "application/json",
-        }
+        selected_model = (
+            self.deepseek_reasoner_model if (use_reasoner and not self.is_gemini()) else self.model
+        )
 
-        selected_model = DEEPSEEK_REASONER_MODEL if use_reasoner else self.model
-
+        # ----------------------------------------------------------------------
+        # LUỒNG 1: MÔ HÌNH CỤC BỘ LOCAL (OLLAMA / GPU RTX 3060)
+        # ----------------------------------------------------------------------
         if self.is_local():
-            # Sử dụng Ollama native API (/api/chat) để hỗ trợ đầy đủ options.num_ctx
             endpoint = self.base_url.replace("/v1", "").rstrip("/") + "/api/chat"
             model_lower = selected_model.lower()
 
-            # Cân chỉnh giới hạn context thích ứng với bộ nhớ GPU (RTX 3060 12GB)
-            # Đối với 14B: Cần 8.2GB VRAM cho weights, giới hạn an toàn tuyệt đối là 8,192 (KV cache 1.5GB)
-            # Đối với 7B/8B: Cần 4.2GB VRAM cho weights, giới hạn an toàn là 16,384
-            # Đối với 3B: Cần 1.8GB VRAM, có thể dùng tới 32,768
             if "14b" in model_lower or "20b" in model_lower:
                 max_model_ctx = 8192
                 pred_tokens = min(3072, max_tokens)
@@ -211,9 +320,7 @@ class DeepSeekClient:
                 max_model_ctx = 32768
                 pred_tokens = max_tokens
 
-            # Đảm bảo tổng độ dài văn bản đầu vào không làm tràn context window
             max_input_chars = int((max_model_ctx - pred_tokens - 512) * 3.0)
-
             processed_messages = []
             for m in messages:
                 content = m.get("content", "")
@@ -240,92 +347,188 @@ class DeepSeekClient:
                     "num_predict": pred_tokens,
                 },
             }
-            # Đối với Qwen thì hỗ trợ format: json, riêng DeepSeek-R1 thì không truyền format: json để không chặn <think>
             if json_mode and "r1" not in selected_model.lower():
                 payload["format"] = "json"
-        else:
-            endpoint = f"{self.base_url}/chat/completions"
-            payload = {
-                "model": selected_model,
-                "messages": messages,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            }
-            if json_mode and not use_reasoner:
-                payload["response_format"] = {"type": "json_object"}
 
-        max_retries = 3
-        last_error = None
-
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            for attempt in range(1, max_retries + 1):
-                try:
-                    response = await client.post(endpoint, headers=headers, json=payload)
-                except httpx.TimeoutException:
-                    logger.warning(f"Quá thời gian kết nối AI ({self.timeout}s). Lần {attempt}/{max_retries}...")
-                    last_error = "Quá thời gian chờ máy chủ AI (Timeout)."
-                    await asyncio.sleep(2 * attempt)
-                    continue
-                except httpx.HTTPError as ex:
-                    last_error = f"Lỗi mạng khi kết nối máy chủ AI: {ex}"
-                    await asyncio.sleep(2 * attempt)
-                    continue
-
-                if response.status_code == 200:
-                    data = response.json()
-                    if self.is_local() and "message" in data:
-                        raw_content = data.get("message", {}).get("content", "") or ""
-                        finish_reason = data.get("done_reason", "stop")
-                        usage = {
-                            "prompt_tokens": data.get("prompt_eval_count", 0),
-                            "completion_tokens": data.get("eval_count", 0),
-                        }
-                    else:
-                        choice = data["choices"][0]
-                        raw_content = choice["message"]["content"] or ""
-                        finish_reason = choice.get("finish_reason")
-                        usage = data.get("usage", {})
-
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                resp = await client.post(endpoint, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    raw_content = data.get("message", {}).get("content", "") or ""
+                    finish_reason = data.get("done_reason", "stop")
+                    usage = {
+                        "prompt_tokens": data.get("prompt_eval_count", 0),
+                        "completion_tokens": data.get("eval_count", 0),
+                    }
                     if json_mode:
-                        try:
-                            parsed_data = repair_and_parse_json(raw_content)
-                            return {
-                                "success": True,
-                                "data": parsed_data,
-                                "raw_content": raw_content,
-                                "model": selected_model,
-                                "usage": usage,
-                            }
-                        except Exception as parse_err:
-                            if finish_reason == "length":
-                                provider_name = f"mô hình AI cục bộ ({selected_model})" if self.is_local() else "DeepSeek"
-                                raise RuntimeError(
-                                    f"Văn bản gửi kèm quá dài khiến {provider_name} chưa kịp hoàn tất toàn bộ nội dung JSON. "
-                                    "Đồng chí vui lòng gửi lại lệnh hoặc gửi từng tệp để Chuyên viên Ảo thẩm định sâu hơn."
-                                )
-                            raise parse_err
-
+                        parsed = repair_and_parse_json(raw_content)
+                        return {
+                            "success": True,
+                            "data": parsed,
+                            "raw_content": raw_content,
+                            "model": selected_model,
+                            "provider": "local",
+                            "usage": usage,
+                        }
                     return {
                         "success": True,
                         "content": raw_content,
                         "model": selected_model,
+                        "provider": "local",
                         "usage": usage,
                     }
+                raise RuntimeError(f"Ollama trả mã lỗi {resp.status_code}: {resp.text[:300]}")
 
-                if response.status_code in (429, 500, 502, 503, 504):
-                    logger.warning(f"DeepSeek API trả mã {response.status_code}. Thử lại lần {attempt}/{max_retries}...")
-                    last_error = f"Máy chủ DeepSeek đang bận ({response.status_code})."
-                    await asyncio.sleep(2 * attempt)
-                    continue
+        # ----------------------------------------------------------------------
+        # LUỒNG 2: MÔ HÌNH ĐÁM MÂY (GEMINI CHÍNH HOẶC DEEPSEEK CLOUD DỰ PHÒNG)
+        # ----------------------------------------------------------------------
+        primary_provider = "gemini" if self.is_gemini() else "cloud"
+        active_key = self.api_key if self._has_valid_key(self.api_key) else (
+            self.gemini_key if primary_provider == "gemini" else self.deepseek_key
+        )
+        active_base = self.base_url
 
-                # Lỗi không thể thử lại
-                if response.status_code == 401:
-                    raise RuntimeError("DEEPSEEK_API_KEY không hợp lệ. Vui lòng kiểm tra lại key trong tệp .env.")
-                if response.status_code == 402:
-                    raise RuntimeError("Tài khoản DeepSeek đã hết số dư. Vui lòng nạp thêm tiền tại platform.deepseek.com.")
-                raise RuntimeError(f"DeepSeek API trả mã lỗi {response.status_code}: {response.text[:300]}")
+        # Danh sách model thử nghiệm cho Gemini (nếu model mới 3.5 chưa sẵn sàng thì thử 3.1, 2.5, 2.0)
+        gemini_candidate_models = [selected_model]
+        if primary_provider == "gemini":
+            for alt in ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                if alt not in gemini_candidate_models:
+                    gemini_candidate_models.append(alt)
 
-        raise RuntimeError(f"Không thể kết nối với DeepSeek sau {max_retries} lần thử: {last_error}")
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            last_error = None
+            success = False
+            raw_content, usage, finish_reason = "", {}, None
+
+            # Thử gọi Động cơ chính (Primary)
+            for attempt_model in (gemini_candidate_models if primary_provider == "gemini" else [selected_model]):
+                try:
+                    raw_content, usage, finish_reason = await self._execute_openai_call(
+                        client=client,
+                        base_url=active_base,
+                        api_key=active_key,
+                        model=attempt_model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        json_mode=json_mode,
+                    )
+                    selected_model = attempt_model
+                    success = True
+                    break
+                except httpx.HTTPStatusError as http_err:
+                    status_code = http_err.response.status_code
+                    last_error = f"HTTP {status_code}"
+                    if status_code == 404 and primary_provider == "gemini":
+                        # Tên model chưa kích hoạt trên key này -> thử model Gemini tiếp theo
+                        logger.info(f"Mô hình {attempt_model} chưa khả dụng (404), thử chuyển sang {gemini_candidate_models}...")
+                        continue
+                    if status_code in (429, 500, 502, 503, 504):
+                        logger.warning(f"Động cơ chính {primary_provider} ({attempt_model}) trả mã {status_code}. Thử phương án dự phòng...")
+                        break
+                    # Lỗi 401 hoặc 402
+                    break
+                except Exception as ex:
+                    last_error = str(ex)
+                    logger.warning(f"Lỗi khi kết nối động cơ chính {primary_provider}: {ex}")
+                    break
+
+            # ------------------------------------------------------------------
+            # CƠ CHẾ TỰ ĐỘNG CHUYỂN SANG ĐỘNG CƠ DỰ PHÒNG (FAILOVER FALLBACK)
+            # ------------------------------------------------------------------
+            fallback_used = False
+            fallback_provider = None
+
+            if not success:
+                # Nếu Gemini gặp sự cố -> Chuyển sang DeepSeek Cloud
+                if primary_provider == "gemini" and self._has_valid_key(self.deepseek_key):
+                    logger.warning(
+                        f"⚠️ Động cơ chính Gemini không khả dụng ({last_error}). "
+                        f"🔄 ĐANG TỰ ĐỘNG KÍCH HOẠT ĐỘNG CƠ DỰ PHÒNG: DeepSeek Cloud ({self.deepseek_model})..."
+                    )
+                    try:
+                        raw_content, usage, finish_reason = await self._execute_openai_call(
+                            client=client,
+                            base_url=self.deepseek_base_url,
+                            api_key=self.deepseek_key,
+                            model=self.deepseek_model,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            json_mode=json_mode,
+                        )
+                        selected_model = self.deepseek_model
+                        primary_provider = "cloud"
+                        success = True
+                        fallback_used = True
+                        fallback_provider = "DeepSeek Cloud (671B)"
+                        logger.info("✅ Động cơ dự phòng DeepSeek đã phản hồi thành công!")
+                    except Exception as fb_err:
+                        last_error = f"Cả Gemini và DeepSeek đều gặp lỗi: {fb_err}"
+
+                # Nếu DeepSeek gặp sự cố -> Chuyển sang Google Gemini
+                elif primary_provider == "cloud" and self._has_valid_key(self.gemini_key):
+                    logger.warning(
+                        f"⚠️ Động cơ DeepSeek không khả dụng ({last_error}). "
+                        f"🔄 ĐANG TỰ ĐỘNG KÍCH HOẠT ĐỘNG CƠ DỰ PHÒNG: Google Gemini ({self.gemini_model})..."
+                    )
+                    try:
+                        raw_content, usage, finish_reason = await self._execute_openai_call(
+                            client=client,
+                            base_url=self.gemini_base_url,
+                            api_key=self.gemini_key,
+                            model=self.gemini_model,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            json_mode=json_mode,
+                        )
+                        selected_model = self.gemini_model
+                        primary_provider = "gemini"
+                        success = True
+                        fallback_used = True
+                        fallback_provider = "Google Gemini Flash"
+                        logger.info("✅ Động cơ dự phòng Gemini đã phản hồi thành công!")
+                    except Exception as fb_err:
+                        last_error = f"Cả DeepSeek và Gemini đều gặp lỗi: {fb_err}"
+
+            if not success:
+                raise RuntimeError(
+                    f"Không thể kết nối với máy chủ AI ({primary_provider}): {last_error}. "
+                    "Đồng chí vui lòng kiểm tra kết nối mạng hoặc khoá API trong tệp .env."
+                )
+
+            # Xử lý kết quả trả về
+            if json_mode:
+                try:
+                    parsed_data = repair_and_parse_json(raw_content)
+                    return {
+                        "success": True,
+                        "data": parsed_data,
+                        "raw_content": raw_content,
+                        "model": selected_model,
+                        "provider": primary_provider,
+                        "fallback_used": fallback_used,
+                        "fallback_provider": fallback_provider,
+                        "usage": usage,
+                    }
+                except Exception as parse_err:
+                    if finish_reason == "length":
+                        raise RuntimeError(
+                            f"Văn bản gửi kèm quá dài khiến mô hình AI ({selected_model}) chưa kịp hoàn tất toàn bộ nội dung JSON. "
+                            "Đồng chí vui lòng gửi lại lệnh hoặc gửi từng tệp để Chuyên viên Ảo thẩm định sâu hơn."
+                        )
+                    raise parse_err
+
+            return {
+                "success": True,
+                "content": raw_content,
+                "model": selected_model,
+                "provider": primary_provider,
+                "fallback_used": fallback_used,
+                "fallback_provider": fallback_provider,
+                "usage": usage,
+            }
 
     def call_chat_sync(
         self,

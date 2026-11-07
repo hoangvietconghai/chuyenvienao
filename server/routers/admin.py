@@ -104,7 +104,17 @@ async def get_system_status():
     """Kiểm tra tình trạng vận hành hệ thống và kết nối AI."""
     ai_configured = default_ai_client.is_configured()
     is_local = default_ai_client.is_local()
+    is_gemini = getattr(default_ai_client, "is_gemini", lambda: False)()
     current_model = default_ai_client.model
+    provider = getattr(default_ai_client, "provider", "cloud")
+
+    ai_notice = (
+        f"Sẵn sàng (Local {current_model})" if is_local
+        else (
+            f"Google Gemini ({current_model}) [Động cơ chính]" if is_gemini and ai_configured
+            else (f"DeepSeek Cloud ({current_model}) [Động cơ dự phòng]" if ai_configured else "Chưa cấu hình API Key")
+        )
+    )
 
     den_count = len(list(VAN_BAN_DEN_DIR.glob("**/*.*"))) if VAN_BAN_DEN_DIR.exists() else 0
     du_thao_count = len(list(VAN_BAN_DU_THAO_DIR.glob("**/*.docx"))) if VAN_BAN_DU_THAO_DIR.exists() else 0
@@ -114,8 +124,10 @@ async def get_system_status():
         "app_name": "Chuyên viên Ảo Văn phòng Đảng uỷ xã Công Hải",
         "model_in_use": current_model,
         "is_local": is_local,
+        "is_gemini": is_gemini,
+        "provider": provider,
         "ai_configured": ai_configured,
-        "ai_notice": f"Sẵn sàng (Local {current_model})" if is_local else ("Đã sẵn sàng" if ai_configured else "Chưa cấu hình API Key"),
+        "ai_notice": ai_notice,
         "organization": {
             "cap_tren": CO_QUAN_CAP_TREN,
             "ban_hanh": CO_QUAN_BAN_HANH,
@@ -157,6 +169,8 @@ async def list_available_models():
     return {
         "current_model": default_ai_client.model,
         "is_local": default_ai_client.is_local(),
+        "is_gemini": getattr(default_ai_client, "is_gemini", lambda: False)(),
+        "provider": getattr(default_ai_client, "provider", "cloud"),
         "ollama_online": ollama_online,
         "installed_local_models": installed_local_models,
         "models": models_info,
@@ -165,12 +179,14 @@ async def list_available_models():
 
 @router.post("/api/models/switch")
 async def switch_model(req: ModelSwitchRequest):
-    """Chuyển đổi mô hình AI đang sử dụng (Local 3B/7B hoặc Cloud)."""
+    """Chuyển đổi mô hình AI đang sử dụng (Gemini, DeepSeek hoặc Local 3B/7B/14B)."""
     res = default_ai_client.switch_model(req.model_id, req.provider)
     return {
         "success": True,
         "active_model": res["model"],
+        "provider": res.get("provider", "cloud"),
         "is_local": res["is_local"],
+        "is_gemini": res.get("is_gemini", False),
         "message": f"Đã chuyển sang mô hình: {res['model']}",
     }
 
