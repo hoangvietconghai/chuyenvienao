@@ -235,7 +235,7 @@
             </div>
 
             <!-- ==================== SUBTAB 2: QUẢN TRỊ MÔ HÌNH AI ==================== -->
-            <div class="admin-subcontent" id="subtab-models" style="display: none;">
+            <div class="admin-subcontent" id="subtab-models">
               <div class="ai-models-grid" id="adminAiModelsGrid">
                 <div class="ai-engine-card active" id="cardModelGemini">
                   <span style="font-size: 11px; font-weight: 700; color: var(--primary-red); background: var(--red-100); padding: 3px 8px; border-radius: 4px;">ĐỘNG CƠ CHÍNH</span>
@@ -261,7 +261,7 @@
             </div>
 
             <!-- ==================== SUBTAB 3: NHẬT KÝ HỘI THOẠI ==================== -->
-            <div class="admin-subcontent" id="subtab-logs" style="display: none;">
+            <div class="admin-subcontent" id="subtab-logs">
               <div class="admin-card-table">
                 <div class="table-header-bar">
                   <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Lịch Sử Hội Thoại Cán Bộ (Kênh Web & Zalo)</h3>
@@ -274,10 +274,10 @@
                   <thead>
                     <tr>
                       <th width="150">Thời Gian</th>
-                      <th width="100">Kênh</th>
-                      <th width="180">Cán Bộ</th>
+                      <th width="140">Cán Bộ / SĐT</th>
                       <th>Nội Dung Người Dùng</th>
                       <th>Phản Hồi AI</th>
+                      <th width="110">Mô Hình</th>
                     </tr>
                   </thead>
                   <tbody id="chatLogsTableBody">
@@ -288,7 +288,7 @@
             </div>
 
             <!-- ==================== SUBTAB 4: SỔ NHIỆM VỤ ==================== -->
-            <div class="admin-subcontent" id="subtab-tasks" style="display: none;">
+            <div class="admin-subcontent" id="subtab-tasks">
               <div class="admin-card-table">
                 <div class="table-header-bar">
                   <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Sổ Theo Dõi Nhiệm Vụ Giao Việc</h3>
@@ -297,31 +297,33 @@
                       <option value="">Tất cả trạng thái</option>
                       <option value="Chưa thực hiện">Chưa thực hiện</option>
                       <option value="Đang thực hiện">Đang thực hiện</option>
-                      <option value="Đã hoàn thành">Đã hoàn thành</option>
-                      <option value="Quá hạn">Quá hạn</option>
+                      <option value="Hoàn thành">Hoàn thành</option>
+                      <option value="Chuyển tiếp tháng sau">Chuyển tiếp</option>
                     </select>
                     <button class="btn-chs-outline" id="btnRefreshTasks">🔄 Làm mới</button>
                   </div>
                 </div>
-                <table class="chs-table">
+                <table class="chs-table" id="tasksTable">
                   <thead>
                     <tr>
-                      <th width="60">STT</th>
-                      <th>Nội Dung Nhiệm Vụ</th>
+                      <th width="120">Mã / Số Hiệu</th>
                       <th width="160">Cơ Quan Chủ Trì</th>
-                      <th width="120">Hạn Chót</th>
-                      <th width="130">Trạng Thái</th>
+                      <th>Nội Dung Nhiệm Vụ</th>
+                      <th width="110">Hạn Chót</th>
+                      <th width="100">Ưu Tiên</th>
+                      <th width="120">Trạng Thái</th>
+                      <th width="90" style="text-align: center;">Thao Tác</th>
                     </tr>
                   </thead>
                   <tbody id="tasksTableBody">
-                    <tr><td colspan="5" style="text-align: center; padding: 20px;">Đang tải sổ nhiệm vụ...</td></tr>
+                    <tr><td colspan="7" style="text-align: center; padding: 20px;">Đang tải sổ nhiệm vụ...</td></tr>
                   </tbody>
                 </table>
               </div>
             </div>
 
             <!-- ==================== SUBTAB 5: KHO VĂN BẢN RAG ==================== -->
-            <div class="admin-subcontent" id="subtab-rag" style="display: none;">
+            <div class="admin-subcontent" id="subtab-rag">
               <div class="admin-card-table">
                 <div class="table-header-bar">
                   <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Kho Văn Bản Tri Thức & Pháp Quy Cấp Uỷ</h3>
@@ -332,29 +334,40 @@
                   </div>
                 </div>
                 <div id="ragResultsWrap" style="padding: 12px; display: none;"></div>
-                <table class="chs-table">
+                <table class="chs-table" id="ragDocsTable">
                   <thead>
                     <tr>
-                      <th width="60">STT</th>
                       <th width="130">Số Hiệu</th>
+                      <th width="80">Thể Loại</th>
+                      <th width="140">Cơ Quan Ban Hành</th>
+                      <th width="100">Ngày BH</th>
+                      <th width="90">Vòng Đời</th>
+                      <th width="110">Chuyên Đề</th>
                       <th>Trích Yếu Nội Dung</th>
-                      <th width="140">Cơ Quan</th>
-                      <th width="100">Ngày Ban Hành</th>
-                      <th width="80" style="text-align: center;">Chunks</th>
+                      <th width="70" style="text-align: center;">Chunks</th>
+                      <th width="100" style="text-align: center;">Thao Tác</th>
                     </tr>
                   </thead>
                   <tbody id="ragDocsTableBody">
-                    <tr><td colspan="6" style="text-align: center; padding: 20px;">Đang nạp danh mục văn bản RAG...</td></tr>
+                    <tr><td colspan="9" style="text-align: center; padding: 20px;">Đang nạp danh mục văn bản RAG...</td></tr>
                   </tbody>
                 </table>
               </div>
             </div>
 
             <!-- ==================== SUBTAB 6: CHỈ TIÊU KPI ==================== -->
-            <div class="admin-subcontent" id="subtab-kpis" style="display: none;">
+            <div class="admin-subcontent" id="subtab-kpis">
               <div class="admin-card-table">
                 <div class="table-header-bar">
-                  <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">20 Chỉ Tiêu Đại Hội Đảng Bộ Xã & NQ57 Chuyển Đổi Số</h3>
+                  <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Chỉ Tiêu Kinh Tế - Xã Hội & Chuyển Đổi Số</h3>
+                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">Nghị quyết Đại hội Đảng bộ xã lần thứ I và Nghị quyết 57-NQ/TU Tỉnh uỷ.</p>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn-chs-outline kpi-filter-chip active" data-kpi-source="">Tất cả (20)</button>
+                    <button class="btn-chs-outline kpi-filter-chip" data-kpi-source="NQ_DAI_HOI_I">Đại hội I</button>
+                    <button class="btn-chs-outline kpi-filter-chip" data-kpi-source="NQ57_CDS">NQ57 CĐS</button>
+                  </div>
                 </div>
                 <div id="kpisGrid" style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
                   Đang tải chỉ tiêu...
@@ -363,7 +376,7 @@
             </div>
 
             <!-- ==================== SUBTAB 7: MÁY CHỦ VPS & LOGS ==================== -->
-            <div class="admin-subcontent" id="subtab-server" style="display: none;">
+            <div class="admin-subcontent" id="subtab-server">
               <div class="admin-card-table">
                 <div class="table-header-bar">
                   <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Nhật Ký Máy Chủ VPS (Systemd Journal)</h3>

@@ -794,6 +794,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (viewAdmin) { viewAdmin.style.display = 'block'; viewAdmin.classList.add('active'); }
       if (btnSwitchAdmin) btnSwitchAdmin.classList.add('active');
       if (btnSwitchChat) btnSwitchChat.classList.remove('active');
+
+      // Đảm bảo hiển thị đúng phân hệ đang được chọn
+      const currentActiveTab = document.querySelector('.admin-subtab.active') || adminSubtabs[0];
+      const targetSubtabId = currentActiveTab ? currentActiveTab.getAttribute('data-subtab') : 'subtab-cadres';
+      adminSubcontents.forEach(c => {
+        if (c.id === targetSubtabId) {
+          c.classList.add('active');
+          c.style.display = 'block';
+        } else {
+          c.classList.remove('active');
+          c.style.display = 'none';
+        }
+      });
+
       loadAdminDashboard();
     } else {
       if (viewAdmin) { viewAdmin.style.display = 'none'; viewAdmin.classList.remove('active'); }
@@ -815,11 +829,17 @@ document.addEventListener('DOMContentLoaded', () => {
     tab.addEventListener('click', () => {
       const targetId = tab.getAttribute('data-subtab');
       adminSubtabs.forEach(t => t.classList.remove('active'));
-      adminSubcontents.forEach(c => c.classList.remove('active'));
+      adminSubcontents.forEach(c => {
+        c.classList.remove('active');
+        c.style.display = 'none';
+      });
 
       tab.classList.add('active');
       const targetContent = document.getElementById(targetId);
-      if (targetContent) targetContent.classList.add('active');
+      if (targetContent) {
+        targetContent.classList.add('active');
+        targetContent.style.display = 'block';
+      }
 
       if (targetId === 'subtab-cadres') loadAdminCadres();
       if (targetId === 'subtab-models') checkStatus();
@@ -2123,9 +2143,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const cardModelDeepseek = document.getElementById('cardModelDeepseek');
   const cardModelOllama = document.getElementById('cardModelOllama');
 
+  function updateModelCardsUI(currentModel, provider) {
+    if (cardModelGemini) cardModelGemini.classList.remove('active');
+    if (cardModelDeepseek) cardModelDeepseek.classList.remove('active');
+    if (cardModelOllama) cardModelOllama.classList.remove('active');
+
+    const m = (currentModel || '').toLowerCase();
+    const p = (provider || '').toLowerCase();
+
+    if (p === 'gemini' || m.includes('gemini')) {
+      if (cardModelGemini) cardModelGemini.classList.add('active');
+    } else if (p === 'local' || m.includes('qwen') || m.includes('r1')) {
+      if (cardModelOllama) cardModelOllama.classList.add('active');
+    } else {
+      if (cardModelDeepseek) cardModelDeepseek.classList.add('active');
+    }
+  }
+
   if (cardModelGemini) {
     cardModelGemini.addEventListener('click', async () => {
       await switchActiveModel('gemini-3.5-flash-lite', 'gemini');
+      updateModelCardsUI('gemini-3.5-flash-lite', 'gemini');
       alert('✓ Đã kích hoạt Google Gemini 3.5 Flash Lite làm Động cơ chính!');
     });
   }
@@ -2133,6 +2171,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cardModelDeepseek) {
     cardModelDeepseek.addEventListener('click', async () => {
       await switchActiveModel('deepseek-chat', 'cloud');
+      updateModelCardsUI('deepseek-chat', 'cloud');
       alert('✓ Đã kích hoạt DeepSeek Cloud (671B) làm Động cơ chính!');
     });
   }
@@ -2140,6 +2179,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cardModelOllama) {
     cardModelOllama.addEventListener('click', async () => {
       await switchActiveModel('qwen2.5:3b', 'local');
+      updateModelCardsUI('qwen2.5:3b', 'local');
       alert('✓ Đã kích hoạt Ollama Local làm Động cơ chính!');
     });
   }
@@ -2177,6 +2217,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (statAdminAiModel && d.ai) {
         statAdminAiModel.textContent = `${d.ai.current_model} [${d.ai.provider?.toUpperCase()}]`;
+        updateModelCardsUI(d.ai.current_model, d.ai.provider);
       }
     } catch (err) {
       console.warn('Lỗi tải metrics admin:', err);
