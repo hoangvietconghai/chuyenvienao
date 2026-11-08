@@ -415,27 +415,32 @@
           </button>
         </div>
 
-        <!-- BƯỚC 2: MÃ OTP TRỰC QUAN -->
+        <!-- BƯỚC 2: MÃ OTP BẢO MẬT QUA ZALO -->
         <div id="authStep2" style="display: none;">
-          <p style="font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 12px;">
-            Mã xác thực gửi tới số: <b id="displayAuthTargetPhone" style="color: var(--primary-red);"></b>
-          </p>
-          <div class="otp-highlight-box" id="authDevOtpHint">
-            <span style="font-size: 12px; font-weight: 700; color: var(--red-700); text-transform: uppercase;">Mã OTP xác thực trực tiếp:</span>
-            <div class="otp-number-display" id="displayOtpCode">------</div>
-            <button class="btn-autofill-otp" id="btnAutoFillOtp">⚡ Tự động điền mã</button>
+          <div class="otp-zalo-card" style="background: linear-gradient(135deg, rgba(0, 104, 255, 0.08), rgba(0, 104, 255, 0.02)); border: 1px solid rgba(0, 104, 255, 0.2); border-radius: 12px; padding: 14px 16px; text-align: center; margin-bottom: 16px;">
+            <div style="font-size: 26px; margin-bottom: 6px;">💬🔐</div>
+            <div style="font-size: 13.5px; font-weight: 800; color: #0068ff; text-transform: uppercase; letter-spacing: 0.5px;">Mã OTP đã gửi về Zalo</div>
+            <p style="font-size: 12.5px; color: var(--text-secondary); margin: 6px 0 0 0; line-height: 1.5;">
+              Hệ thống đã gửi mã OTP 6 số bảo mật tới Zalo số: <b id="displayAuthTargetPhone" style="color: var(--primary-red);"></b>.
+              <br>Đồng chí vui lòng mở <b>Zalo</b> trên điện thoại để lấy mã xác nhận.
+            </p>
           </div>
           <div class="form-group-chs">
-            <label class="form-label-chs">Nhập 6 chữ số OTP</label>
-            <input type="text" id="inputAuthOtp" class="form-input-chs" placeholder="6 chữ số OTP" maxlength="6" style="text-align: center; letter-spacing: 4px; font-size: 20px; font-weight: 700;">
+            <label class="form-label-chs">Nhập 6 chữ số OTP từ Zalo</label>
+            <input type="text" id="inputAuthOtp" class="form-input-chs" placeholder="------" maxlength="6" autocomplete="off" style="text-align: center; letter-spacing: 6px; font-size: 22px; font-weight: 800;">
           </div>
-          <div id="authNoticeOtp" style="font-size: 13px; color: var(--primary-red); margin-bottom: 12px;"></div>
+          <div id="authNoticeOtp" style="font-size: 13px; color: var(--primary-red); margin-bottom: 12px; text-align: center;"></div>
           <button class="btn-chs-submit" id="btnVerifyOtp">
             <span>Xác nhận đăng nhập</span>
           </button>
-          <button id="btnBackToStep1" style="width: 100%; text-align: center; margin-top: 10px; font-size: 13px; color: var(--text-muted); cursor: pointer;">
-            ← Đổi số điện thoại khác
-          </button>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+            <button type="button" id="btnBackToStep1" style="background: none; border: none; font-size: 12.5px; color: var(--text-muted); cursor: pointer; padding: 4px;">
+              ← Đổi số khác
+            </button>
+            <button type="button" id="btnResendOtp" style="background: none; border: none; font-size: 12.5px; color: #0068ff; cursor: pointer; font-weight: 700; padding: 4px;">
+              Gửi lại mã OTP
+            </button>
+          </div>
         </div>
 
         <!-- BƯỚC 3: HỒ SƠ ĐÃ ĐĂNG NHẬP -->

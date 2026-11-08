@@ -13,6 +13,7 @@ Bảo vệ tuyệt đối thông tin cá nhân (Zero PII to AI):
 
 import hashlib
 import time
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException, status
@@ -53,7 +54,7 @@ def generate_auth_token(can_bo_id: str, phone: str) -> str:
 
 @router.post("/send-otp")
 async def send_otp(req: SendOtpRequest):
-    """Gửi mã xác thực OTP 6 số tới số điện thoại Zalo của cán bộ."""
+    """Gửi mã xác thực OTP 6 số bảo mật trực tiếp tới ứng dụng Zalo của cán bộ."""
     clean_phone = db_service.normalize_phone_number(req.phone)
     if not clean_phone or len(clean_phone) < 9:
         raise HTTPException(
@@ -68,6 +69,16 @@ async def send_otp(req: SendOtpRequest):
             detail="Số điện thoại chưa có trong danh bạ cán bộ xã Công Hải. Vui lòng liên hệ Văn phòng Đảng uỷ để đăng ký."
         )
 
+    zalo_chat_id = can_bo.get("zalo_chat_id") or can_bo.get("zalo_user_id")
+    if not zalo_chat_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Tài khoản của đồng chí {can_bo.get('ho_ten')} chưa được liên kết với Bot Zalo của Văn phòng Đảng uỷ. "
+                f"Vui lòng mở ứng dụng Zalo, tìm Bot VPĐU Công Hải và nhắn số điện thoại {clean_phone} để kích hoạt nhận OTP."
+            )
+        )
+
     otp_code, _ = db_service.create_zalo_otp(clean_phone)
     if not otp_code:
         raise HTTPException(
@@ -75,13 +86,34 @@ async def send_otp(req: SendOtpRequest):
             detail="Không thể tạo mã xác thực. Vui lòng thử lại sau ít phút."
         )
 
-    logger.info(f"Đã phát sinh mã OTP trực tiếp cho {clean_phone} ({can_bo.get('ho_ten')})")
+    # Gửi mã OTP trực tiếp qua tin nhắn Zalo cá nhân của cán bộ (chống rò rỉ trên Web)
+    exp_time_str = datetime.fromtimestamp(time.time() + 300).strftime("%H:%M")
+    otp_msg = (
+        f"🔐 [CÔNG HẢI SỐ - MÃ XÁC THỰC OTP]\n\n"
+        f"Kính gửi đồng chí {can_bo.get('ho_ten')} ({can_bo.get('chuc_vu')}),\n"
+        f"Mã OTP đăng nhập hệ thống Chuyên viên ảo của đồng chí là:\n\n"
+        f"👉  {otp_code}  👈\n\n"
+        f"⏱️ Mã có hiệu lực trong vòng 5 phút (hết hạn lúc {exp_time_str}).\n"
+        f"⚠️ Tuyệt đối KHÔNG chia sẻ mã này cho bất kỳ ai để bảo vệ an toàn thông tin nội bộ."
+    )
 
+    send_res = send_message(str(zalo_chat_id), otp_msg)
+    if not send_res or not send_res.get("ok"):
+        logger.error(f"Gửi OTP Zalo thất bại tới {zalo_chat_id} ({clean_phone}): {send_res}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Gửi tin nhắn OTP qua Zalo không thành công. Vui lòng kiểm tra lại kết nối mạng hoặc liên hệ Văn phòng Đảng uỷ."
+        )
+
+    logger.info(f"Đã gửi mã OTP thành công qua Zalo cho {clean_phone} ({can_bo.get('ho_ten')})")
+
+    masked_phone = clean_phone[:3] + "****" + clean_phone[-3:] if len(clean_phone) >= 7 else clean_phone
+
+    # TUYỆT ĐỐI KHÔNG TRẢ VỀ otp HAY dev_otp RA TRÌNH DUYỆT (CHỐNG LỖ HỔNG BẢO MẬT)
     return {
         "success": True,
-        "message": f"Mã xác thực của đồng chí {can_bo.get('ho_ten')} đã sẵn sàng.",
-        "otp": otp_code,
-        "dev_otp": otp_code,
+        "message": f"Mã xác thực OTP đã được gửi đến Zalo của đồng chí {can_bo.get('ho_ten')}.",
+        "phone_masked": masked_phone,
         "can_bo": {
             "can_bo_id": can_bo.get("can_bo_id"),
             "ho_ten": can_bo.get("ho_ten"),

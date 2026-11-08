@@ -165,6 +165,31 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
         logger.info(f"[Zalo] Tin nhắn từ {display_name} ({chat_id}): {text[:60]}")
         send_typing_action(chat_id)
 
+        # 4.1. Tự động liên kết tài khoản Zalo với số điện thoại trong danh bạ (Zalo 2FA Linking)
+        import re
+        link_match = re.search(r'^(?:(?:lien\s*ket|dang\s*ky|link|sdt|so\s*dien\s*thoai)\s*)?(0[3|5|7|8|9][0-9]{8})$', text, re.IGNORECASE)
+        if link_match:
+            candidate_phone = link_match.group(1)
+            from server.services import db_service
+            can_bo_found = db_service.get_can_bo_by_phone(candidate_phone)
+            if can_bo_found:
+                ok, updated_cb = db_service.link_can_bo_zalo(candidate_phone, str(chat_id), str(sender_id))
+                if ok and updated_cb:
+                    welcome_msg = (
+                        f"🎉 **XÁC NHẬN LIÊN KẾT ZALO THÀNH CÔNG!**\n\n"
+                        f"Kính chào đồng chí **{updated_cb.get('ho_ten')}** ({updated_cb.get('chuc_vu')} — {updated_cb.get('co_quan')})!\n\n"
+                        f"Hồ sơ cán bộ số điện thoại **{candidate_phone}** đã được liên kết chính thức với tài khoản Zalo này.\n"
+                        f"Từ bây giờ, đồng chí có thể:\n"
+                        f"1️⃣ Nhận mã xác thực OTP bảo mật khi đăng nhập Web Công Hải Số.\n"
+                        f"2️⃣ Nhận thông báo nhắc việc, đôn đốc nhiệm vụ tự động từ Văn phòng Đảng uỷ.\n"
+                        f"3️⃣ Gửi văn bản hoặc chỉ đạo công việc trực tiếp cho Chuyên viên ảo qua Zalo 24/7."
+                    )
+                    send_message(chat_id, welcome_msg)
+                    return
+            else:
+                send_message(chat_id, f"⚠️ Số điện thoại **{candidate_phone}** chưa có trong danh bạ cán bộ xã Công Hải. Đồng chí vui lòng liên hệ Văn phòng Đảng uỷ để được cập nhật vào danh bạ.")
+                return
+
         # Chuyển vào chat_engine chính của Chuyên viên ảo
         chat_res = await chat_engine.handle_chat(session_id=session_id, message=text)
         reply_text = chat_res.get("reply", "")

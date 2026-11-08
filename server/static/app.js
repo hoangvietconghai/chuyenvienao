@@ -1839,8 +1839,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const displayOtpCode = document.getElementById('displayOtpCode');
-  const btnAutoFillOtp = document.getElementById('btnAutoFillOtp');
+  const btnResendOtp = document.getElementById('btnResendOtp');
+  let resendCountdownTimer = null;
+
+  function startResendCountdown(seconds = 60) {
+    if (!btnResendOtp) return;
+    if (resendCountdownTimer) clearInterval(resendCountdownTimer);
+    let remaining = seconds;
+    btnResendOtp.disabled = true;
+    btnResendOtp.style.opacity = '0.5';
+    btnResendOtp.style.cursor = 'not-allowed';
+    btnResendOtp.textContent = `Gửi lại mã (${remaining}s)`;
+
+    resendCountdownTimer = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(resendCountdownTimer);
+        btnResendOtp.disabled = false;
+        btnResendOtp.style.opacity = '1';
+        btnResendOtp.style.cursor = 'pointer';
+        btnResendOtp.textContent = 'Gửi lại mã OTP';
+      } else {
+        btnResendOtp.textContent = `Gửi lại mã (${remaining}s)`;
+      }
+    }, 1000);
+  }
+
+  async function triggerSendOtp(phone) {
+    const res = await fetch('/api/auth/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: phone })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Không thể tạo mã xác thực');
+    }
+
+    currentAuthTargetPhone = phone;
+    if (displayAuthTargetPhone) {
+      displayAuthTargetPhone.textContent = data.phone_masked || phone;
+    }
+    
+    // Xoá trắng ô nhập OTP, bắt buộc cán bộ mở Zalo trên điện thoại lấy mã thực tế
+    if (inputAuthOtp) inputAuthOtp.value = '';
+
+    authStep1.style.display = 'none';
+    authStep2.style.display = 'block';
+    if (inputAuthOtp) inputAuthOtp.focus();
+    startResendCountdown(60);
+  }
 
   if (btnSendOtp && inputAuthPhone) {
     btnSendOtp.addEventListener('click', async () => {
@@ -1852,37 +1901,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       try {
         btnSendOtp.disabled = true;
-        btnSendOtp.textContent = '⏳ Đang kiểm tra danh bạ...';
+        btnSendOtp.textContent = '⏳ Đang gửi mã qua Zalo...';
         authNoticePhone.textContent = '';
-
-        const res = await fetch('/api/auth/send-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: phone })
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.detail || 'Không thể tạo mã xác thực');
-        }
-
-        currentAuthTargetPhone = phone;
-        if (displayAuthTargetPhone) displayAuthTargetPhone.textContent = phone;
-        
-        const code = data.otp || data.dev_otp;
-        if (displayOtpCode) displayOtpCode.textContent = code || '------';
-        if (inputAuthOtp) inputAuthOtp.value = code || '';
-
-        authStep1.style.display = 'none';
-        authStep2.style.display = 'block';
-        if (inputAuthOtp) inputAuthOtp.focus();
-
-        if (btnAutoFillOtp) {
-          btnAutoFillOtp.onclick = () => {
-            if (inputAuthOtp) inputAuthOtp.value = code || '';
-            if (btnVerifyOtp) btnVerifyOtp.click();
-          };
-        }
+        await triggerSendOtp(phone);
       } catch (err) {
         authNoticePhone.textContent = '⚠️ ' + err.message;
       } finally {
@@ -1893,6 +1914,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputAuthPhone.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') btnSendOtp.click();
+    });
+  }
+
+  if (btnResendOtp) {
+    btnResendOtp.addEventListener('click', async () => {
+      if (!currentAuthTargetPhone || btnResendOtp.disabled) return;
+      try {
+        authNoticeOtp.textContent = '⏳ Đang gửi lại mã qua Zalo...';
+        authNoticeOtp.style.color = '#0068ff';
+        await triggerSendOtp(currentAuthTargetPhone);
+        authNoticeOtp.textContent = '✓ Đã gửi lại mã OTP mới qua Zalo của đồng chí!';
+        authNoticeOtp.style.color = '#059669';
+        setTimeout(() => {
+          authNoticeOtp.textContent = '';
+          authNoticeOtp.style.color = 'var(--primary-red)';
+        }, 5000);
+      } catch (err) {
+        authNoticeOtp.textContent = '⚠️ ' + err.message;
+        authNoticeOtp.style.color = 'var(--primary-red)';
+      }
     });
   }
 

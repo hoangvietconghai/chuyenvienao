@@ -36,6 +36,8 @@ Bạn là **Trợ lý AI Tham mưu Tổng hợp, Văn thư và Tự động hóa
 
 ## Hướng dẫn sử dụng Skills & Tra cứu Tri thức Địa phương
 
+- **Định hướng Kiến trúc & Luồng Mã nguồn (Dành cho AI Lập trình):** Khi thực hiện các tác vụ kỹ thuật, phát triển tính năng, sửa lỗi, thêm endpoint hoặc mở rộng workflow, AI **BẮT BUỘC đọc tệp [CODEBASE_MAP.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/CODEBASE_MAP.md) trước tiên** để nắm trọn vẹn 100% kiến trúc phân tầng, các sơ đồ luồng thực thi (Mermaid), thiết kế CSDL SQLite WAL và bảng ánh xạ chức năng của hệ thống. Sau khi nâng cấp hoặc bổ sung mã nguồn, chạy `python scripts/generate_code_map.py --update-map` để tự động đồng bộ bản đồ mã nguồn.
+
 - Khi nhận yêu cầu soạn thảo hoặc thẩm định văn bản, hãy đọc skill phù hợp trong thư mục `.agents/skills/` trước khi thực hiện. Luôn đọc skill `quy-chuan-nen-tang` (`.agents/skills/quy-chuan-nen-tang/SKILL.md`) trước vì đây là quy chuẩn nền tảng dùng chung.
 
 - **Tra cứu Tri thức & Số liệu Địa phương:** Luôn chủ động tham khảo tệp [references/tong_quan_xa_cong_hai.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/references/tong_quan_xa_cong_hai.md) khi soạn thảo hoặc thẩm định văn bản để đối chiếu chính xác các mục tiêu, chỉ tiêu kinh tế - xã hội chính thức của Đảng bộ xã (tăng trưởng 11-12%/năm, thu ngân sách tăng 12%/năm, đến 2030 không còn hộ nghèo, đạt chuẩn NTM nâng cao, biên chế 72 cán bộ...), tuyệt đối không đặt nghi vấn hoặc bác bỏ các chỉ tiêu đã được Đại hội Đảng bộ xã lần thứ I thông qua.

@@ -1409,41 +1409,19 @@ details.doc-card summary {
   box-shadow: 0 4px 14px rgba(192, 0, 0, 0.25);
 }
 
-/* Hộp OTP trực quan tức thì */
-.otp-highlight-box {
-  background-color: var(--red-50);
-  border: 1.5px dashed var(--red-300);
+/* Hộp thông báo OTP bảo mật gửi qua Zalo */
+.otp-zalo-card {
+  background: linear-gradient(135deg, rgba(0, 104, 255, 0.08), rgba(0, 104, 255, 0.02));
+  border: 1px solid rgba(0, 104, 255, 0.25);
   border-radius: var(--radius-md);
-  padding: 14px;
+  padding: 16px 18px;
   margin-bottom: 18px;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 104, 255, 0.06);
 }
 
-.otp-number-display {
-  font-size: 32px;
-  font-weight: 800;
-  color: var(--primary-red);
-  letter-spacing: 6px;
-  margin: 6px 0;
-  font-family: monospace;
-}
-
-.btn-autofill-otp {
-  background-color: var(--primary-red);
-  color: #ffffff;
-  padding: 6px 14px;
-  font-size: 12.5px;
+.otp-zalo-card b {
   font-weight: 700;
-  border-radius: var(--radius-sm);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  transition: all 0.2s;
-}
-
-.btn-autofill-otp:hover {
-  background-color: var(--primary-red-hover);
 }
 
 /* ANIMATIONS */

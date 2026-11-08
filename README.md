@@ -8,6 +8,8 @@ Hệ thống được phát triển chuyên biệt theo **Mô hình Hạt nhân 
 
 Hệ thống đóng vai trò là **Chuyên viên Ảo Tham mưu Tổng hợp Toàn năng** phục vụ Thường trực Đảng uỷ, Ban Thường vụ Đảng uỷ và Ban Chấp hành Đảng bộ xã Công Hải, tỉnh Khánh Hoà (trực thuộc trực tiếp Tỉnh uỷ Khánh Hoà theo mô hình chính quyền địa phương 02 cấp từ ngày 01/7/2025).
 
+> 🧭 **Dành cho Kỹ sư & Mọi AI Agent:** Tham khảo ngay [CODEBASE_MAP.md](CODEBASE_MAP.md) để xem toàn bộ kiến trúc phân tầng, các sơ đồ luồng thực thi (Mermaid), thiết kế CSDL SQLite WAL và danh mục API Endpoints của hệ thống.
+
 ---
 
 ## 🏛️ ĐẶC ĐIỂM BỘ MÁY & MÔ HÌNH QUẢN LÝ (TỪ 01/7/2025)
@@ -43,7 +45,7 @@ Hệ thống đóng vai trò là **Chuyên viên Ảo Tham mưu Tổng hợp To�
 2. **Giao diện Web Công Hải Số (ChatCHS — `http://45.119.82.227` hoặc `http://localhost:8000`):**
    * **Nhận diện thương hiệu Đảng bộ:** Tích hợp logo chính thức Công Hải Số, nền chìm hoa văn Trống đồng Đông Sơn tinh tế, tông màu Đỏ Đảng chủ đạo (`#C00000`).
    * **Kiến trúc 1 trang duy nhất (Single-Page View):** Cán bộ thông thường và khách chỉ thấy duy nhất giao diện Chat tinh gọn, sang trọng. Toàn bộ các bảng biểu và phân hệ quản trị được chuyển vào **Bảng Điều Hành Admin** dành riêng cho Quản trị viên (`0327777707`).
-   * **Xác thực Cán bộ & OTP trực quan:** Đăng nhập bằng số điện thoại cán bộ trong danh bạ, mã OTP hiển thị nổi bật với nút tự động điền 1 chạm.
+   * **Xác thực Cán bộ Hai lớp (Zalo 2FA OTP):** Đăng nhập an toàn bằng số điện thoại trong danh bạ, mã OTP 6 số bảo mật được gửi trực tiếp về Zalo cá nhân của cán bộ (tuyệt đối không hiển thị mã trên trình duyệt để bảo vệ an toàn thông tin nội bộ).
    * **Bảng điều hành Admin 7 phân hệ hoàn chỉnh:** Quản lý danh bạ cán bộ (CRUD), Đổi động cơ AI 1 chạm, Giám sát hội thoại hệ thống, Sổ nhiệm vụ, Kho RAG, Chỉ tiêu KPI và Xem log máy chủ VPS trực tiếp.
 3. **Zalo Bot Di Động 24/7 (`scripts/run_zalo_bot.py`):**
    * Hoạt động theo cơ chế **Long Polling (`getUpdates`)**, độc lập hoàn toàn, không phụ thuộc vào proxy hay tên miền ngoài.
@@ -96,6 +98,7 @@ Hệ thống đóng vai trò là **Chuyên viên Ảo Tham mưu Tổng hợp To�
 e:\Viet Design\Chuyên viên ảo\
 │
 ├── 📜 AGENTS.md                             # QUY TẮC VẬN HÀNH MẶC ĐỊNH (auto-load)
+├── 🗺️ CODEBASE_MAP.md                       # BẢN ĐỒ KIẾN TRÚC MÃ NGUỒN & AI ONBOARDING
 ├── 📖 README.md                             # TÀI LIỆU TỔNG QUAN DỰ ÁN (File này)
 ├── 📖 SETUP.md                              # HƯỚNG DẪN CÀI ĐẶT MÁY CHỦ TỪ ĐẦU
 ├── 📋 requirements.txt                      # DANH MỤC THƯ VIỆN PYTHON ĐẦY ĐỦ
@@ -126,7 +129,7 @@ e:\Viet Design\Chuyên viên ảo\
 │   ├── plan_registry.py                     # Sổ kế hoạch và định danh pháp quy cấp uỷ
 │   │
 │   ├── routers/                             # CÁC ROUTER CHUYÊN TRÁCH
-│   │   ├── auth.py                          # Xác thực cán bộ, mã OTP tự điền, phiên làm việc
+│   │   ├── auth.py                          # Xác thực cán bộ, Zalo OTP bảo mật 2FA, phiên làm việc
 │   │   ├── chat.py                          # Endpoint chat, tải file đính kèm, xuất Word
 │   │   ├── knowledge.py                     # Quản trị kho tri thức RAG, preview, commit
 │   │   ├── admin.py                         # Quản lý AI Model, CRUD cán bộ, Tasks, KPIs, Logs, Webhook
@@ -158,6 +161,7 @@ e:\Viet Design\Chuyên viên ảo\
 │       └── assets/                          # Logo Công Hải Số, Icon, Trống đồng Đông Sơn
 │
 ├── ⚙️ scripts/                              # CÔNG CỤ TỰ ĐỘNG HOÁ & RUNNER
+│   ├── generate_code_map.py                 # Bộ phân tích AST & tự động đồng bộ CODEBASE_MAP
 │   ├── export_docx.py                       # Engine cốt lõi sinh file Word (.docx) chuẩn HD 05
 │   ├── doc_reader.py                        # Trích xuất văn bản (.docx, .doc, .pdf)
 │   ├── deploy_remote.py                     # Tool điều phối triển khai và cập nhật VPS từ xa

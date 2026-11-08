@@ -1052,6 +1052,29 @@ def get_can_bo_by_phone(phone: str) -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
 
 
+def link_can_bo_zalo(phone: str, zalo_chat_id: str, zalo_user_id: str = "") -> Tuple[bool, Optional[Dict[str, Any]]]:
+    """Liên kết định danh Zalo (chat_id, user_id) vào hồ sơ cán bộ theo số điện thoại."""
+    clean_p = normalize_phone_number(phone)
+    if not clean_p:
+        return False, None
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        UPDATE danh_ba_can_bo
+        SET zalo_chat_id = ?, zalo_user_id = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE so_dien_thoai = ? OR so_dien_thoai = ? OR so_dien_thoai LIKE ?;
+        """, (str(zalo_chat_id), str(zalo_user_id or zalo_chat_id), clean_p, '84' + clean_p[1:], f"%{clean_p}%"))
+        if cursor.rowcount > 0:
+            cursor.execute("""
+            SELECT * FROM danh_ba_can_bo 
+            WHERE so_dien_thoai = ? OR so_dien_thoai = ? 
+            LIMIT 1;
+            """, (clean_p, '84' + clean_p[1:]))
+            row = cursor.fetchone()
+            return True, dict(row) if row else None
+    return False, None
+
+
 def create_zalo_otp(phone: str) -> Tuple[str, Optional[Dict[str, Any]]]:
     """Sinh mã xác thực OTP 6 số và lưu vào CSDL (hạn dùng 5 phút)."""
     import random
