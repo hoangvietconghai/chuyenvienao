@@ -1833,12 +1833,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (modalAuth) {
-    modalAuth.addEventListener('click', (e) => {
-      if (e.target === modalAuth) modalAuth.style.display = 'none';
-    });
-  }
-
   const btnResendOtp = document.getElementById('btnResendOtp');
   let resendCountdownTimer = null;
 
