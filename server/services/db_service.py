@@ -263,6 +263,24 @@ def init_database() -> None:
         );
         """)
 
+        # 9.5 Bảng Phiên Đăng Nhập Cán Bộ (Session Tokens bền vững)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS phien_dang_nhap (
+            token TEXT PRIMARY KEY,
+            can_bo_id TEXT NOT NULL,
+            so_dien_thoai TEXT NOT NULL,
+            ho_ten TEXT NOT NULL,
+            chuc_vu TEXT,
+            co_quan TEXT,
+            co_quan_code TEXT,
+            vai_tro TEXT DEFAULT 'can_bo',
+            created_at REAL NOT NULL,
+            expires_at REAL NOT NULL,
+            FOREIGN KEY (can_bo_id) REFERENCES danh_ba_can_bo(can_bo_id) ON DELETE CASCADE
+        );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_token_expires ON phien_dang_nhap(expires_at);")
+
         # 10. Bảng Nhật ký Hội thoại Đa kênh (Web Chat & Zalo Bot)
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS nhat_ky_hoi_thoai (
@@ -1094,6 +1112,61 @@ def verify_zalo_otp(phone: str, otp_code: str) -> Tuple[bool, str, Optional[Dict
 
     can_bo = get_can_bo_by_phone(clean_p)
     return True, "Xác thực thành công", can_bo
+
+
+def save_auth_session(token: str, can_bo: Dict[str, Any], duration_days: int = 30) -> bool:
+    """Lưu phiên đăng nhập bền vững của cán bộ vào SQLite (mặc định 30 ngày)."""
+    import time
+    now = time.time()
+    expires_at = now + (duration_days * 86400)
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT OR REPLACE INTO phien_dang_nhap (
+            token, can_bo_id, so_dien_thoai, ho_ten, chuc_vu, co_quan, co_quan_code, vai_tro, created_at, expires_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """, (
+            token,
+            can_bo.get("can_bo_id", ""),
+            can_bo.get("so_dien_thoai", ""),
+            can_bo.get("ho_ten", ""),
+            can_bo.get("chuc_vu", ""),
+            can_bo.get("co_quan", ""),
+            can_bo.get("co_quan_code", ""),
+            can_bo.get("vai_tro", "can_bo"),
+            now,
+            expires_at,
+        ))
+    return True
+
+
+def get_auth_session(token: str) -> Optional[Dict[str, Any]]:
+    """Truy vấn thông tin cán bộ từ token còn hiệu lực trong CSDL."""
+    if not token:
+        return None
+    import time
+    now = time.time()
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT can_bo_id, so_dien_thoai, ho_ten, chuc_vu, co_quan, co_quan_code, vai_tro, created_at, expires_at
+        FROM phien_dang_nhap
+        WHERE token = ? AND expires_at > ?;
+        """, (token, now))
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+    return None
+
+
+def delete_auth_session(token: str) -> bool:
+    """Xoá phiên đăng nhập khi cán bộ đăng xuất."""
+    if not token:
+        return False
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM phien_dang_nhap WHERE token = ?;", (token,))
+    return True
 
 
 # ==============================================================================

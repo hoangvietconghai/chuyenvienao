@@ -117,6 +117,12 @@ async def verify_otp(req: VerifyOtpRequest):
         "created_at": time.time(),
     }
 
+    # Lưu token phiên bền vững vào SQLite (30 ngày)
+    try:
+        db_service.save_auth_session(token, can_bo_info, duration_days=30)
+    except Exception as db_err:
+        logger.warning(f"Lỗi lưu phiên vào CSDL: {db_err}")
+
     # Nếu có session_id gửi kèm -> Gắn danh tính cán bộ vào phiên chat backend
     if req.session_id:
         _, s = chat_engine.get_session(req.session_id)
@@ -135,13 +141,45 @@ async def verify_otp(req: VerifyOtpRequest):
 
 @router.post("/check")
 async def check_auth_session(req: SessionCheckRequest):
-    """Kiểm tra trạng thái đăng nhập của phiên hiện tại."""
+    """Kiểm tra trạng thái đăng nhập của phiên hiện tại và tái gắn danh tính."""
     token = req.token
-    if token and token in ACTIVE_TOKENS:
+    can_bo_info = None
+
+    if token:
+        if token in ACTIVE_TOKENS:
+            can_bo_info = ACTIVE_TOKENS[token]["can_bo"]
+        else:
+            # Phục hồi phiên bền vững từ CSDL SQLite
+            try:
+                db_session = db_service.get_auth_session(token)
+                if db_session:
+                    can_bo_info = {
+                        "can_bo_id": db_session["can_bo_id"],
+                        "ho_ten": db_session["ho_ten"],
+                        "chuc_vu": db_session["chuc_vu"],
+                        "co_quan": db_session["co_quan"],
+                        "co_quan_code": db_session["co_quan_code"],
+                        "so_dien_thoai": db_session.get("so_dien_thoai"),
+                        "vai_tro": db_session.get("vai_tro", "can_bo"),
+                    }
+                    ACTIVE_TOKENS[token] = {
+                        "can_bo": can_bo_info,
+                        "created_at": db_session["created_at"],
+                    }
+            except Exception as ex:
+                logger.warning(f"Lỗi đọc phiên từ CSDL: {ex}")
+
+    if can_bo_info:
+        # Tự động gắn quyền và danh tính vào phiên chat backend
+        if req.session_id:
+            _, s = chat_engine.get_session(req.session_id)
+            s["authenticated"] = True
+            s["can_bo"] = can_bo_info
+
         return {
             "authenticated": True,
             "mode": "cadre",
-            "can_bo": ACTIVE_TOKENS[token]["can_bo"],
+            "can_bo": can_bo_info,
         }
 
     if req.session_id and req.session_id in chat_engine.SESSIONS:
@@ -163,8 +201,12 @@ async def check_auth_session(req: SessionCheckRequest):
 @router.post("/logout")
 async def logout(req: SessionCheckRequest):
     """Đăng xuất cán bộ và chuyển về Chế độ Khách (Ẩn danh)."""
-    if req.token and req.token in ACTIVE_TOKENS:
-        del ACTIVE_TOKENS[req.token]
+    if req.token:
+        ACTIVE_TOKENS.pop(req.token, None)
+        try:
+            db_service.delete_auth_session(req.token)
+        except Exception:
+            pass
 
     if req.session_id and req.session_id in chat_engine.SESSIONS:
         s = chat_engine.SESSIONS[req.session_id]

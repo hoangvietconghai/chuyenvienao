@@ -400,13 +400,18 @@ document.addEventListener('DOMContentLoaded', () => {
     scrollToBottom();
 
     try {
+      const authToken = localStorage.getItem('cva_auth_token') || '';
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({
           session_id: sessionId,
           message: text,
           action: action,
+          token: authToken,
         }),
       });
 
@@ -438,10 +443,14 @@ document.addEventListener('DOMContentLoaded', () => {
   btnNewChat.addEventListener('click', async () => {
     if (confirm('Bắt đầu cuộc trò chuyện mới? (Dự thảo chưa xuất Word sẽ bị xoá)')) {
       try {
+        const authToken = localStorage.getItem('cva_auth_token') || '';
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
         const res = await fetch('/api/chat/reset', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sessionId }),
+          headers: headers,
+          body: JSON.stringify({ session_id: sessionId, token: authToken }),
         });
         const d = await res.json();
         saveSessionId(d.session_id);
@@ -2238,7 +2247,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const items = data.items || [];
 
       if (items.length === 0) {
-        chatLogsTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:30px;">Chưa có bản ghi hội thoại nào. (Chế độ Khách không lưu trữ vào CSDL)</td></tr>';
+        chatLogsTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:30px;">Chưa có bản ghi hội thoại nào.</td></tr>';
         return;
       }
 

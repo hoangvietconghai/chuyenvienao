@@ -119,10 +119,25 @@ def get_session(session_id: Optional[str]) -> Tuple[str, Dict[str, Any]]:
     return session_id, SESSIONS[session_id]
 
 
-def reset_session(session_id: Optional[str]) -> str:
+def reset_session(session_id: Optional[str], token: Optional[str] = None) -> str:
+    saved_auth = None
     if session_id and session_id in SESSIONS:
+        old_s = SESSIONS[session_id]
+        if old_s.get("authenticated") and old_s.get("can_bo"):
+            saved_auth = (True, old_s["can_bo"])
         del SESSIONS[session_id]
-    new_id, _ = get_session(None)
+    new_id, new_s = get_session(None)
+    if saved_auth:
+        new_s["authenticated"], new_s["can_bo"] = saved_auth
+    elif token:
+        try:
+            from server.services import db_service
+            db_s = db_service.get_auth_session(token)
+            if db_s:
+                new_s["authenticated"] = True
+                new_s["can_bo"] = db_s
+        except Exception:
+            pass
     return new_id
 
 
@@ -705,39 +720,83 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
 # HÀM CÔNG KHAI
 # ==============================================================================
 
-async def handle_chat(session_id: Optional[str], message: str = "", action: str = "") -> Dict[str, Any]:
+async def handle_chat(session_id: Optional[str], message: str = "", action: str = "", token: Optional[str] = None) -> Dict[str, Any]:
     session_id, s = get_session(session_id)
     message = (message or "").strip()
     action = (action or "").strip()
     new_atts = [a for a in s["attachments"] if not a["used"]]
     start_time = time.time()
 
+    # Tự động nạp và duy trì danh tính cán bộ từ token nếu phiên chưa có
+    if token and not s.get("can_bo"):
+        try:
+            from server.routers.auth import ACTIVE_TOKENS
+            from server.services import db_service
+            can_bo_info = None
+            if token in ACTIVE_TOKENS:
+                can_bo_info = ACTIVE_TOKENS[token]["can_bo"]
+            else:
+                db_s = db_service.get_auth_session(token)
+                if db_s:
+                    can_bo_info = {
+                        "can_bo_id": db_s["can_bo_id"],
+                        "ho_ten": db_s["ho_ten"],
+                        "chuc_vu": db_s["chuc_vu"],
+                        "co_quan": db_s["co_quan"],
+                        "co_quan_code": db_s["co_quan_code"],
+                        "so_dien_thoai": db_s.get("so_dien_thoai"),
+                        "vai_tro": db_s.get("vai_tro", "can_bo"),
+                    }
+                    ACTIVE_TOKENS[token] = {"can_bo": can_bo_info, "created_at": time.time()}
+            if can_bo_info:
+                s["authenticated"] = True
+                s["can_bo"] = can_bo_info
+        except Exception as auth_ex:
+            logger.warning(f"Lỗi nạp danh tính từ token: {auth_ex}")
+
     def done(result: Dict[str, Any]) -> Dict[str, Any]:
         result["session_id"] = session_id
-        # Lưu nhật ký hội thoại NẾU phiên ĐÃ ĐĂNG NHẬP CHÍNH DANH
-        if s.get("authenticated") and s.get("can_bo"):
-            can_bo = s["can_bo"]
-            latency_ms = int((time.time() - start_time) * 1000)
-            names = ", ".join(a["name"] for a in s["attachments"])
-            reply_text = result.get("reply", "")
+
+        # LƯU TOÀN BỘ NHẬT KÝ HỘI THOẠI 100% ĐẦY ĐỦ (CẢ CÁN BỘ ĐĂNG NHẬP & CHẾ ĐỘ KHÁCH)
+        can_bo = s.get("can_bo")
+        latency_ms = int((time.time() - start_time) * 1000)
+        names = ", ".join(a["name"] for a in s["attachments"])
+        reply_text = result.get("reply", "")
+
+        if can_bo:
+            ho_ten = can_bo.get("ho_ten", "Cán bộ")
+            so_dien_thoai = can_bo.get("so_dien_thoai", "")
+            co_quan = can_bo.get("co_quan", "Văn phòng Đảng uỷ")
+            vai_tro = can_bo.get("vai_tro", "can_bo")
+            can_bo_id = can_bo.get("can_bo_id")
+        else:
+            ho_ten = "Khách (Chưa đăng nhập)"
+            so_dien_thoai = ""
+            co_quan = "Truy cập Web"
+            vai_tro = "khach"
+            can_bo_id = None
+
+        # Ghi nhật ký vào CSDL SQLite WAL
+        if message or reply_text or action:
             try:
                 from server.services import db_service
                 db_service.save_chat_log({
                     "session_id": session_id,
                     "channel": "web",
-                    "can_bo_id": can_bo.get("can_bo_id"),
-                    "so_dien_thoai": can_bo.get("so_dien_thoai"),
-                    "ho_ten": can_bo.get("ho_ten"),
-                    "co_quan": can_bo.get("co_quan"),
-                    "vai_tro": can_bo.get("vai_tro", "can_bo"),
-                    "message_text": message or "(thao tác nút/gửi tệp)",
+                    "can_bo_id": can_bo_id,
+                    "so_dien_thoai": so_dien_thoai,
+                    "ho_ten": ho_ten,
+                    "co_quan": co_quan,
+                    "vai_tro": vai_tro,
+                    "message_text": message or (f"Thao tác: {action}" if action else "(Gửi tệp đính kèm)"),
                     "attachment_names": names,
                     "bot_reply": reply_text,
-                    "model_used": getattr(default_ai_client, "model", ""),
+                    "model_used": getattr(default_ai_client, "model", "gemini-3.5-flash-lite"),
                     "latency_ms": latency_ms,
                 })
             except Exception as log_ex:
                 logger.warning(f"Lỗi lưu nhật ký chat: {log_ex}")
+
         return result
 
     # Ghi lịch sử phía người dùng

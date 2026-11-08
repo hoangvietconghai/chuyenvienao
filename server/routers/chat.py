@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
@@ -36,19 +36,26 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
     message: Optional[str] = ""
     action: Optional[str] = ""
+    token: Optional[str] = None
 
 
 class SessionRequest(BaseModel):
     session_id: Optional[str] = None
     attachment_id: Optional[str] = None
+    token: Optional[str] = None
 
 
 # --- CHAT ENDPOINTS ---
 
 @router.post("/api/chat")
-async def chat_endpoint(req: ChatRequest):
+async def chat_endpoint(req: ChatRequest, request: Request):
     """Nhận lệnh của cán bộ, tự chọn nghiệp vụ và phản hồi."""
-    return await chat_engine.handle_chat(req.session_id, req.message or "", req.action or "")
+    token = req.token
+    if not token:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+    return await chat_engine.handle_chat(req.session_id, req.message or "", req.action or "", token=token)
 
 
 @router.post("/api/chat/upload")
@@ -96,9 +103,14 @@ async def chat_remove_attachment(req: SessionRequest):
 
 
 @router.post("/api/chat/reset")
-async def chat_reset(req: SessionRequest):
+async def chat_reset(req: SessionRequest, request: Request):
     """Làm mới phiên làm việc."""
-    return {"session_id": chat_engine.reset_session(req.session_id)}
+    token = req.token
+    if not token:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+    return {"session_id": chat_engine.reset_session(req.session_id, token=token)}
 
 
 @router.post("/api/upload")
