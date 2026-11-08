@@ -25,10 +25,29 @@ fi
 
 cd "$APP_DIR"
 
+# 0. Tự động sao lưu & Kích hoạt Lá chắn bảo vệ CSDL SQLite VPS (Database Shield)
+echo -e "${BLUE}>> [0/4] Tự động sao lưu và kích hoạt Lá chắn CSDL SQLite VPS...${NC}"
+mkdir -p "$APP_DIR/backups"
+if [ -f "$APP_DIR/data/chuyen_vien_ao.db" ]; then
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    cp "$APP_DIR/data/chuyen_vien_ao.db" "$APP_DIR/backups/chuyen_vien_ao_${TIMESTAMP}.db"
+    cp "$APP_DIR/data/chuyen_vien_ao.db" "$APP_DIR/backups/db_shield_active.db"
+    # Giữ tối đa 15 bản sao lưu gần nhất để bảo vệ dung lượng ổ đĩa
+    ls -tp "$APP_DIR/backups"/chuyen_vien_ao_*.db 2>/dev/null | grep -v '/$' | tail -n +16 | xargs -I {} rm -- {} 2>/dev/null || true
+    echo -e "${GREEN}  ✓ Đã sao lưu dự phòng CSDL VPS thành công: chuyen_vien_ao_${TIMESTAMP}.db${NC}"
+fi
+
 # 1. Kéo mã nguồn mới nhất từ nhánh main
 echo -e "${BLUE}>> [1/4] Kéo mã nguồn mới nhất từ GitHub (origin/main)...${NC}"
 git fetch origin main
 git reset --hard origin/main
+
+# 1.1 Khôi phục bảo toàn 100% CSDL VPS (ngăn git ghi đè hoặc xoá bỏ)
+if [ -f "$APP_DIR/backups/db_shield_active.db" ]; then
+    mkdir -p "$APP_DIR/data"
+    cp "$APP_DIR/backups/db_shield_active.db" "$APP_DIR/data/chuyen_vien_ao.db"
+    echo -e "${GREEN}  ✓ Lá chắn CSDL: Đã bảo toàn nguyên vẹn 100% CSDL thực tế trên VPS.${NC}"
+fi
 
 # 2. Cài đặt các thư viện mới nếu có thay đổi trong requirements.txt
 echo -e "${BLUE}>> [2/4] Kiểm tra và cập nhật các gói thư viện Python...${NC}"

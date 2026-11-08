@@ -162,6 +162,7 @@ e:\Viet Design\Chuyên viên ảo\
 │
 ├── ⚙️ scripts/                              # CÔNG CỤ TỰ ĐỘNG HOÁ & RUNNER
 │   ├── generate_code_map.py                 # Bộ phân tích AST & tự động đồng bộ CODEBASE_MAP
+│   ├── pull_db_from_vps.py                  # Đồng bộ an toàn CSDL thực tế từ VPS về máy cục bộ
 │   ├── export_docx.py                       # Engine cốt lõi sinh file Word (.docx) chuẩn HD 05
 │   ├── doc_reader.py                        # Trích xuất văn bản (.docx, .doc, .pdf)
 │   ├── deploy_remote.py                     # Tool điều phối triển khai và cập nhật VPS từ xa
@@ -226,6 +227,14 @@ curl.exe -X POST http://45.119.82.227/api/admin/system/deploy-webhook
 ```
 * **Thời gian hoàn tất:** Chỉ từ **3 đến 5 giây**.
 * **Đảm bảo an toàn:** Không cần nhập mật khẩu SSH, không ghi đè tệp cấu hình `.env`, bảo toàn nguyên vẹn 100% CSDL SQLite WAL (danh bạ, sổ nhiệm vụ, nhật ký chat).
+
+#### 🛡️ Cơ chế Bảo vệ CSDL Sản xuất (Production Database Shield):
+* **Máy chủ VPS là nguồn dữ liệu duy nhất (Single Source of Truth):** Toàn bộ tệp CSDL SQLite `chuyen_vien_ao.db` trên VPS được bảo vệ độc lập, không bị theo dõi bởi Git (đã loại trừ trong `.gitignore`). Khi đồng chí đẩy code từ máy tính cá nhân lên GitHub, dữ liệu trên VPS **tuyệt đối không bao giờ bị ghi đè hoặc reset**.
+* **Tự động sao lưu dự phòng khi cập nhật:** Mỗi lần chạy lệnh cập nhật, script `update_vps.sh` sẽ tự động tạo bản sao lưu tại `/opt/chuyenvienao/backups/chuyen_vien_ao_[timestamp].db` trước khi áp dụng code mới (lưu trữ tối đa 15 bản sao lưu gần nhất).
+* **Đồng bộ CSDL thực tế từ VPS về máy tính cá nhân:** Khi đồng chí cần lấy dữ liệu thực tế mới nhất từ VPS về máy tính cá nhân để xem xét hoặc sao lưu:
+```powershell
+python scripts/pull_db_from_vps.py
+```
 
 #### 🛠️ Triển khai mới toàn diện (Reset / Cài đặt sạch môi trường VPS):
 Dùng khi máy chủ VPS mới tinh hoặc cần cài đặt lại từ đầu:

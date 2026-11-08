@@ -9,11 +9,13 @@ venv/
 .venv/
 .env
 .env.local
+# CSDL SQLite WAL (Tuyệt đối không đưa lên Git để bảo vệ dữ liệu thực tế trên VPS)
 *.db
 *.db-wal
 *.db-shm
-# Ngoại lệ: Đồng bộ CSDL SQLite hợp nhất của Chuyên viên ảo giữa cơ quan và ở nhà
-!data/chuyen_vien_ao.db
+data/*.db
+data/*.db-wal
+data/*.db-shm
 
 # Microsoft Office temporary files
 ~$*.docx

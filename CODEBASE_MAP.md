@@ -219,6 +219,11 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 6. **Tiết kiệm Token & Không In Lại Toàn Văn:** Khi đã xuất file Word (.docx), trong khung chat **tuyệt đối không in lại toàn văn nội dung**, chỉ tóm tắt 3 phần (Bảng phân công, Lưu ý số liệu, Link tải file).
 7. **SQLite Concurrency & WAL Locking:** Luôn sử dụng `get_db_connection()` context manager từ `db_service.py`. Không mở kết nối thô mà quên đóng, không thực hiện các giao dịch kéo dài gây nghẽn `database.db`.
 8. **Bảo vệ Endpoint CI/CD Webhook:** Endpoint `POST /api/admin/system/deploy-webhook` tại [server/routers/admin.py](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/server/routers/admin.py) là đường dây nóng giúp đồng chí cập nhật VPS chỉ trong 3–5 giây. Tuyệt đối không chỉnh sửa gây lỗi cú pháp hoặc chặn quyền endpoint này.
+9. **Lá chắn CSDL Sản xuất (Production Database Shield & Single Source of Truth):**
+   - **VPS là nguồn dữ liệu duy nhất:** Dữ liệu hoạt động thực tế 24/7 của toàn thể cán bộ (nhật ký chat, nhiệm vụ 5 Rõ, KPI, OTP, RAG) lưu trữ tại máy chủ VPS (`/opt/chuyenvienao/data/chuyen_vien_ao.db`).
+   - **Tuyệt đối KHÔNG đưa `data/*.db` vào Git:** Tệp CSDL bắt buộc nằm trong `.gitignore`. Máy tính cá nhân chỉ là môi trường phát triển code.
+   - **Cơ chế tự động sao lưu trong `update_vps.sh`:** Kịch bản CI/CD trên VPS luôn tự động sao lưu dự phòng CSDL vào thư mục `backups/` và khôi phục lá chắn bảo vệ CSDL, đảm bảo lệnh `git reset --hard` không bao giờ ghi đè hay xoá mất dữ liệu thực tế của VPS.
+   - **Đồng bộ một chiều (VPS -> Local):** Khi cần lấy dữ liệu thực tế từ VPS về máy cá nhân, sử dụng script [scripts/pull_db_from_vps.py](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/scripts/pull_db_from_vps.py), tuyệt đối không đẩy đè CSDL máy cá nhân lên VPS.
 
 ---
 
@@ -226,8 +231,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 08/11/2026 12:38:06*
-> *Quy mô: **50** tệp Python | **11,597** dòng mã | **48** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 08/11/2026 13:05:29*
+> *Quy mô: **51** tệp Python | **11,713** dòng mã | **48** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -331,6 +336,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`scripts/doc_reader.py`](scripts/doc_reader.py) | 431 | 9 Funcs | scripts/doc_reader.py |
 | [`scripts/export_docx.py`](scripts/export_docx.py) | 820 | 1 Classes | scripts/export_docx.py |
 | [`scripts/generate_code_map.py`](scripts/generate_code_map.py) | 308 | 1 Classes | scripts/generate_code_map.py |
+| [`scripts/pull_db_from_vps.py`](scripts/pull_db_from_vps.py) | 116 | 1 Funcs | scripts/pull_db_from_vps.py |
 | [`scripts/run_zalo_bot.py`](scripts/run_zalo_bot.py) | 93 | 1 Funcs | scripts/run_zalo_bot.py |
 | [`scripts/seed_database.py`](scripts/seed_database.py) | 291 | 4 Funcs | scripts/seed_database.py |
 | [`scripts/test_doc_reader.py`](scripts/test_doc_reader.py) | 116 | 1 Classes | scripts/test_doc_reader.py |
