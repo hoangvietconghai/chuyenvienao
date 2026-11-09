@@ -231,8 +231,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 08/11/2026 13:05:29*
-> *Quy mô: **51** tệp Python | **11,713** dòng mã | **48** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 09/11/2026 14:57:19*
+> *Quy mô: **51** tệp Python | **11,818** dòng mã | **49** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -261,6 +261,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | **`POST`** | `/api/admin/cadres` | `create_cadre_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Thêm cán bộ mới vào danh bạ. |
 | **`PUT`** | `/api/admin/cadres/{can_bo_id}` | `update_cadre_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Cập nhật toàn diện thông tin cán bộ trong danh bạ. |
 | **`DELETE`** | `/api/admin/cadres/{can_bo_id}` | `delete_cadre_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Xoá cán bộ khỏi danh bạ. |
+| **`POST`** | `/api/admin/cadres/send-zalo` | `send_zalo_to_cadres_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Gửi tin nhắn thông báo qua Bot Zalo cho cán bộ (chọn 1 hoặc nhiều người). |
 | **`POST`** | `/api/admin/system/deploy-webhook` | `deploy_webhook` | [`server/routers/admin.py`](server/routers/admin.py) | Webhook nhận tín hiệu push từ GitHub để tự động cập nhật hệ thống trên VPS. |
 | **`POST`** | `/send-otp` | `send_otp` | [`server/routers/auth.py`](server/routers/auth.py) | Gửi mã xác thực OTP 6 số bảo mật trực tiếp tới ứng dụng Zalo của cán bộ. |
 | **`POST`** | `/verify-otp` | `verify_otp` | [`server/routers/auth.py`](server/routers/auth.py) | Xác thực mã OTP 6 số và đăng nhập chính danh cán bộ. |
@@ -308,7 +309,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/prompts/wf4_tham_dinh.py`](server/prompts/wf4_tham_dinh.py) | 159 | 1 Funcs | server/prompts/wf4_tham_dinh.py |
 | [`server/router.py`](server/router.py) | 118 | 1 Funcs | server/router.py |
 | [`server/routers/__init__.py`](server/routers/__init__.py) | 6 | 0 Funcs | server/routers |
-| [`server/routers/admin.py`](server/routers/admin.py) | 532 | 21 Endpoints, 8 Classes | server/routers/admin.py |
+| [`server/routers/admin.py`](server/routers/admin.py) | 636 | 22 Endpoints, 9 Classes | server/routers/admin.py |
 | [`server/routers/auth.py`](server/routers/auth.py) | 249 | 4 Endpoints, 3 Classes | server/routers/auth.py |
 | [`server/routers/chat.py`](server/routers/chat.py) | 198 | 7 Endpoints, 2 Classes | server/routers/chat.py |
 | [`server/routers/knowledge.py`](server/routers/knowledge.py) | 194 | 11 Endpoints, 3 Classes | server/routers/knowledge.py |
@@ -336,7 +337,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`scripts/doc_reader.py`](scripts/doc_reader.py) | 431 | 9 Funcs | scripts/doc_reader.py |
 | [`scripts/export_docx.py`](scripts/export_docx.py) | 820 | 1 Classes | scripts/export_docx.py |
 | [`scripts/generate_code_map.py`](scripts/generate_code_map.py) | 308 | 1 Classes | scripts/generate_code_map.py |
-| [`scripts/pull_db_from_vps.py`](scripts/pull_db_from_vps.py) | 116 | 1 Funcs | scripts/pull_db_from_vps.py |
+| [`scripts/pull_db_from_vps.py`](scripts/pull_db_from_vps.py) | 117 | 1 Funcs | scripts/pull_db_from_vps.py |
 | [`scripts/run_zalo_bot.py`](scripts/run_zalo_bot.py) | 93 | 1 Funcs | scripts/run_zalo_bot.py |
 | [`scripts/seed_database.py`](scripts/seed_database.py) | 291 | 4 Funcs | scripts/seed_database.py |
 | [`scripts/test_doc_reader.py`](scripts/test_doc_reader.py) | 116 | 1 Classes | scripts/test_doc_reader.py |

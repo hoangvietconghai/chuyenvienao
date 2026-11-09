@@ -2010,7 +2010,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================================================
-  // 8. QUẢN LÝ DANH BẠ CÁN BỘ (CRUD DÀNH CHO ADMIN)
+  // 8. QUẢN LÝ DANH BẠ CÁN BỘ (CRUD DÀNH CHO ADMIN) & GỬI TIN NHẮN BOT ZALO
   // ============================================================================
   const cadresTableBody = document.getElementById('cadresTableBody');
   const inputSearchCadre = document.getElementById('inputSearchCadre');
@@ -2028,11 +2028,54 @@ document.addEventListener('DOMContentLoaded', () => {
   const crudVaiTro = document.getElementById('crudVaiTro');
   const crudCadreNotice = document.getElementById('crudCadreNotice');
 
+  // Các phần tử phục vụ chức năng Gửi Tin Nhắn Bot Zalo
+  const chkSelectAllCadres = document.getElementById('chkSelectAllCadres');
+  const btnOpenSendZaloModal = document.getElementById('btnOpenSendZaloModal');
+  const btnSendZaloText = document.getElementById('btnSendZaloText');
+  const modalSendZalo = document.getElementById('modalSendZalo');
+  const btnCloseSendZaloModal = document.getElementById('btnCloseSendZaloModal');
+  const btnCancelSendZaloModal = document.getElementById('btnCancelSendZaloModal');
+  const zaloRecipientCount = document.getElementById('zaloRecipientCount');
+  const zaloRecipientsContainer = document.getElementById('zaloRecipientsContainer');
+  const btnSelectAllLinkedZalo = document.getElementById('btnSelectAllLinkedZalo');
+  const btnClearSelectedZalo = document.getElementById('btnClearSelectedZalo');
+  const zaloMsgTitle = document.getElementById('zaloMsgTitle');
+  const zaloMsgContent = document.getElementById('zaloMsgContent');
+  const zaloCharCount = document.getElementById('zaloCharCount');
+  const zaloPreviewTitle = document.getElementById('zaloPreviewTitle');
+  const zaloPreviewRecipient = document.getElementById('zaloPreviewRecipient');
+  const zaloPreviewContent = document.getElementById('zaloPreviewContent');
+  const zaloSendStatusArea = document.getElementById('zaloSendStatusArea');
+  const btnSubmitSendZalo = document.getElementById('btnSubmitSendZalo');
+
   let adminCadresList = [];
+  const selectedCadreIds = new Set();
+
+  function updateSelectedCadresUI() {
+    const total = selectedCadreIds.size;
+    if (btnSendZaloText) {
+      btnSendZaloText.textContent = total > 0 ? `Gửi Tin Nhắn Zalo (${total})` : 'Gửi Tin Nhắn Zalo';
+    }
+
+    if (chkSelectAllCadres) {
+      const visibleCheckboxes = cadresTableBody ? cadresTableBody.querySelectorAll('.chk-select-cadre') : [];
+      if (visibleCheckboxes.length === 0) {
+        chkSelectAllCadres.checked = false;
+        chkSelectAllCadres.indeterminate = false;
+      } else {
+        let checkedCount = 0;
+        visibleCheckboxes.forEach(chk => {
+          if (chk.checked) checkedCount++;
+        });
+        chkSelectAllCadres.checked = checkedCount === visibleCheckboxes.length;
+        chkSelectAllCadres.indeterminate = checkedCount > 0 && checkedCount < visibleCheckboxes.length;
+      }
+    }
+  }
 
   async function loadAdminCadres() {
     if (!cadresTableBody) return;
-    cadresTableBody.innerHTML = '<tr><td colspan="7" class="loading-td">Đang tải danh bạ cán bộ...</td></tr>';
+    cadresTableBody.innerHTML = '<tr><td colspan="9" class="loading-td">Đang tải danh bạ cán bộ...</td></tr>';
 
     try {
       const res = await fetch('/api/admin/cadres');
@@ -2042,7 +2085,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAdminCadresTable(adminCadresList);
       if (statAdminCadres) statAdminCadres.textContent = adminCadresList.length;
     } catch (err) {
-      cadresTableBody.innerHTML = `<tr><td colspan="7" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
+      cadresTableBody.innerHTML = `<tr><td colspan="9" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
@@ -2057,7 +2100,8 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     if (filtered.length === 0) {
-      cadresTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:30px;">Danh bạ chưa có cán bộ nào phù hợp. Bấm "➕ Thêm Cán Bộ Mới" để thêm.</td></tr>';
+      cadresTableBody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#94a3b8; padding:30px;">Danh bạ chưa có cán bộ nào phù hợp. Bấm "➕ Thêm Cán Bộ Mới" để thêm.</td></tr>';
+      updateSelectedCadresUI();
       return;
     }
 
@@ -2068,16 +2112,27 @@ document.addEventListener('DOMContentLoaded', () => {
         : '<span class="badge-role-cadre">Cán bộ</span>';
 
       const isMainAdmin = c.so_dien_thoai === '0327777707';
+      const isLinkedZalo = Boolean(c.zalo_chat_id || c.zalo_user_id);
+      const isChecked = selectedCadreIds.has(c.can_bo_id);
+
+      const zaloBadge = isLinkedZalo
+        ? `<span class="badge-zalo-linked" title="Đã kích hoạt Zalo Bot (Chat ID: ${escapeHtml(c.zalo_chat_id || c.zalo_user_id || '')})">● Đã liên kết Zalo</span>`
+        : `<span class="badge-zalo-unlinked" title="Chưa kích hoạt nhận tin qua Bot Zalo">○ Chưa liên kết Zalo</span>`;
 
       return `
-        <tr>
+        <tr class="${isChecked ? 'row-selected' : ''}">
+          <td style="text-align: center;">
+            <input type="checkbox" class="chk-select-cadre" data-id="${c.can_bo_id}" ${isChecked ? 'checked' : ''}>
+          </td>
           <td style="color:#94a3b8; font-size:12px;">${idx + 1}</td>
           <td><b>${escapeHtml(c.ho_ten || '')}</b></td>
           <td><code style="color:#38bdf8; font-weight:600;">${escapeHtml(c.so_dien_thoai || 'Chưa có')}</code></td>
           <td>${escapeHtml(c.chuc_vu || '')}</td>
           <td>${escapeHtml(c.co_quan || '')}</td>
+          <td>${zaloBadge}</td>
           <td>${roleBadge}</td>
           <td style="text-align: center;">
+            <button class="btn-table-action btn-zalo-row" data-id="${c.can_bo_id}" title="Gửi tin nhắn Zalo riêng cho cán bộ này">💬 Gửi Zalo</button>
             <button class="btn-table-action btn-edit-cadre" data-id="${c.can_bo_id}">✏️ Sửa</button>
             ${!isMainAdmin ? `<button class="btn-table-action delete btn-delete-cadre" data-id="${c.can_bo_id}" data-name="${escapeHtml(c.ho_ten)}">🗑️ Xoá</button>` : ''}
           </td>
@@ -2085,7 +2140,31 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }).join('');
 
-    // Gắn sự kiện nút Sửa & Xoá
+    // Gắn sự kiện chọn từng dòng checkbox
+    cadresTableBody.querySelectorAll('.chk-select-cadre').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const cid = chk.getAttribute('data-id');
+        if (chk.checked) {
+          selectedCadreIds.add(cid);
+        } else {
+          selectedCadreIds.delete(cid);
+        }
+        updateSelectedCadresUI();
+      });
+    });
+
+    // Gắn sự kiện nút Gửi Zalo từng người
+    cadresTableBody.querySelectorAll('.btn-zalo-row').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cid = btn.getAttribute('data-id');
+        selectedCadreIds.clear();
+        selectedCadreIds.add(cid);
+        updateSelectedCadresUI();
+        openSendZaloModal();
+      });
+    });
+
+    // Gắn sự kiện nút Sửa
     cadresTableBody.querySelectorAll('.btn-edit-cadre').forEach(btn => {
       btn.addEventListener('click', () => {
         const cid = btn.getAttribute('data-id');
@@ -2094,6 +2173,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    // Gắn sự kiện nút Xoá
     cadresTableBody.querySelectorAll('.btn-delete-cadre').forEach(btn => {
       btn.addEventListener('click', async () => {
         const cid = btn.getAttribute('data-id');
@@ -2103,12 +2183,33 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/api/admin/cadres/${cid}`, { method: 'DELETE' });
             const d = await res.json();
             if (!res.ok) throw new Error(d.detail || 'Lỗi khi xoá cán bộ');
+            selectedCadreIds.delete(cid);
             await loadAdminCadres();
           } catch (err) {
             alert('❌ ' + err.message);
           }
         }
       });
+    });
+
+    updateSelectedCadresUI();
+  }
+
+  // Sự kiện chọn tất cả checkbox ở Header
+  if (chkSelectAllCadres) {
+    chkSelectAllCadres.addEventListener('change', () => {
+      const isChecked = chkSelectAllCadres.checked;
+      const visibleCheckboxes = cadresTableBody ? cadresTableBody.querySelectorAll('.chk-select-cadre') : [];
+      visibleCheckboxes.forEach(chk => {
+        const cid = chk.getAttribute('data-id');
+        chk.checked = isChecked;
+        if (isChecked) {
+          selectedCadreIds.add(cid);
+        } else {
+          selectedCadreIds.delete(cid);
+        }
+      });
+      updateSelectedCadresUI();
     });
   }
 
@@ -2176,6 +2277,283 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadAdminCadres();
       } catch (err) {
         if (crudCadreNotice) crudCadreNotice.textContent = '⚠️ ' + err.message;
+      }
+    });
+  }
+
+  // ============================================================================
+  // LOGIC MODAL SOẠN & GỬI TIN NHẮN BOT ZALO CHO CÁN BỘ
+  // ============================================================================
+  function updateZaloPreview() {
+    const titleVal = zaloMsgTitle ? (zaloMsgTitle.value.trim() || 'Thông báo từ Văn phòng Đảng uỷ') : '';
+    const contentVal = zaloMsgContent ? zaloMsgContent.value.trim() : '';
+
+    if (zaloPreviewTitle) {
+      zaloPreviewTitle.innerHTML = `🔔 <b>${escapeHtml(titleVal.toUpperCase())}</b>`;
+    }
+
+    if (zaloPreviewRecipient) {
+      const selectedCadres = adminCadresList.filter(c => selectedCadreIds.has(c.can_bo_id));
+      if (selectedCadres.length === 1) {
+        const c = selectedCadres[0];
+        const extra = [c.chuc_vu, c.co_quan].filter(Boolean).join(' - ');
+        zaloPreviewRecipient.innerHTML = `Kính gửi đồng chí: <b>${escapeHtml(c.ho_ten)}</b> ${extra ? `<i>(${escapeHtml(extra)})</i>` : ''}`;
+      } else if (selectedCadres.length > 1) {
+        zaloPreviewRecipient.innerHTML = `Kính gửi: <b>Các đồng chí được triệu tập / phân công</b> <i>(${selectedCadres.length} đồng chí)</i>`;
+      } else {
+        zaloPreviewRecipient.innerHTML = `Kính gửi đồng chí: <i>[Chưa chọn cán bộ nhận]</i>`;
+      }
+    }
+
+    if (zaloPreviewContent) {
+      zaloPreviewContent.textContent = contentVal || '(Chưa có nội dung tin nhắn)';
+    }
+
+    if (zaloCharCount && zaloMsgContent) {
+      const len = zaloMsgContent.value.length;
+      zaloCharCount.textContent = `${len} / 1900 ký tự`;
+      zaloCharCount.style.color = len > 1800 ? '#ef4444' : '#94a3b8';
+    }
+  }
+
+  function renderZaloRecipientsBox() {
+    if (!zaloRecipientsContainer) return;
+
+    if (adminCadresList.length === 0) {
+      zaloRecipientsContainer.innerHTML = '<div style="color:#94a3b8; font-size:12.5px; padding:10px;">Chưa có dữ liệu cán bộ.</div>';
+      return;
+    }
+
+    zaloRecipientsContainer.innerHTML = adminCadresList.map(c => {
+      const isSelected = selectedCadreIds.has(c.can_bo_id);
+      const isLinkedZalo = Boolean(c.zalo_chat_id || c.zalo_user_id);
+      const detailInfo = [c.chuc_vu, c.co_quan].filter(Boolean).join(' - ');
+
+      const badgeHtml = isLinkedZalo
+        ? '<span class="badge-zalo-linked" style="font-size:10.5px;">● Đã liên kết Zalo</span>'
+        : '<span class="badge-zalo-unlinked" style="font-size:10.5px;">○ Chưa liên kết Zalo</span>';
+
+      return `
+        <div class="zalo-recipient-item ${isSelected ? 'selected' : ''} ${!isLinkedZalo ? 'unlinked' : ''}" data-id="${c.can_bo_id}">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" class="modal-chk-recipient" data-id="${c.can_bo_id}" ${isSelected ? 'checked' : ''}>
+            <div>
+              <div style="font-weight: 700; color: #1e293b;">${escapeHtml(c.ho_ten || '')}</div>
+              <div style="font-size: 11.5px; color: #64748b;">${escapeHtml(detailInfo || 'Cán bộ')} - SĐT: ${escapeHtml(c.so_dien_thoai || 'Chưa có')}</div>
+            </div>
+          </div>
+          <div>${badgeHtml}</div>
+        </div>
+      `;
+    }).join('');
+
+    // Gắn sự kiện click chọn người nhận trong modal
+    zaloRecipientsContainer.querySelectorAll('.zalo-recipient-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (e.target.tagName.toLowerCase() === 'input') return;
+        const cid = item.getAttribute('data-id');
+        const chk = item.querySelector('.modal-chk-recipient');
+        if (selectedCadreIds.has(cid)) {
+          selectedCadreIds.delete(cid);
+          if (chk) chk.checked = false;
+          item.classList.remove('selected');
+        } else {
+          selectedCadreIds.add(cid);
+          if (chk) chk.checked = true;
+          item.classList.add('selected');
+        }
+        if (zaloRecipientCount) zaloRecipientCount.textContent = selectedCadreIds.size;
+        updateSelectedCadresUI();
+        updateZaloPreview();
+      });
+    });
+
+    zaloRecipientsContainer.querySelectorAll('.modal-chk-recipient').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const cid = chk.getAttribute('data-id');
+        const item = chk.closest('.zalo-recipient-item');
+        if (chk.checked) {
+          selectedCadreIds.add(cid);
+          if (item) item.classList.add('selected');
+        } else {
+          selectedCadreIds.delete(cid);
+          if (item) item.classList.remove('selected');
+        }
+        if (zaloRecipientCount) zaloRecipientCount.textContent = selectedCadreIds.size;
+        updateSelectedCadresUI();
+        updateZaloPreview();
+      });
+    });
+
+    if (zaloRecipientCount) zaloRecipientCount.textContent = selectedCadreIds.size;
+  }
+
+  function openSendZaloModal() {
+    if (!modalSendZalo) return;
+
+    // Nếu chưa chọn ai, tự động chọn các cán bộ đã liên kết Zalo để tiện nhất
+    if (selectedCadreIds.size === 0 && adminCadresList.length > 0) {
+      adminCadresList.forEach(c => {
+        if (c.zalo_chat_id || c.zalo_user_id) {
+          selectedCadreIds.add(c.can_bo_id);
+        }
+      });
+      updateSelectedCadresUI();
+    }
+
+    if (zaloSendStatusArea) {
+      zaloSendStatusArea.style.display = 'none';
+      zaloSendStatusArea.innerHTML = '';
+    }
+
+    renderZaloRecipientsBox();
+    updateZaloPreview();
+
+    modalSendZalo.style.display = 'grid';
+    if (zaloMsgContent) zaloMsgContent.focus();
+  }
+
+  if (btnOpenSendZaloModal) {
+    btnOpenSendZaloModal.addEventListener('click', () => openSendZaloModal());
+  }
+
+  if (btnCloseSendZaloModal) {
+    btnCloseSendZaloModal.addEventListener('click', () => modalSendZalo.style.display = 'none');
+  }
+
+  if (btnCancelSendZaloModal) {
+    btnCancelSendZaloModal.addEventListener('click', () => modalSendZalo.style.display = 'none');
+  }
+
+  // Chọn tất cả đã liên kết Zalo
+  if (btnSelectAllLinkedZalo) {
+    btnSelectAllLinkedZalo.addEventListener('click', () => {
+      selectedCadreIds.clear();
+      adminCadresList.forEach(c => {
+        if (c.zalo_chat_id || c.zalo_user_id) {
+          selectedCadreIds.add(c.can_bo_id);
+        }
+      });
+      renderZaloRecipientsBox();
+      updateSelectedCadresUI();
+      updateZaloPreview();
+    });
+  }
+
+  // Bỏ chọn tất cả
+  if (btnClearSelectedZalo) {
+    btnClearSelectedZalo.addEventListener('click', () => {
+      selectedCadreIds.clear();
+      renderZaloRecipientsBox();
+      updateSelectedCadresUI();
+      updateZaloPreview();
+    });
+  }
+
+  // Gợi ý mẫu tin nhắn nhanh
+  document.querySelectorAll('.btn-template-tag').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tpl = btn.getAttribute('data-tpl');
+      if (tpl === 'hop') {
+        if (zaloMsgTitle) zaloMsgTitle.value = 'Mời tham dự cuộc họp Thường trực Đảng uỷ';
+        if (zaloMsgContent) {
+          zaloMsgContent.value = `Thực hiện ý kiến chỉ đạo của Thường trực Đảng uỷ xã Công Hải, Văn phòng Đảng uỷ trân trọng kính mời đồng chí tham dự cuộc họp:\n- Thời gian: 08 giờ 00, ngày .../.../2026.\n- Địa điểm: Phòng họp Văn phòng Đảng uỷ xã Công Hải.\n- Nội dung: Cho ý kiến chỉ đạo về các nhiệm vụ trọng tâm chuẩn bị tổng kết năm.\nĐề nghị đồng chí sắp xếp công việc và có mặt đúng giờ./.`;
+        }
+      } else if (tpl === 'dondoc') {
+        if (zaloMsgTitle) zaloMsgTitle.value = 'Đôn đốc tiến độ nộp Báo cáo tổng kết năm 2026';
+        if (zaloMsgContent) {
+          zaloMsgContent.value = `Kính gửi đồng chí, để chuẩn bị chu đáo hồ sơ trình Ban Thường vụ Đảng uỷ tổng kết năm 2026, Văn phòng Đảng uỷ đề nghị đồng chí khẩn trương hoàn thiện Báo cáo của cơ quan/đơn vị và gửi về Văn phòng trước ngày 25/11/2026.\nTrân trọng cảm ơn sự phối hợp của đồng chí./.`;
+        }
+      } else if (tpl === 'thongbao') {
+        if (zaloMsgTitle) zaloMsgTitle.value = 'Thông báo chỉ đạo của Thường trực Đảng uỷ';
+        if (zaloMsgContent) {
+          zaloMsgContent.value = `Văn phòng Đảng uỷ xã Công Hải trân trọng thông báo ý kiến chỉ đạo của Thường trực Đảng uỷ về việc triển khai nhiệm vụ đột xuất...\nĐề nghị đồng chí nắm bắt và chủ động triển khai thực hiện./.`;
+        }
+      }
+      updateZaloPreview();
+    });
+  });
+
+  if (zaloMsgTitle) zaloMsgTitle.addEventListener('input', updateZaloPreview);
+  if (zaloMsgContent) zaloMsgContent.addEventListener('input', updateZaloPreview);
+
+  // Gửi tin nhắn Zalo
+  if (btnSubmitSendZalo) {
+    btnSubmitSendZalo.addEventListener('click', async () => {
+      if (selectedCadreIds.size === 0) {
+        alert('⚠️ Vui lòng chọn ít nhất một cán bộ để gửi tin nhắn.');
+        return;
+      }
+
+      const content = zaloMsgContent ? zaloMsgContent.value.trim() : '';
+      if (!content) {
+        alert('⚠️ Vui lòng nhập nội dung tin nhắn cần gửi.');
+        if (zaloMsgContent) zaloMsgContent.focus();
+        return;
+      }
+
+      const title = zaloMsgTitle ? (zaloMsgTitle.value.trim() || 'Thông báo từ Văn phòng Đảng uỷ') : 'Thông báo từ Văn phòng Đảng uỷ';
+      const targetCadreIds = Array.from(selectedCadreIds);
+
+      btnSubmitSendZalo.disabled = true;
+      btnSubmitSendZalo.innerHTML = '<span>⏳ Đang gửi tin qua Bot Zalo...</span>';
+
+      if (zaloSendStatusArea) {
+        zaloSendStatusArea.style.display = 'block';
+        zaloSendStatusArea.className = 'zalo-status-banner warning';
+        zaloSendStatusArea.innerHTML = `Đang kết nối Zalo Bot Platform gửi tin nhắn tới ${targetCadreIds.length} cán bộ, vui lòng đợi...`;
+      }
+
+      try {
+        const res = await fetch('/api/admin/cadres/send-zalo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            can_bo_ids: targetCadreIds,
+            tieu_de: title,
+            noi_dung: content
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Lỗi khi gửi tin qua Bot Zalo');
+
+        const { total_selected, total_sent, total_failed, details } = data;
+
+        let statusClass = 'success';
+        if (total_sent === 0 && total_failed > 0) statusClass = 'error';
+        else if (total_failed > 0) statusClass = 'warning';
+
+        let html = `<b>Kết quả gửi tin nhắn Bot Zalo:</b><br>`;
+        html += `• Đã chọn: <b>${total_selected}</b> cán bộ<br>`;
+        html += `• Gửi thành công: <b style="color:#16a34a;">${total_sent}</b> cán bộ<br>`;
+        if (total_failed > 0) {
+          html += `• Thất bại / Chưa nhận: <b style="color:#ef4444;">${total_failed}</b> cán bộ<br>`;
+          html += `<div style="margin-top:6px; font-size:12px; max-height:80px; overflow-y:auto; border-top:1px dashed #cbd5e1; padding-top:4px;">`;
+          details.filter(d => d.status === 'failed').forEach(d => {
+            html += `• <b>${escapeHtml(d.ho_ten)}</b>: ${escapeHtml(d.reason || 'Lỗi gửi')}<br>`;
+          });
+          html += `</div>`;
+        }
+
+        if (zaloSendStatusArea) {
+          zaloSendStatusArea.className = `zalo-status-banner ${statusClass}`;
+          zaloSendStatusArea.innerHTML = html;
+        }
+
+        if (total_sent > 0 && total_failed === 0) {
+          setTimeout(() => {
+            if (modalSendZalo) modalSendZalo.style.display = 'none';
+          }, 2500);
+        }
+      } catch (err) {
+        if (zaloSendStatusArea) {
+          zaloSendStatusArea.className = 'zalo-status-banner error';
+          zaloSendStatusArea.innerHTML = `❌ Lỗi: ${escapeHtml(err.message)}`;
+        }
+      } finally {
+        btnSubmitSendZalo.disabled = false;
+        btnSubmitSendZalo.innerHTML = '<span>🚀 Gửi Tin Nhắn Zalo</span>';
       }
     });
   }

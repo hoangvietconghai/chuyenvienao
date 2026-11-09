@@ -32,6 +32,7 @@ from server.config import (
 )
 from server.logger import get_logger
 from server.services import db_service
+from server.services.zalo_api import send_message
 from server.workflows.wf1_synthesizer import (
     analyze_weekly_reports,
     generate_weekly_report_docx,
@@ -507,6 +508,109 @@ async def delete_cadre_endpoint(can_bo_id: str):
         return {"success": True, "message": f"Đã xoá cán bộ {can_bo_id}."}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+class SendZaloMessageRequest(BaseModel):
+    can_bo_ids: List[str]
+    noi_dung: str
+    tieu_de: Optional[str] = "Thông báo từ Văn phòng Đảng uỷ"
+
+
+@router.post("/api/admin/cadres/send-zalo")
+async def send_zalo_to_cadres_endpoint(req: SendZaloMessageRequest):
+    """Gửi tin nhắn thông báo qua Bot Zalo cho cán bộ (chọn 1 hoặc nhiều người)."""
+    if not req.can_bo_ids:
+        raise HTTPException(status_code=400, detail="Vui lòng chọn ít nhất một cán bộ để gửi tin nhắn.")
+
+    clean_content = req.noi_dung.strip()
+    if not clean_content:
+        raise HTTPException(status_code=400, detail="Nội dung tin nhắn không được để trống.")
+
+    title = req.tieu_de.strip() if req.tieu_de else "Thông báo từ Văn phòng Đảng uỷ"
+
+    def _process_send():
+        results = []
+        success_count = 0
+        failed_count = 0
+
+        # Lấy thông tin các cán bộ được chọn từ CSDL
+        with db_service.get_db_connection() as conn:
+            cursor = conn.cursor()
+            placeholders = ",".join(["?"] * len(req.can_bo_ids))
+            cursor.execute(f"SELECT * FROM danh_ba_can_bo WHERE can_bo_id IN ({placeholders});", req.can_bo_ids)
+            cadres = {row["can_bo_id"]: dict(row) for row in cursor.fetchall()}
+
+        for cid in req.can_bo_ids:
+            cadre = cadres.get(cid)
+            if not cadre:
+                failed_count += 1
+                results.append({
+                    "can_bo_id": cid,
+                    "ho_ten": "Không xác định",
+                    "status": "failed",
+                    "reason": "Không tìm thấy cán bộ trong danh bạ"
+                })
+                continue
+
+            ho_ten = cadre.get("ho_ten") or "Đồng chí"
+            chuc_vu = cadre.get("chuc_vu") or ""
+            co_quan = cadre.get("co_quan") or ""
+            zalo_chat_id = cadre.get("zalo_chat_id") or cadre.get("zalo_user_id")
+
+            if not zalo_chat_id:
+                failed_count += 1
+                results.append({
+                    "can_bo_id": cid,
+                    "ho_ten": ho_ten,
+                    "chuc_vu": chuc_vu,
+                    "co_quan": co_quan,
+                    "status": "failed",
+                    "reason": "Chưa liên kết Bot Zalo (chưa từng nhắn tin với Bot)"
+                })
+                continue
+
+            # Soạn tin nhắn chính thức chuẩn phong cách Công Hải Số
+            title_header = f"🔔 *{title.upper()}*"
+            recipient_info = f"Kính gửi đồng chí: *{ho_ten}*"
+            if chuc_vu or co_quan:
+                info_detail = " - ".join([p for p in [chuc_vu, co_quan] if p])
+                recipient_info += f" ({info_detail})"
+
+            msg_body = f"{title_header}\n{recipient_info}\n\n{clean_content}\n\n---\n*Hệ thống Quản trị Công Hải Số*"
+
+            send_res = send_message(str(zalo_chat_id), msg_body)
+            # Kiểm tra kết quả phản hồi của Zalo Bot Platform
+            if send_res and (send_res.get("ok") is True or send_res.get("error_code") == 0):
+                success_count += 1
+                results.append({
+                    "can_bo_id": cid,
+                    "ho_ten": ho_ten,
+                    "chuc_vu": chuc_vu,
+                    "co_quan": co_quan,
+                    "status": "success",
+                    "message": "Đã gửi thành công qua Bot Zalo"
+                })
+            else:
+                failed_count += 1
+                err_msg = send_res.get("description") if isinstance(send_res, dict) else "Lỗi kết nối Zalo Bot Platform"
+                results.append({
+                    "can_bo_id": cid,
+                    "ho_ten": ho_ten,
+                    "chuc_vu": chuc_vu,
+                    "co_quan": co_quan,
+                    "status": "failed",
+                    "reason": err_msg or "Gửi tin qua Zalo thất bại"
+                })
+
+        return {
+            "success": success_count > 0 or (success_count == 0 and failed_count == 0),
+            "total_selected": len(req.can_bo_ids),
+            "total_sent": success_count,
+            "total_failed": failed_count,
+            "details": results
+        }
+
+    return await run_in_threadpool(_process_send)
 
 
 @router.post("/api/admin/system/deploy-webhook")

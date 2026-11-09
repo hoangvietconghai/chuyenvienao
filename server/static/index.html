@@ -209,8 +209,11 @@
                     <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Danh Bạ Cán Bộ Có Quyền Đăng Nhập</h3>
                     <p style="font-size: 12.5px; color: var(--text-muted);">Cán bộ có tên trong danh bạ mới có thể đăng nhập bằng Số điện thoại.</p>
                   </div>
-                  <div style="display: flex; gap: 8px;">
-                    <input type="text" id="inputSearchCadre" class="form-input-chs" style="width: 260px; padding: 7px 12px;" placeholder="Tìm theo tên hoặc số điện thoại...">
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" id="inputSearchCadre" class="form-input-chs" style="width: 240px; padding: 7px 12px;" placeholder="Tìm theo tên hoặc số điện thoại...">
+                    <button class="btn-chs-outline" id="btnOpenSendZaloModal" style="background-color: #0284c7; color: white; border: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                      <span>💬</span> <span id="btnSendZaloText">Gửi Tin Nhắn Zalo</span>
+                    </button>
                     <button class="btn-chs-outline" id="btnOpenAddCadreModal" style="background-color: var(--primary-red); color: white; border: none;">➕ Thêm Cán Bộ</button>
                   </div>
                 </div>
@@ -218,17 +221,21 @@
                 <table class="chs-table" id="cadresTable">
                   <thead>
                     <tr>
-                      <th width="60">STT</th>
+                      <th width="40" style="text-align: center;">
+                        <input type="checkbox" id="chkSelectAllCadres" title="Chọn tất cả cán bộ">
+                      </th>
+                      <th width="50">STT</th>
                       <th>Họ và Tên</th>
-                      <th width="140">Số Điện Thoại</th>
+                      <th width="130">Số Điện Thoại</th>
                       <th>Chức Vụ</th>
                       <th>Cơ Quan / Đơn Vị</th>
-                      <th width="120">Vai Trò</th>
-                      <th width="140" style="text-align: center;">Thao Tác</th>
+                      <th width="130">Trạng Thái Zalo</th>
+                      <th width="100">Vai Trò</th>
+                      <th width="200" style="text-align: center;">Thao Tác</th>
                     </tr>
                   </thead>
                   <tbody id="cadresTableBody">
-                    <tr><td colspan="7" style="text-align: center; padding: 20px;">Đang tải danh bạ cán bộ...</td></tr>
+                    <tr><td colspan="9" style="text-align: center; padding: 20px;">Đang tải danh bạ cán bộ...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -504,6 +511,92 @@
             <button type="submit" class="btn-chs-submit" style="width: auto; padding: 10px 24px;">Lưu cán bộ</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL GỬI TIN NHẮN BOT ZALO ==================== -->
+  <div class="modal-backdrop" id="modalSendZalo" style="display: none;">
+    <div class="modal-chs-card wide" style="max-width: 720px;">
+      <div class="modal-chs-header" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: white; padding: 16px 20px; border-radius: 12px 12px 0 0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">💬</span>
+          <div>
+            <h3 class="modal-chs-title" style="color: white; margin: 0; font-size: 17px; font-weight: 700;">Soạn Tin Nhắn Gửi Qua Bot Zalo</h3>
+            <p style="margin: 0; font-size: 12px; opacity: 0.9;">Gửi thông báo, lịch họp hoặc đôn đốc nhiệm vụ trực tiếp đến Zalo của cán bộ</p>
+          </div>
+        </div>
+        <button id="btnCloseSendZaloModal" style="font-size: 20px; color: white; cursor: pointer; background: none; border: none;">✕</button>
+      </div>
+      <div class="modal-chs-body" style="padding: 20px; max-height: calc(85vh - 120px); overflow-y: auto;">
+        <!-- Danh sách người nhận được chọn -->
+        <div class="form-group-chs" style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label-chs" style="margin: 0; font-weight: 700;">
+              Người nhận (<span id="zaloRecipientCount" style="color: #0284c7; font-weight: 800;">0</span> cán bộ được chọn)
+            </label>
+            <div style="display: flex; gap: 10px; font-size: 12.5px;">
+              <button type="button" class="btn-small-link" id="btnSelectAllLinkedZalo" style="color: #0284c7; background: none; border: none; cursor: pointer; text-decoration: underline;">Chọn tất cả đã liên kết Zalo</button>
+              <span style="color: #cbd5e1;">|</span>
+              <button type="button" class="btn-small-link" id="btnClearSelectedZalo" style="color: #ef4444; background: none; border: none; cursor: pointer; text-decoration: underline;">Bỏ chọn</button>
+            </div>
+          </div>
+          <div class="zalo-recipients-box" id="zaloRecipientsContainer">
+            <!-- Hiển thị danh sách tick chọn người nhận sinh động -->
+          </div>
+          <small class="form-hint" style="color: #64748b; display: block; margin-top: 6px; font-size: 12px;">
+            💡 <i>Ghi chú: Chỉ cán bộ hiển thị <span style="color: #16a34a; font-weight: 600;">● Đã liên kết Zalo</span> mới có thể nhận được tin nhắn từ Bot Zalo.</i>
+          </small>
+        </div>
+
+        <!-- Mẫu tin nhắn nhanh -->
+        <div class="form-group-chs" style="margin-bottom: 14px;">
+          <label class="form-label-chs" style="margin-bottom: 6px; font-weight: 600;">Gợi ý mẫu tin nhắn nhanh</label>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-template-tag" data-tpl="hop">📅 Mời họp khẩn</button>
+            <button type="button" class="btn-template-tag" data-tpl="dondoc">⏰ Đôn đốc báo cáo</button>
+            <button type="button" class="btn-template-tag" data-tpl="thongbao">📢 Thông báo chỉ đạo</button>
+          </div>
+        </div>
+
+        <!-- Tiêu đề thông báo -->
+        <div class="form-group-chs" style="margin-bottom: 14px;">
+          <label class="form-label-chs" style="margin-bottom: 4px; font-weight: 600;">Tiêu đề thông báo (*)</label>
+          <input type="text" id="zaloMsgTitle" class="form-input-chs" value="Thông báo từ Văn phòng Đảng uỷ" placeholder="Ví dụ: Lịch họp Thường trực Đảng uỷ, Đôn đốc nộp báo cáo...">
+        </div>
+
+        <!-- Nội dung tin nhắn -->
+        <div class="form-group-chs" style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="form-label-chs" style="margin: 0; font-weight: 600;">Nội dung tin nhắn (*)</label>
+            <span style="font-size: 12px; color: #94a3b8;" id="zaloCharCount">0 / 1900 ký tự</span>
+          </div>
+          <textarea id="zaloMsgContent" class="form-input-chs" rows="5" style="resize: vertical; font-family: inherit; line-height: 1.5; font-size: 13.5px;" placeholder="Nhập nội dung cần truyền đạt đến cán bộ..."></textarea>
+        </div>
+
+        <!-- Khung xem trước tin nhắn (Live Preview) -->
+        <div class="form-group-chs" style="margin-bottom: 16px;">
+          <label class="form-label-chs" style="margin-bottom: 6px; font-weight: 600;">Xem trước hiển thị trên Zalo</label>
+          <div class="zalo-preview-bubble" id="zaloPreviewBox">
+            <div class="preview-header" id="zaloPreviewTitle">🔔 <b>THÔNG BÁO TỪ VĂN PHÒNG ĐẢNG UỶ</b></div>
+            <div class="preview-recipient" id="zaloPreviewRecipient">Kính gửi đồng chí: <i>[Họ và tên cán bộ]</i></div>
+            <div class="preview-body" id="zaloPreviewContent" style="margin: 8px 0; white-space: pre-wrap; color: #334155;">(Chưa có nội dung)</div>
+            <div class="preview-footer" style="border-top: 1px dashed #cbd5e1; padding-top: 6px; font-size: 11px; color: #64748b;">
+              <i>Hệ thống Quản trị Công Hải Số</i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trạng thái gửi / Kết quả -->
+        <div id="zaloSendStatusArea" style="display: none; margin-bottom: 14px;"></div>
+
+        <!-- Nút hành động -->
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+          <button type="button" class="btn-chs-outline" id="btnCancelSendZaloModal">Đóng</button>
+          <button type="button" class="btn-chs-primary" id="btnSubmitSendZalo" style="background-color: #0284c7; border: none; display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px;">
+            <span>🚀 Gửi Tin Nhắn Zalo</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
