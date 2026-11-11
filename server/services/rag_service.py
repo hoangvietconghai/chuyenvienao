@@ -906,7 +906,10 @@ def retrieve_hybrid_context(
 
     final_slots = (slot_core[:core_limit] + slot_thematic[:thematic_limit] + slot_citations[:citation_limit])[:max_slots]
 
-    context_lines = ["=== KHO TRI THỨC VÀ CĂN CỨ VĂN BẢN ĐÃ ĐỐI SOÁT (HYBRID RAG) ==="]
+    context_lines = [
+        "=== KHO TRI THỨC VÀ CĂN CỨ VĂN BẢN ĐÃ ĐỐI SOÁT (HYBRID RAG) ===",
+        "[LƯU Ý QUAN TRỌNG: Kho CSDL văn bản Đảng uỷ xã hiện lưu trữ hơn 2.000 văn bản đi nhiệm kỳ 2025-2030. Các đoạn trích dưới đây chỉ là các đoạn trích nội dung liên quan nhất được trích xuất phục vụ câu hỏi hiện tại, KHÔNG PHẢI là toàn bộ số lượng văn bản trong kho.]"
+    ]
     citations = []
 
     for idx, slot in enumerate(final_slots, 1):
@@ -935,3 +938,153 @@ def retrieve_hybrid_context(
             "citation_linked": len(slot_citations[:2])
         }
     }
+
+
+# ==============================================================================
+# 4. TRUY VẤN THỐNG KÊ & TỔNG HỢP VĂN BẢN (AGGREGATE STATS QUERY)
+# ==============================================================================
+
+DOC_TYPE_NAMES = {
+    'CV': 'Công văn', 'BS': 'Bản sao', 'BC': 'Báo cáo', 'KH': 'Kế hoạch',
+    'TB': 'Thông báo', 'QĐ': 'Quyết định', 'CTr': 'Chương trình', 'TTr': 'Tờ trình',
+    'HD': 'Hướng dẫn', 'NQ': 'Nghị quyết', 'KL': 'Kết luận', 'QĐi': 'Quy định',
+    'QC': 'Quy chế', 'GM': 'Giấy mời', 'ĐA': 'Đề án', 'CT': 'Chỉ thị',
+    'GGT': 'Giấy giới thiệu', 'PA': 'Phương án', 'GNP': 'Giấy nghỉ phép'
+}
+
+MAP_KEYWORDS_THE_LOAI = {
+    'quyết định': ('QĐ', 'Quyết định'),
+    'công văn': ('CV', 'Công văn'),
+    'kế hoạch': ('KH', 'Kế hoạch'),
+    'nghị quyết': ('NQ', 'Nghị quyết'),
+    'báo cáo': ('BC', 'Báo cáo'),
+    'thông báo': ('TB', 'Thông báo'),
+    'chương trình': ('CTr', 'Chương trình'),
+    'tờ trình': ('TTr', 'Tờ trình'),
+    'hướng dẫn': ('HD', 'Hướng dẫn'),
+    'kết luận': ('KL', 'Kết luận'),
+    'quy định': ('QĐi', 'Quy định'),
+    'quy chế': ('QC', 'Quy chế'),
+    'đề án': ('ĐA', 'Đề án'),
+    'giấy mời': ('GM', 'Giấy mời'),
+    'chỉ thị': ('CT', 'Chỉ thị'),
+}
+
+
+def check_and_get_aggregate_stats(query: str) -> Optional[Dict[str, Any]]:
+    """
+    Nhận diện câu hỏi thống kê / đếm số lượng văn bản trong kho (Aggregation / Stats Query)
+    và truy vấn trực tiếp CSDL SQLite để trả về số liệu tổng thể chính xác 100%.
+    """
+    if not query:
+        return None
+
+    # Nhận diện ý định hỏi về số lượng / thống kê văn bản
+    has_stat_intent = bool(re.search(
+        r'(số\s+lượng|bao\s+nhiêu|tổng\s+số|thống\s+kê|danh\s+sách\s+tổng|tổng\s+hợp\s+số\s+lượng|đã\s+ban\s+hành\s+bao\s+nhiêu|có\s+bao\s+nhiêu|được\s+bao\s+nhiêu|toàn\s+bộ\s+văn\s+bản)',
+        query,
+        re.IGNORECASE
+    ))
+    has_doc_term = bool(re.search(
+        r'(văn\s+bản|công\s+văn|quyết\s+định|kế\s+hoạch|nghị\s+quyết|thông\s+báo|báo\s+cáo|tờ\s+trình|hướng\s+dẫn|kết\s+luận|chương\s+trình|đề\s+án|quy\s+chế|quy\s+định|giấy\s+mời|hồ\s+sơ)',
+        query,
+        re.IGNORECASE
+    ))
+
+    if not (has_stat_intent and has_doc_term):
+        return None
+
+    try:
+        with db_service.get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            # 1. Tổng số văn bản
+            cursor.execute("SELECT COUNT(*) AS total FROM so_van_ban;")
+            total_docs = cursor.fetchone()["total"]
+
+            if total_docs == 0:
+                return None
+
+            # 2. Khoảng thời gian
+            cursor.execute("SELECT MIN(ngay_ban_hanh) AS d_min, MAX(ngay_ban_hanh) AS d_max FROM so_van_ban WHERE ngay_ban_hanh != '';")
+            row_date = cursor.fetchone()
+            d_min = row_date["d_min"] if row_date else "04/08/2025"
+            d_max = row_date["d_max"] if row_date else "11/11/2026"
+
+            def fmt_date(d_str: str) -> str:
+                if d_str and '-' in d_str:
+                    p = d_str.split('-')
+                    if len(p) == 3:
+                        return f"{p[2]}/{p[1]}/{p[0]}"
+                return d_str
+
+            d_min_fmt = fmt_date(d_min)
+            d_max_fmt = fmt_date(d_max)
+
+            # 3. Phân bổ theo năm
+            cursor.execute("SELECT nam_ban_hanh, COUNT(*) AS cnt FROM so_van_ban GROUP BY nam_ban_hanh ORDER BY nam_ban_hanh ASC;")
+            by_year = [(r["nam_ban_hanh"], r["cnt"]) for r in cursor.fetchall()]
+
+            # 4. Phân bổ theo thể loại
+            cursor.execute("SELECT the_loai_vb, COUNT(*) AS cnt FROM so_van_ban GROUP BY the_loai_vb ORDER BY cnt DESC;")
+            by_type = [(r["the_loai_vb"], r["cnt"]) for r in cursor.fetchall()]
+
+            # 5. Phân bổ theo người ký
+            cursor.execute("SELECT nguoi_ky, COUNT(*) AS cnt FROM so_van_ban WHERE nguoi_ky IS NOT NULL AND nguoi_ky != '' GROUP BY nguoi_ky ORDER BY cnt DESC LIMIT 5;")
+            by_signer = [(r["nguoi_ky"], r["cnt"]) for r in cursor.fetchall()]
+
+            # Kiểm tra nếu hỏi cụ thể 1 thể loại (VD: "bao nhiêu quyết định")
+            target_the_loai = None
+            q_lower = query.lower()
+            for kw, (code, name) in MAP_KEYWORDS_THE_LOAI.items():
+                if kw in q_lower and "văn bản" not in kw:
+                    target_the_loai = (code, name)
+                    break
+
+            lines = [
+                "=== THỐNG KÊ THỰC CHỨNG CHÍNH THỨC TỪ KHO CSDL VĂN BẢN ĐẢNG UỶ (SQLITE WAL) ===",
+                f"- Tổng số lượng văn bản đi của Đảng uỷ xã Công Hải nhiệm kỳ 2025-2030 đã ban hành và lưu trữ trong CSDL: {total_docs:,} văn bản.",
+                f"- Giai đoạn ban hành: Từ ngày {d_min_fmt} đến ngày {d_max_fmt} (sau khi thực hiện mô hình chính quyền địa phương 02 cấp).",
+                f"- Phân bổ theo năm: " + ", ".join([f"Năm {y}: {cnt:,} văn bản" for y, cnt in by_year]),
+                "- Cơ cấu phân bổ chi tiết theo thể loại văn bản:"
+            ]
+
+            for code, cnt in by_type:
+                tname = DOC_TYPE_NAMES.get(code, code)
+                lines.append(f"  + {tname}: {cnt:,} văn bản")
+
+            if by_signer:
+                lines.append("- Một số cán bộ/lãnh đạo ký văn bản chủ yếu:")
+                for sname, cnt in by_signer:
+                    lines.append(f"  + Đ/c {sname}: {cnt:,} văn bản")
+
+            # Nếu hỏi thể loại cụ thể
+            if target_the_loai:
+                code, name = target_the_loai
+                cursor.execute("SELECT COUNT(*) AS cnt FROM so_van_ban WHERE the_loai_vb = ?;", (code,))
+                tcnt = cursor.fetchone()["cnt"]
+                cursor.execute("SELECT so_hieu_vb, trich_yeu, ngay_ban_hanh, nguoi_ky FROM so_van_ban WHERE the_loai_vb = ? ORDER BY ngay_ban_hanh DESC LIMIT 5;", (code,))
+                samples = cursor.fetchall()
+                lines.append(f"\n[SỐ LIỆU RIÊNG CHO THỂ LOẠI '{name.upper()}']:")
+                lines.append(f"- Tổng số {name.lower()} đã ban hành: {tcnt:,} văn bản.")
+                lines.append(f"- Một số {name.lower()} tiêu biểu gần đây:")
+                for row in samples:
+                    lines.append(f"  • {row['so_hieu_vb']} ({fmt_date(row['ngay_ban_hanh'])}): {row['trich_yeu']}")
+
+            lines.append(
+                f"\n[CHỈ DẪN NGHIỆP VỤ BẮT BUỘC DÀNH CHO TRỢ LÝ AI]:\n"
+                f"1. Cán bộ đang hỏi về số lượng/thống kê văn bản đã ban hành.\n"
+                f"2. BẮT BUỘC sử dụng con số TỔNG CỘNG CHÍNH THỨC LÀ {total_docs:,} VĂN BẢN (và bảng cơ cấu thể loại ở trên) để trả lời cán bộ rõ ràng, đầy đủ, chia nhóm số liệu khoa học.\n"
+                f"3. TUYỆT ĐỐI KHÔNG được trả lời số lượng chỉ là 5 hay 6 văn bản (con số 5 hay 6 đó chỉ là số mẩu trích dẫn ví dụ trích xuất trên màn hình, không phải toàn bộ kho văn bản)."
+            )
+
+            return {
+                "stats_text": "\n".join(lines),
+                "total_docs": total_docs,
+                "is_stats_query": True
+            }
+
+    except Exception as ex:
+        logger.warning(f"Lỗi khi truy vấn thống kê văn bản: {ex}")
+        return None
+

@@ -704,14 +704,26 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
     local_facts = get_local_knowledge_summary()
     msgs = [{"role": "system", "content": f"{CHAT_SYSTEM_PROMPT}\n\n{core_rules}\n\n{local_facts}"}]
 
-    # 1. Truy xuất Hybrid RAG từ Kho văn bản cấp uỷ (Giỏ Ngữ Cảnh 2 - 4 - 2)
+    # 1. Kiểm tra nếu câu hỏi là dạng thống kê / đếm số lượng văn bản trong kho
+    stats_info = None
+    try:
+        from server.services.rag_service import check_and_get_aggregate_stats
+        stats_info = check_and_get_aggregate_stats(message)
+        if stats_info and stats_info.get("stats_text"):
+            msgs.append({"role": "system", "content": stats_info["stats_text"]})
+    except Exception as ex:
+        logger.warning(f"Lỗi khi kiểm tra thống kê văn bản: {ex}")
+
+    # 2. Truy xuất Hybrid RAG từ Kho văn bản cấp uỷ (Giỏ Ngữ Cảnh 2 - 4 - 2)
     citations = []
     try:
         from server.services.rag_service import retrieve_hybrid_context
         rag_res = retrieve_hybrid_context(message, max_slots=6)
         if rag_res.get("context_text"):
             msgs.append({"role": "system", "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"})
-            citations = rag_res.get("citations", [])
+            # Nếu là câu hỏi thống kê số lượng -> không lấy citations gây nhầm lẫn là chỉ có 3-5 văn bản
+            if not stats_info:
+                citations = rag_res.get("citations", [])
     except Exception as ex:
         logger.warning(f"Lỗi khi tra cứu Hybrid RAG: {ex}")
 

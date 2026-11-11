@@ -231,8 +231,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 16:23:52*
-> *Quy mô: **51** tệp Python | **12,646** dòng mã | **52** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 16:37:45*
+> *Quy mô: **51** tệp Python | **12,811** dòng mã | **52** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -298,7 +298,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/__init__.py`](server/__init__.py) | 2 | 0 Funcs | Package server cho Hệ thống Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải. |
 | [`server/ai_connector.py`](server/ai_connector.py) | 643 | 1 Classes | server/ai_connector.py |
 | [`server/app.py`](server/app.py) | 127 | 3 Endpoints | server/app.py |
-| [`server/chat_engine.py`](server/chat_engine.py) | 886 | 21 Funcs | server/chat_engine.py |
+| [`server/chat_engine.py`](server/chat_engine.py) | 898 | 21 Funcs | server/chat_engine.py |
 | [`server/config.py`](server/config.py) | 202 | 0 Funcs | server/config.py |
 | [`server/logger.py`](server/logger.py) | 88 | 2 Funcs | server/logger.py |
 | [`server/plan_registry.py`](server/plan_registry.py) | 310 | 8 Funcs | server/plan_registry.py |
@@ -322,7 +322,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 86 | 3 Funcs | server/services/embedding_service.py |
 | [`server/services/gdrive_service.py`](server/services/gdrive_service.py) | 201 | 4 Funcs | server/services/gdrive_service.py |
 | [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 148 | 4 Funcs | server/services/knowledge_loader.py |
-| [`server/services/rag_service.py`](server/services/rag_service.py) | 937 | 13 Funcs | server/services/rag_service.py |
+| [`server/services/rag_service.py`](server/services/rag_service.py) | 1,090 | 14 Funcs | server/services/rag_service.py |
 | [`server/services/scheduler_service.py`](server/services/scheduler_service.py) | 278 | 9 Funcs | server/services/scheduler_service.py |
 | [`server/services/zalo_api.py`](server/services/zalo_api.py) | 143 | 6 Funcs | server/services/zalo_api.py |
 | [`server/services/zalo_bot_service.py`](server/services/zalo_bot_service.py) | 213 | 7 Funcs | server/services/zalo_bot_service.py |
