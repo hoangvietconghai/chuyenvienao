@@ -169,38 +169,6 @@
               <button class="admin-subtab" data-subtab="subtab-server">🖥️ Sức Khoẻ VPS & Logs</button>
             </div>
 
-            <!-- 4 THẺ THỐNG KÊ NHANH -->
-            <div class="admin-stats-row">
-              <div class="stat-card-chs">
-                <div class="stat-icon-wrap">👥</div>
-                <div>
-                  <div class="stat-value" id="statAdminCadres">1</div>
-                  <div class="stat-label">Cán bộ trong danh bạ</div>
-                </div>
-              </div>
-              <div class="stat-card-chs">
-                <div class="stat-icon-wrap">💬</div>
-                <div>
-                  <div class="stat-value" id="statAdminMessages">0</div>
-                  <div class="stat-label">Hội thoại đã lưu</div>
-                </div>
-              </div>
-              <div class="stat-card-chs">
-                <div class="stat-icon-wrap">⚡</div>
-                <div>
-                  <div class="stat-value" id="statAdminAiModel" style="font-size: 16px;">Gemini 3.5 Flash Lite</div>
-                  <div class="stat-label">Động cơ AI chính</div>
-                </div>
-              </div>
-              <div class="stat-card-chs">
-                <div class="stat-icon-wrap">🖥️</div>
-                <div>
-                  <div class="stat-value" id="statAdminDisk">-</div>
-                  <div class="stat-label">Dung lượng ổ đĩa VPS</div>
-                </div>
-              </div>
-            </div>
-
             <!-- ==================== SUBTAB 1: DANH BẠ CÁN BỘ (CRUD) ==================== -->
             <div class="admin-subcontent active" id="subtab-cadres">
               <div class="admin-card-table">
@@ -458,6 +426,38 @@
 
             <!-- ==================== SUBTAB 7: MÁY CHỦ VPS & LOGS ==================== -->
             <div class="admin-subcontent" id="subtab-server">
+              <!-- 4 THẺ THỐNG KÊ NHANH TÀI NGUYÊN HỆ THỐNG -->
+              <div class="admin-stats-row" style="margin-bottom: 20px;">
+                <div class="stat-card-chs">
+                  <div class="stat-icon-wrap">👥</div>
+                  <div>
+                    <div class="stat-value" id="statAdminCadres">1</div>
+                    <div class="stat-label">Cán bộ trong danh bạ</div>
+                  </div>
+                </div>
+                <div class="stat-card-chs">
+                  <div class="stat-icon-wrap">💬</div>
+                  <div>
+                    <div class="stat-value" id="statAdminMessages">0</div>
+                    <div class="stat-label">Hội thoại đã lưu</div>
+                  </div>
+                </div>
+                <div class="stat-card-chs">
+                  <div class="stat-icon-wrap">⚡</div>
+                  <div>
+                    <div class="stat-value" id="statAdminAiModel" style="font-size: 16px;">Gemini 3.5 Flash Lite</div>
+                    <div class="stat-label">Động cơ AI chính</div>
+                  </div>
+                </div>
+                <div class="stat-card-chs">
+                  <div class="stat-icon-wrap">🖥️</div>
+                  <div>
+                    <div class="stat-value" id="statAdminDisk">-</div>
+                    <div class="stat-label">Dung lượng ổ đĩa VPS</div>
+                  </div>
+                </div>
+              </div>
+
               <div class="admin-card-table">
                 <div class="table-header-bar">
                   <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Nhật Ký Máy Chủ VPS (Systemd Journal)</h3>
@@ -897,6 +897,6 @@
   </div>
 
   <!-- NẠP JAVASCRIPT HẠT NHÂN -->
-  <script src="/static/app.js?v=2.2.6"></script>
+  <script src="/static/app.js?v=2.2.7"></script>
 </body>
 </html>
