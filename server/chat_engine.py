@@ -723,12 +723,21 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
     res = await default_ai_client.call_chat_async(msgs, temperature=0.3, max_tokens=2000, json_mode=False)
 
     reply_content = res.get("content", "").strip() or "Xin lỗi, tôi chưa có câu trả lời."
-    # Bổ sung trích dẫn nguồn RAG ở cuối câu trả lời nếu có
+    # Bổ sung trích dẫn nguồn RAG ở cuối câu trả lời nếu có (tự động khử trùng lặp theo số hiệu)
     if citations:
-        cite_lines = ["\n\n📚 **Căn cứ tra cứu thực chứng từ Kho văn bản:**"]
-        for c in citations[:3]:
-            cite_lines.append(f"• **{c['so_hieu']}** ({c['tier']}): *{c['trich_yeu']}*")
-        reply_content += "\n".join(cite_lines)
+        seen_so_hieu = set()
+        unique_citations = []
+        for c in citations:
+            so = (c.get("so_hieu") or "").strip()
+            if so and so not in seen_so_hieu:
+                seen_so_hieu.add(so)
+                unique_citations.append(c)
+
+        if unique_citations:
+            cite_lines = ["\n\n📚 **Căn cứ tra cứu thực chứng từ Kho văn bản:**"]
+            for c in unique_citations[:3]:
+                cite_lines.append(f"• **{c['so_hieu']}** ({c['tier']}): *{c['trich_yeu']}*")
+            reply_content += "\n".join(cite_lines)
 
     return _reply(s, reply_content)
 
