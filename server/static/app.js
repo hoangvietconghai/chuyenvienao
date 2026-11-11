@@ -2665,7 +2665,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       chatLogsTableBody.innerHTML = items.map(it => {
-        const senderDisplay = `<b>${escapeHtml(it.ho_ten || 'Cán bộ')}</b>${it.so_dien_thoai ? `<br><span style="font-size:11px; color:#64748b;">${escapeHtml(it.so_dien_thoai)}</span>` : ''}`;
+        const isZalo = it.channel === 'zalo' || (it.session_id && String(it.session_id).startsWith('zalo_'));
+        const channelBadge = isZalo
+          ? '<span style="display:inline-block; font-size:10px; font-weight:700; background:#0068ff; color:white; padding:1px 6px; border-radius:3px; margin-bottom:3px;">💬 Zalo Bot</span>'
+          : '<span style="display:inline-block; font-size:10px; font-weight:700; background:#475569; color:white; padding:1px 6px; border-radius:3px; margin-bottom:3px;">🌐 Web Chat</span>';
+
+        const senderDisplay = `${channelBadge}<br><b>${escapeHtml(it.ho_ten || 'Cán bộ')}</b>${it.so_dien_thoai ? `<br><span style="font-size:11px; color:#64748b;">${escapeHtml(it.so_dien_thoai)}</span>` : ''}`;
 
         return `
           <tr>

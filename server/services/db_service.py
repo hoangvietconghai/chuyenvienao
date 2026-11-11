@@ -305,6 +305,9 @@ def init_database() -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_log_canbo ON nhat_ky_hoi_thoai(can_bo_id);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_log_channel ON nhat_ky_hoi_thoai(channel, created_at);")
 
+        # Tự động dọn dẹp các bản ghi log giả lập kênh 'web' bị trùng lặp của phiên Zalo (do lỗi phiên bản trước)
+        cursor.execute("DELETE FROM nhat_ky_hoi_thoai WHERE channel = 'web' AND session_id LIKE 'zalo_%';")
+
         # Đảm bảo tài khoản Quản trị viên của đồng chí Ngô Hoàng Việt luôn tồn tại
         cursor.execute("""
         INSERT INTO danh_ba_can_bo (can_bo_id, ho_ten, chuc_vu, co_quan, co_quan_code, co_quan_loai, so_dien_thoai, vai_tro, is_active)
@@ -1197,9 +1200,48 @@ def delete_auth_session(token: str) -> bool:
 # ==============================================================================
 
 def save_chat_log(log_data: Dict[str, Any]) -> int:
-    """Lưu nhật ký hội thoại chính danh (chỉ lưu khi cán bộ đã đăng nhập hoặc Zalo bot)."""
+    """Lưu nhật ký hội thoại chính danh (chống trùng lặp tin nhắn đa kênh)."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
+
+        session_id = str(log_data.get("session_id", "")).strip()
+        message_text = str(log_data.get("message_text", "")).strip()
+        channel = log_data.get("channel", "web")
+
+        # 1. Chống trùng lặp: Nếu trong cùng 1 session và nội dung tin nhắn đã được ghi gần nhất
+        if session_id and message_text:
+            cursor.execute("""
+            SELECT id, channel FROM nhat_ky_hoi_thoai
+            WHERE session_id = ? AND message_text = ?
+            ORDER BY id DESC LIMIT 1;
+            """, (session_id, message_text))
+            last_dup = cursor.fetchone()
+            if last_dup:
+                # Nếu bản cũ là kênh 'web' tạm và bản mới là kênh 'zalo' chính thức -> Nâng cấp bản ghi cũ
+                if last_dup["channel"] == "web" and channel == "zalo":
+                    cursor.execute("""
+                    UPDATE nhat_ky_hoi_thoai
+                    SET channel = 'zalo',
+                        can_bo_id = COALESCE(:can_bo_id, can_bo_id),
+                        so_dien_thoai = COALESCE(:so_dien_thoai, so_dien_thoai),
+                        ho_ten = :ho_ten,
+                        co_quan = :co_quan,
+                        vai_tro = :vai_tro,
+                        bot_reply = :bot_reply
+                    WHERE id = :id;
+                    """, {
+                        "id": last_dup["id"],
+                        "can_bo_id": log_data.get("can_bo_id"),
+                        "so_dien_thoai": log_data.get("so_dien_thoai", ""),
+                        "ho_ten": log_data.get("ho_ten", "Khách"),
+                        "co_quan": log_data.get("co_quan", ""),
+                        "vai_tro": log_data.get("vai_tro", "can_bo"),
+                        "bot_reply": log_data.get("bot_reply", "")[:4000],
+                    })
+                    return last_dup["id"]
+                # Nếu đã có bản ghi y hệt thì bỏ qua không ghi đúp
+                return last_dup["id"]
+
         cursor.execute("""
         INSERT INTO nhat_ky_hoi_thoai (
             session_id, channel, can_bo_id, so_dien_thoai, ho_ten, co_quan, vai_tro,
@@ -1209,14 +1251,14 @@ def save_chat_log(log_data: Dict[str, Any]) -> int:
             :message_text, :attachment_names, :bot_reply, :model_used, :latency_ms
         );
         """, {
-            "session_id": log_data.get("session_id", ""),
-            "channel": log_data.get("channel", "web"),
+            "session_id": session_id,
+            "channel": channel,
             "can_bo_id": log_data.get("can_bo_id"),
             "so_dien_thoai": log_data.get("so_dien_thoai", ""),
             "ho_ten": log_data.get("ho_ten", "Khách"),
             "co_quan": log_data.get("co_quan", ""),
             "vai_tro": log_data.get("vai_tro", "can_bo"),
-            "message_text": log_data.get("message_text", ""),
+            "message_text": message_text,
             "attachment_names": log_data.get("attachment_names", ""),
             "bot_reply": log_data.get("bot_reply", "")[:4000],
             "model_used": log_data.get("model_used", ""),

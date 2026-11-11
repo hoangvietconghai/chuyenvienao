@@ -776,8 +776,9 @@ async def handle_chat(session_id: Optional[str], message: str = "", action: str 
             vai_tro = "khach"
             can_bo_id = None
 
-        # Ghi nhật ký vào CSDL SQLite WAL
-        if message or reply_text or action:
+        # Ghi nhật ký vào CSDL SQLite WAL (Chỉ ghi kênh Web; kênh Zalo do zalo_webhook.py tự ghi độc quyền để tránh trùng lặp)
+        is_zalo_session = bool(session_id and str(session_id).startswith("zalo_"))
+        if (message or reply_text or action) and not is_zalo_session:
             try:
                 from server.services import db_service
                 db_service.save_chat_log({
