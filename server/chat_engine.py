@@ -445,6 +445,23 @@ def _approval_actions(has_warnings: bool) -> List[Dict[str, str]]:
 
 async def _draft_party_document(s: Dict[str, Any], message: str, new_atts: List[Dict]) -> Dict[str, Any]:
     """Soạn thảo chủ động mọi thể loại văn bản Đảng theo lệnh của cán bộ với tri thức và kỹ năng được nạp đầy đủ."""
+    # Chống ảo giác (Anti-Hallucination Guard): Nếu không có tệp đính kèm và yêu cầu triển khai/giao việc chưa rõ văn bản nguồn
+    is_implement_directive = bool(re.search(r'(?:triển\s*khai|giao\s*việc|thực\s*hiện\s*văn\s*bản|soạn\s*công\s*văn\s*triển\s*khai)', message, re.IGNORECASE))
+    has_specific_source = bool(re.search(r'(?:số\s*\d+|nghị\s*quyết|chỉ\s*thị|kế\s*hoạch\s*số|kết\s*luận|thông\s*báo\s*số|\d+[-/][A-ZĐ]+)', message, re.IGNORECASE))
+
+    if not new_atts and is_implement_directive and not has_specific_source and len(message.strip()) < 80:
+        s["awaiting"] = "wf3_giao_viec"
+        ho_ten_xung_ho = f"đồng chí {s['can_bo'].get('ho_ten', '')}" if s.get("can_bo") else "đồng chí"
+        return _reply(
+            s,
+            f"⚠️ **CHƯA CÓ VĂN BẢN NGUỒN CẦN TRIỂN KHAI**\n\n"
+            f"Kính thưa {ho_ten_xung_ho}, tôi đã tiếp nhận yêu cầu: *\"{message.strip()}\"*.\n\n"
+            "Tuy nhiên, hiện tại trong phiên làm việc **chưa có tệp văn bản đính kèm** hoặc thông tin cụ thể về văn bản cấp trên cần triển khai (như số hiệu, ngày ban hành, nội dung chỉ đạo cốt lõi).\n\n"
+            "📌 *Theo Quy tắc 'Hỏi lại khi chưa rõ — Nắm vững rồi mới viết'*, xin đồng chí vui lòng:\n"
+            "1️⃣ **Gửi tệp văn bản cấp trên** (file Word, PDF hoặc ảnh chụp) vào đây.\n"
+            "2️⃣ Hoặc gõ bổ sung thông tin: *Số hiệu văn bản, ngày ban hành của Tỉnh uỷ/UBND tỉnh, và đơn vị nào chủ trì thực hiện* để tôi tham mưu dự thảo chính xác 100%, tuyệt đối không tự suy đoán."
+        )
+
     context_text = _build_input_text(message, new_atts)
     detected_type = _normalize_doc_type(message)
     knowledge_context = build_system_knowledge_prompt(detected_type, include_local=True)

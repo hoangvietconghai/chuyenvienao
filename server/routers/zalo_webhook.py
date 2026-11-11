@@ -97,14 +97,54 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
         display_name = from_info.get("display_name", "Đồng chí")
         session_id = f"zalo_{chat_id}"
 
-        # 3. Xử lý khi người dùng gửi TỆP (user_send_file, message.file.received)
-        is_file_event = event_name in ["user_send_file", "message.file.received"]
-        attachments = message_data.get("attachments", [])
+        # 3. Xử lý khi người dùng gửi TỆP (user_send_file, document, photo, file, attachments)
+        file_url = None
+        file_name = None
 
-        if is_file_event or (attachments and attachments[0].get("type") in ["file", "document"]):
-            file_payload = attachments[0].get("payload", {}) if attachments else {}
-            file_url = file_payload.get("url")
-            file_name = file_payload.get("name") or f"van_ban_{int(time.time())}.docx"
+        # A. Cấu trúc document (Zalo Bot API / Telegram schema)
+        doc_obj = message_data.get("document") or payload.get("document")
+        if isinstance(doc_obj, dict):
+            file_name = doc_obj.get("file_name") or doc_obj.get("name")
+            file_url = doc_obj.get("url") or doc_obj.get("file_url") or doc_obj.get("download_url")
+
+        # B. Cấu trúc attachments (Zalo OA / Webhook schema)
+        attachments = message_data.get("attachments") or payload.get("attachments") or []
+        if not file_url and attachments and isinstance(attachments, list):
+            att_0 = attachments[0] if isinstance(attachments[0], dict) else {}
+            payload_0 = att_0.get("payload", {}) if isinstance(att_0.get("payload"), dict) else {}
+            file_url = payload_0.get("url") or payload_0.get("download_url") or att_0.get("url") or att_0.get("link")
+            file_name = file_name or payload_0.get("name") or att_0.get("name")
+
+        # C. Cấu trúc photo (ảnh chụp văn bản)
+        photo_obj = message_data.get("photo") or payload.get("photo")
+        if not file_url and photo_obj:
+            if isinstance(photo_obj, list) and photo_obj:
+                best_photo = photo_obj[-1] if isinstance(photo_obj[-1], dict) else {}
+                file_url = best_photo.get("url") or best_photo.get("file_url")
+                file_name = file_name or f"anh_van_ban_{int(time.time())}.jpg"
+            elif isinstance(photo_obj, dict):
+                file_url = photo_obj.get("url") or photo_obj.get("file_url")
+                file_name = file_name or f"anh_van_ban_{int(time.time())}.jpg"
+
+        # D. Cấu trúc file trực tiếp
+        file_obj = message_data.get("file") or payload.get("file")
+        if not file_url and isinstance(file_obj, dict):
+            file_url = file_obj.get("url") or file_obj.get("download_url")
+            file_name = file_name or file_obj.get("name")
+
+        is_file_event = bool(
+            file_url
+            or doc_obj
+            or attachments
+            or photo_obj
+            or file_obj
+            or event_name in ["user_send_file", "message.file.received", "user_send_image"]
+        )
+
+        if is_file_event:
+            logger.info(f"📎 [Zalo File Event] user={display_name} ({chat_id}) | file_name={file_name} | url_found={bool(file_url)} | payload={payload}")
+            if not file_name:
+                file_name = f"van_ban_{int(time.time())}.docx"
 
             if file_url:
                 send_message(chat_id, f"📥 Đang tiếp nhận và phân tích tệp: **{file_name}**...")
@@ -120,7 +160,8 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
                         if not routing.get("full_text", "").strip():
                             send_message(
                                 chat_id,
-                                f"⚠️ Đã nhận tệp **{file_name}** nhưng không trích xuất được văn bản (có thể là bản quét PDF không có lớp chữ).",
+                                f"⚠️ Đã nhận tệp **{file_name}** nhưng không trích xuất được chữ (có thể là bản quét PDF không có lớp chữ OCR).\n\n"
+                                "👉 Đồng chí vui lòng gửi file Word (.docx) hoặc copy/paste trực tiếp văn bản vào đây nhé.",
                             )
                             return
 
@@ -135,8 +176,8 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
                         wf_title = chat_engine.WORKFLOWS.get(suggested_wf, suggested_wf)
 
                         msg_lines = [
-                            f"✅ Đã tiếp nhận tệp: **{file_name}**",
-                            f"📌 Thể loại: **{category_label}**",
+                            f"✅ Đã tiếp nhận và phân tích thành công tệp: **{file_name}**",
+                            f"📌 Thể loại nhận diện: **{category_label}**",
                             f"⚙️ Gợi ý nghiệp vụ: **{wf_title}**",
                         ]
 
@@ -147,15 +188,31 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
 
                         msg_lines.extend([
                             "",
-                            "Đồng chí hãy nhập lệnh chỉ đạo (ví dụ: *'Giao việc'*, *'Soạn thông báo kết luận'*, *'Thẩm định'*, hoặc gõ yêu cầu cụ thể) để tôi xử lý ngay.",
+                            "Đồng chí hãy nhập lệnh chỉ đạo (ví dụ: *'Soạn thảo công văn triển khai'*, *'Thẩm định dự thảo'*, *'Giao việc'*) để tôi tham mưu dự thảo bám sát nội dung tệp này ngay.",
                         ])
 
                         send_message(chat_id, "\n".join(msg_lines))
+                        return
                     else:
-                        send_message(chat_id, f"❌ Không thể tải tệp **{file_name}** từ máy chủ Zalo.")
+                        send_message(
+                            chat_id, 
+                            f"❌ Không thể tải tệp **{file_name}** từ máy chủ Zalo.\n\n"
+                            "👉 Đồng chí vui lòng copy/paste trực tiếp nội dung văn bản vào khung chat này hoặc tải lên Cổng thông tin Web Công Hải Số nhé."
+                        )
+                        return
                 finally:
                     shutil.rmtree(tmp_dir, ignore_errors=True)
-            return
+            else:
+                # Phát hiện có sự kiện gửi tệp nhưng Zalo Bot Platform chưa trả về đường dẫn tải trực tiếp
+                send_message(
+                    chat_id,
+                    f"⚠️ **ĐÃ NHẬN TÍN HIỆU GỬI TỆP: {file_name}**\n\n"
+                    "Tuy nhiên, giao thức Zalo Bot hiện tại chưa trả về đường dẫn tải trực tiếp tệp tin này sang máy chủ.\n\n"
+                    "👉 **Để tôi nắm trọn vẹn nội dung và tham mưu văn bản chính xác nhất, đồng chí vui lòng:**\n"
+                    "1️⃣ Copy trực tiếp nội dung văn bản dán vào khung chat Zalo này; HOẶC\n"
+                    "2️⃣ Mở Cổng thông tin Web Công Hải Số (đăng nhập bằng SĐT nhận OTP Zalo) và đính kèm tệp trực tiếp vào khung Chat Web."
+                )
+                return
 
         # 4. Xử lý tin nhắn CHỮ (văn bản hỏi đáp hoặc điều khiển nghiệp vụ)
         text = message_data.get("text", "").strip()
