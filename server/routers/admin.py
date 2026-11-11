@@ -397,6 +397,47 @@ async def get_admin_conversations(
     }
 
 
+@router.get("/api/admin/sessions")
+async def get_admin_sessions(
+    channel: Optional[str] = None,
+    search: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+):
+    """Lấy danh sách các phiên làm việc tổng hợp (Session-Centric View) phục vụ Giám sát hội thoại mới."""
+    offset = max(0, (page - 1) * page_size)
+    sessions = await run_in_threadpool(
+        db_service.get_chat_sessions_summary,
+        channel=channel,
+        search=search,
+        limit=page_size,
+        offset=offset,
+    )
+    total = await run_in_threadpool(
+        db_service.get_chat_sessions_count,
+        channel=channel,
+        search=search,
+    )
+    return {
+        "sessions": sessions,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size if page_size > 0 else 1,
+    }
+
+
+@router.get("/api/admin/sessions/{session_id}/messages")
+async def get_admin_session_messages(session_id: str):
+    """Lấy toàn bộ dòng chảy tin nhắn của 1 phiên làm việc để mở Drawer/Modal chi tiết."""
+    msgs = await run_in_threadpool(db_service.get_session_messages, session_id=session_id)
+    return {
+        "session_id": session_id,
+        "messages": msgs,
+        "total": len(msgs)
+    }
+
+
 @router.get("/api/admin/system/metrics")
 async def get_system_metrics_endpoint():
     """Lấy số liệu tài nguyên VPS (RAM, CPU, Ổ đĩa) và tình trạng các dịch vụ."""

@@ -1336,6 +1336,129 @@ def get_chat_logs_count(
         return cursor.fetchone()["cnt"]
 
 
+def get_chat_sessions_summary(
+    channel: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0
+) -> List[Dict[str, Any]]:
+    """
+    Truy vấn danh sách các phiên làm việc (Session-Centric Aggregation) phục vụ Bảng Giám Sát Hội Thoại mới.
+    Mỗi dòng đại diện cho 1 phiên: người trao đổi, kênh, số lượt tin, tin đầu/cuối, thời gian.
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        conditions = []
+        params = []
+
+        if channel:
+            conditions.append("channel = ?")
+            params.append(channel)
+        if search and search.strip():
+            kw = f"%{search.strip()}%"
+            conditions.append("(ho_ten LIKE ? OR so_dien_thoai LIKE ? OR message_text LIKE ? OR bot_reply LIKE ?)")
+            params.extend([kw, kw, kw, kw])
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+        query = f"""
+        SELECT 
+            session_id,
+            channel,
+            COALESCE(MAX(can_bo_id), '') AS can_bo_id,
+            COALESCE(MAX(ho_ten), 'Cán bộ') AS ho_ten,
+            COALESCE(MAX(so_dien_thoai), '') AS so_dien_thoai,
+            COALESCE(MAX(co_quan), '') AS co_quan,
+            COALESCE(MAX(vai_tro), 'can_bo') AS vai_tro,
+            COUNT(*) AS total_messages,
+            MIN(created_at) AS started_at,
+            MAX(created_at) AS last_activity,
+            -- Lấy tin nhắn người dùng đầu tiên làm gợi ý chủ đề phiên
+            (SELECT message_text FROM nhat_ky_hoi_thoai sub 
+             WHERE sub.session_id = m.session_id 
+             ORDER BY sub.created_at ASC, sub.id ASC LIMIT 1) AS first_user_message,
+            -- Lấy tin nhắn người dùng gần nhất
+            (SELECT message_text FROM nhat_ky_hoi_thoai sub 
+             WHERE sub.session_id = m.session_id 
+             ORDER BY sub.created_at DESC, sub.id DESC LIMIT 1) AS last_user_message,
+            -- Lấy phản hồi bot gần nhất
+            (SELECT bot_reply FROM nhat_ky_hoi_thoai sub 
+             WHERE sub.session_id = m.session_id 
+             ORDER BY sub.created_at DESC, sub.id DESC LIMIT 1) AS last_bot_reply,
+            -- Tên mô hình dùng gần nhất
+            (SELECT model_used FROM nhat_ky_hoi_thoai sub 
+             WHERE sub.session_id = m.session_id 
+             ORDER BY sub.created_at DESC, sub.id DESC LIMIT 1) AS last_model_used
+        FROM nhat_ky_hoi_thoai m
+        {where_clause}
+        GROUP BY session_id
+        ORDER BY last_activity DESC
+        LIMIT ? OFFSET ?;
+        """
+        params.extend([limit, offset])
+        cursor.execute(query, params)
+        rows = [dict(r) for r in cursor.fetchall()]
+
+        # Xác định nhãn nghiệp vụ (Intent / Topic) cho từng phiên
+        for row in rows:
+            first_msg = (row.get("first_user_message") or "").lower()
+            last_msg = (row.get("last_user_message") or "").lower()
+            text_scan = f"{first_msg} {last_msg}"
+
+            if any(k in text_scan for k in ["báo cáo", "bc tuần", "tháng"]):
+                row["topic_badge"] = "📊 Báo cáo định kỳ"
+            elif any(k in text_scan for k in ["kế hoạch", "kh triển khai"]):
+                row["topic_badge"] = "📋 Kế hoạch công tác"
+            elif any(k in text_scan for k in ["công văn", "cv chỉ đạo"]):
+                row["topic_badge"] = "✉️ Công văn cấp uỷ"
+            elif any(k in text_scan for k in ["kiểm tra", "giám sát", "đoàn", "quyết định", "2345"]):
+                row["topic_badge"] = "🔍 Kiểm tra & Pháp quy"
+            elif any(k in text_scan for k in ["đề án", "đề án 06", "cđs"]):
+                row["topic_badge"] = "🚀 Đề án & Chuyển đổi số"
+            elif any(k in text_scan for k in ["soạn thảo", "dự thảo"]):
+                row["topic_badge"] = "📝 Soạn thảo văn bản"
+            elif any(k in text_scan for k in ["kết nối", "alo", "hi bot", "chào"]):
+                row["topic_badge"] = "👋 Chào hỏi / Kích hoạt"
+            else:
+                row["topic_badge"] = "💬 Tham mưu tổng hợp"
+
+        return rows
+
+
+def get_chat_sessions_count(
+    channel: Optional[str] = None,
+    search: Optional[str] = None
+) -> int:
+    """Đếm tổng số phiên làm việc duy nhất."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        conditions = []
+        params = []
+        if channel:
+            conditions.append("channel = ?")
+            params.append(channel)
+        if search and search.strip():
+            kw = f"%{search.strip()}%"
+            conditions.append("(ho_ten LIKE ? OR so_dien_thoai LIKE ? OR message_text LIKE ? OR bot_reply LIKE ?)")
+            params.extend([kw, kw, kw, kw])
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        cursor.execute(f"SELECT COUNT(DISTINCT session_id) as cnt FROM nhat_ky_hoi_thoai {where_clause};", params)
+        return cursor.fetchone()["cnt"]
+
+
+def get_session_messages(session_id: str) -> List[Dict[str, Any]]:
+    """Lấy toàn bộ dòng chảy tin nhắn (thread messages) theo thứ tự thời gian của 1 phiên cụ thể."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM nhat_ky_hoi_thoai 
+            WHERE session_id = ? 
+            ORDER BY created_at ASC, id ASC;
+        """, (session_id,))
+        return [dict(r) for r in cursor.fetchall()]
+
+
 def get_system_metrics() -> Dict[str, Any]:
     """Lấy số liệu tài nguyên máy chủ / VPS (RAM, CPU, Ổ đĩa) và thống kê hệ thống."""
     import shutil

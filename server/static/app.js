@@ -2646,46 +2646,168 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const filterSessionChannel = document.getElementById('filterSessionChannel');
+  const btnRefreshSessions = document.getElementById('btnRefreshSessions');
+  const modalSessionDetail = document.getElementById('modalSessionDetail');
+  const btnCloseSessionModal = document.getElementById('btnCloseSessionModal');
+  const btnCancelSessionModal = document.getElementById('btnCancelSessionModal');
+  const drawerChannelIcon = document.getElementById('drawerChannelIcon');
+  const drawerCadreName = document.getElementById('drawerCadreName');
+  const drawerSessionBadge = document.getElementById('drawerSessionBadge');
+  const drawerSessionMeta = document.getElementById('drawerSessionMeta');
+  const sessionChatBody = document.getElementById('sessionChatBody');
+  const drawerMessageCount = document.getElementById('drawerMessageCount');
+
   async function loadAdminChatLogs() {
     if (!chatLogsTableBody) return;
-    chatLogsTableBody.innerHTML = '<tr><td colspan="5" class="loading-td">Đang tải nhật ký hội thoại...</td></tr>';
+    chatLogsTableBody.innerHTML = '<tr><td colspan="7" class="loading-td">Đang tải danh sách phiên làm việc...</td></tr>';
 
     try {
       const kw = inputSearchChatLogs ? inputSearchChatLogs.value.trim() : '';
-      const url = `/api/admin/conversations?search=${encodeURIComponent(kw)}&page=1&page_size=50`;
+      const channel = filterSessionChannel ? filterSessionChannel.value : '';
+      const url = `/api/admin/sessions?search=${encodeURIComponent(kw)}&channel=${encodeURIComponent(channel)}&page=1&page_size=50`;
 
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Không thể tải nhật ký');
+      if (!res.ok) throw new Error('Không thể tải danh sách phiên');
       const data = await res.json();
-      const items = data.items || [];
+      const sessions = data.sessions || [];
 
-      if (items.length === 0) {
-        chatLogsTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:30px;">Chưa có bản ghi hội thoại nào.</td></tr>';
+      if (sessions.length === 0) {
+        chatLogsTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:35px;">Chưa có phiên làm việc nào phù hợp.</td></tr>';
         return;
       }
 
-      chatLogsTableBody.innerHTML = items.map(it => {
-        const isZalo = it.channel === 'zalo' || (it.session_id && String(it.session_id).startsWith('zalo_'));
+      chatLogsTableBody.innerHTML = sessions.map(s => {
+        const isZalo = s.channel === 'zalo' || (s.session_id && String(s.session_id).startsWith('zalo_'));
         const channelBadge = isZalo
-          ? '<span style="display:inline-block; font-size:10px; font-weight:700; background:#0068ff; color:white; padding:1px 6px; border-radius:3px; margin-bottom:3px;">💬 Zalo Bot</span>'
-          : '<span style="display:inline-block; font-size:10px; font-weight:700; background:#475569; color:white; padding:1px 6px; border-radius:3px; margin-bottom:3px;">🌐 Web Chat</span>';
+          ? '<span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; background:#0068ff; color:white; padding:2px 8px; border-radius:4px;">💬 Zalo Bot</span>'
+          : '<span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; background:#475569; color:white; padding:2px 8px; border-radius:4px;">🌐 Cổng Web</span>';
 
-        const senderDisplay = `${channelBadge}<br><b>${escapeHtml(it.ho_ten || 'Cán bộ')}</b>${it.so_dien_thoai ? `<br><span style="font-size:11px; color:#64748b;">${escapeHtml(it.so_dien_thoai)}</span>` : ''}`;
+        const cadreInfo = `
+          <div style="font-weight:700; color:var(--text-main);">${escapeHtml(s.ho_ten || 'Cán bộ')}</div>
+          ${s.so_dien_thoai ? `<div style="font-size:11.5px; color:#64748b;">📞 ${escapeHtml(s.so_dien_thoai)}</div>` : ''}
+          ${s.co_quan ? `<div style="font-size:11px; color:#94a3b8;">🏢 ${escapeHtml(s.co_quan)}</div>` : ''}
+        `;
+
+        const topicBadge = `<span style="font-size:12px; font-weight:600; color:var(--primary-red); background:rgba(220,38,38,0.08); padding:3px 8px; border-radius:6px; display:inline-block;">${escapeHtml(s.topic_badge || '💬 Tham mưu tổng hợp')}</span>`;
+
+        const summaryPreview = `
+          <div style="font-size:12.5px; color:#334155; line-height:1.4;">
+            <span style="color:#0284c7; font-weight:600;">Hỏi:</span> "${escapeHtml((s.last_user_message || s.first_user_message || '').substring(0, 100))}"
+          </div>
+          <div style="font-size:11.5px; color:#64748b; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:400px;">
+            <span style="color:#10b981; font-weight:600;">Đáp:</span> ${escapeHtml((s.last_bot_reply || '').substring(0, 120))}...
+          </div>
+        `;
+
+        const msgCountBadge = `
+          <div style="text-align:center;">
+            <span style="font-size:13px; font-weight:700; color:#0284c7; background:#e0f2fe; padding:2px 10px; border-radius:10px;">${s.total_messages || 1}</span>
+          </div>
+        `;
+
+        const timeDisplay = `
+          <div style="font-size:12px; font-weight:600; color:#334155;">${escapeHtml((s.last_activity || '').substring(11, 16))}</div>
+          <div style="font-size:11px; color:#94a3b8;">${escapeHtml((s.last_activity || '').substring(0, 10))}</div>
+        `;
+
+        const actionBtn = `
+          <div style="text-align:center;">
+            <button class="btn-chs-primary" style="padding:5px 12px; font-size:12px;" onclick="window.viewSessionDetail('${escapeHtml(s.session_id)}')">
+              👁️ Mở xem
+            </button>
+          </div>
+        `;
 
         return `
-          <tr>
-            <td style="font-size:12px; color:#94a3b8;">${escapeHtml(it.created_at || '')}</td>
-            <td>${senderDisplay}</td>
-            <td><div style="max-height:80px; overflow-y:auto; font-size:13px;">${escapeHtml(it.message_text)}</div></td>
-            <td><div style="max-height:80px; overflow-y:auto; font-size:12.5px; color:#cbd5e1;">${escapeHtml(it.bot_reply?.substring(0, 300) || '')}...</div></td>
-            <td><code style="font-size:11.5px; color:#eab308;">${escapeHtml(it.model_used || 'Gemini')}</code></td>
+          <tr style="cursor:pointer;" onclick="window.viewSessionDetail('${escapeHtml(s.session_id)}')">
+            <td>${channelBadge}</td>
+            <td>${cadreInfo}</td>
+            <td>${topicBadge}</td>
+            <td>${summaryPreview}</td>
+            <td>${msgCountBadge}</td>
+            <td>${timeDisplay}</td>
+            <td onclick="event.stopPropagation();">${actionBtn}</td>
           </tr>
         `;
       }).join('');
     } catch (err) {
-      chatLogsTableBody.innerHTML = `<tr><td colspan="5" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
+      chatLogsTableBody.innerHTML = `<tr><td colspan="7" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
+
+  // Hàm mở xem toàn bộ mạch tin nhắn của một phiên (Session Detail View)
+  window.viewSessionDetail = async function(sessionId) {
+    if (!modalSessionDetail || !sessionChatBody) return;
+    modalSessionDetail.style.display = 'flex';
+    sessionChatBody.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:50px;">⏳ Đang tải toàn bộ hội thoại...</div>';
+
+    try {
+      const res = await fetch(`/api/admin/sessions/${encodeURIComponent(sessionId)}/messages`);
+      if (!res.ok) throw new Error('Không thể tải tin nhắn phiên');
+      const data = await res.json();
+      const messages = data.messages || [];
+
+      if (messages.length === 0) {
+        sessionChatBody.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:40px;">Phiên này chưa có tin nhắn nào.</div>';
+        return;
+      }
+
+      const first = messages[0];
+      const isZalo = first.channel === 'zalo' || String(sessionId).startsWith('zalo_');
+      if (drawerChannelIcon) drawerChannelIcon.textContent = isZalo ? '💬' : '🌐';
+      if (drawerCadreName) drawerCadreName.textContent = `${first.ho_ten || 'Cán bộ'} ${first.so_dien_thoai ? `(${first.so_dien_thoai})` : ''}`;
+      if (drawerSessionBadge) {
+        drawerSessionBadge.textContent = isZalo ? 'Zalo Bot' : 'Cổng Web';
+        drawerSessionBadge.style.background = isZalo ? '#0068ff' : '#475569';
+      }
+      if (drawerSessionMeta) {
+        drawerSessionMeta.textContent = `Mã phiên: ${sessionId} • Bắt đầu: ${first.created_at || ''}`;
+      }
+      if (drawerMessageCount) {
+        drawerMessageCount.textContent = `Tổng cộng: ${messages.length} lượt tin nhắn`;
+      }
+
+      sessionChatBody.innerHTML = messages.map(m => {
+        return `
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <!-- Tin nhắn Người dùng -->
+            <div style="align-self:flex-end; max-width:80%; background:#dc2626; color:white; padding:10px 14px; border-radius:14px 14px 2px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+              <div style="font-size:11px; opacity:0.85; margin-bottom:4px; display:flex; justify-content:space-between; gap:10px;">
+                <span>👤 ${escapeHtml(m.ho_ten || 'Cán bộ')}</span>
+                <span>${escapeHtml(m.created_at || '')}</span>
+              </div>
+              <div style="font-size:13.5px; line-height:1.45; white-space:pre-wrap;">${escapeHtml(m.message_text)}</div>
+              ${m.attachment_names ? `<div style="margin-top:6px; font-size:11px; background:rgba(0,0,0,0.15); padding:3px 8px; border-radius:4px;">📎 Tệp: ${escapeHtml(m.attachment_names)}</div>` : ''}
+            </div>
+
+            <!-- Phản hồi Trợ lý AI -->
+            <div style="align-self:flex-start; max-width:85%; background:white; border:1px solid #e2e8f0; color:#1e293b; padding:12px 16px; border-radius:14px 14px 14px 2px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+              <div style="font-size:11px; color:#64748b; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px dashed #e2e8f0; padding-bottom:4px;">
+                <span style="font-weight:700; color:var(--primary-red);">🤖 Trợ lý Chuyên viên ảo</span>
+                <span style="font-size:10px; background:#f1f5f9; padding:1px 6px; border-radius:3px;">${escapeHtml(m.model_used || 'Gemini')} • ${m.latency_ms ? `${m.latency_ms}ms` : ''}</span>
+              </div>
+              <div style="font-size:13.5px; line-height:1.55; white-space:pre-wrap;">${escapeHtml(m.bot_reply)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Tự động cuộn xuống tin nhắn cuối cùng
+      sessionChatBody.scrollTop = sessionChatBody.scrollHeight;
+    } catch (err) {
+      sessionChatBody.innerHTML = `<div style="color:#ef4444; padding:20px; text-align:center;">Lỗi: ${escapeHtml(err.message)}</div>`;
+    }
+  };
+
+  // Đóng Modal Session Detail
+  function closeSessionModal() {
+    if (modalSessionDetail) modalSessionDetail.style.display = 'none';
+  }
+  if (btnCloseSessionModal) btnCloseSessionModal.addEventListener('click', closeSessionModal);
+  if (btnCancelSessionModal) btnCancelSessionModal.addEventListener('click', closeSessionModal);
+  if (btnRefreshSessions) btnRefreshSessions.addEventListener('click', loadAdminChatLogs);
+  if (filterSessionChannel) filterSessionChannel.addEventListener('change', loadAdminChatLogs);
 
   async function loadAdminServerLogs() {
     if (!serverLogsPre) return;

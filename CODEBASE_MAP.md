@@ -231,8 +231,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 14:43:24*
-> *Quy mô: **51** tệp Python | **12,205** dòng mã | **49** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 15:30:27*
+> *Quy mô: **51** tệp Python | **12,369** dòng mã | **51** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -254,6 +254,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | **`PUT`** | `/api/kpis/{kpi_id}` | `update_kpi_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Cập nhật tiến độ số liệu của một chỉ tiêu KPI. |
 | **`GET`** | `/api/directory` | `list_directory` | [`server/routers/admin.py`](server/routers/admin.py) | Lấy danh bạ cán bộ, lãnh đạo, 08 thôn và 21 chi bộ xã Công Hải. |
 | **`GET`** | `/api/admin/conversations` | `get_admin_conversations` | [`server/routers/admin.py`](server/routers/admin.py) | Lấy danh sách nhật ký hội thoại đa kênh (Web Chat & Zalo Bot) phục vụ quản trị. |
+| **`GET`** | `/api/admin/sessions` | `get_admin_sessions` | [`server/routers/admin.py`](server/routers/admin.py) | Lấy danh sách các phiên làm việc tổng hợp (Session-Centric View) phục vụ Giám sát hội thoại mới. |
+| **`GET`** | `/api/admin/sessions/{session_id}/messages` | `get_admin_session_messages` | [`server/routers/admin.py`](server/routers/admin.py) | Lấy toàn bộ dòng chảy tin nhắn của 1 phiên làm việc để mở Drawer/Modal chi tiết. |
 | **`GET`** | `/api/admin/system/metrics` | `get_system_metrics_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Lấy số liệu tài nguyên VPS (RAM, CPU, Ổ đĩa) và tình trạng các dịch vụ. |
 | **`GET`** | `/api/admin/system/logs` | `get_system_logs_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Xem nhật ký hệ thống gần nhất trực tiếp trên trình duyệt. |
 | **`PUT`** | `/api/admin/cadres/{can_bo_id}/phone` | `update_cadre_phone_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Cập nhật số điện thoại Zalo và phân quyền cho cán bộ trong danh bạ. |
@@ -309,13 +311,13 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/prompts/wf4_tham_dinh.py`](server/prompts/wf4_tham_dinh.py) | 159 | 1 Funcs | server/prompts/wf4_tham_dinh.py |
 | [`server/router.py`](server/router.py) | 118 | 1 Funcs | server/router.py |
 | [`server/routers/__init__.py`](server/routers/__init__.py) | 6 | 0 Funcs | server/routers |
-| [`server/routers/admin.py`](server/routers/admin.py) | 636 | 22 Endpoints, 9 Classes | server/routers/admin.py |
+| [`server/routers/admin.py`](server/routers/admin.py) | 677 | 24 Endpoints, 9 Classes | server/routers/admin.py |
 | [`server/routers/auth.py`](server/routers/auth.py) | 249 | 4 Endpoints, 3 Classes | server/routers/auth.py |
 | [`server/routers/chat.py`](server/routers/chat.py) | 198 | 7 Endpoints, 2 Classes | server/routers/chat.py |
 | [`server/routers/knowledge.py`](server/routers/knowledge.py) | 194 | 11 Endpoints, 3 Classes | server/routers/knowledge.py |
 | [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 367 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
-| [`server/services/db_service.py`](server/services/db_service.py) | 1,405 | 40 Funcs | server/services/db_service.py |
+| [`server/services/db_service.py`](server/services/db_service.py) | 1,528 | 43 Funcs | server/services/db_service.py |
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 86 | 3 Funcs | server/services/embedding_service.py |
 | [`server/services/gdrive_service.py`](server/services/gdrive_service.py) | 201 | 4 Funcs | server/services/gdrive_service.py |
 | [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 148 | 4 Funcs | server/services/knowledge_loader.py |

@@ -271,24 +271,37 @@
             <div class="admin-subcontent" id="subtab-logs">
               <div class="admin-card-table">
                 <div class="table-header-bar">
-                  <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Lịch Sử Hội Thoại Cán Bộ (Kênh Web & Zalo)</h3>
-                  <div style="display: flex; gap: 8px;">
-                    <input type="text" id="inputSearchChatLogs" class="form-input-chs" style="width: 260px; padding: 7px 12px;" placeholder="Tìm theo người gửi hoặc nội dung...">
+                  <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Giám Sát Phiên Làm Việc & Luồng Hội Thoại Cán Bộ</h3>
+                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">Gom cụm theo phiên làm việc (Session-Centric). Bấm vào từng phiên để xem trọn vẹn mạch hội thoại.</p>
+                  </div>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <select id="filterSessionChannel" class="form-input-chs" style="width: 140px; padding: 7px 10px;">
+                      <option value="">Tất cả kênh</option>
+                      <option value="zalo">💬 Zalo Bot</option>
+                      <option value="web">🌐 Cổng Web</option>
+                    </select>
+                    <input type="text" id="inputSearchChatLogs" class="form-input-chs" style="width: 240px; padding: 7px 12px;" placeholder="Tìm theo cán bộ, SĐT hoặc nội dung...">
                     <button class="btn-chs-outline" id="btnSearchChatLogs">🔍 Tìm kiếm</button>
+                    <button class="btn-chs-outline" id="btnRefreshSessions">🔄 Làm mới</button>
                   </div>
                 </div>
-                <table class="chs-table">
+
+                <!-- Bảng danh sách phiên làm việc -->
+                <table class="chs-table" id="sessionsTable">
                   <thead>
                     <tr>
-                      <th width="150">Thời Gian</th>
-                      <th width="140">Cán Bộ / SĐT</th>
-                      <th>Nội Dung Người Dùng</th>
-                      <th>Phản Hồi AI</th>
-                      <th width="110">Mô Hình</th>
+                      <th width="140">Kênh & Trạng Thái</th>
+                      <th width="180">Cán Bộ / Đơn Vị</th>
+                      <th width="160">Nghiệp Vụ Nhận Diện</th>
+                      <th>Tóm Tắt Mạch Trao Đổi</th>
+                      <th width="110" style="text-align: center;">Số Lượt Tin</th>
+                      <th width="140">Thời Gian Gần Nhất</th>
+                      <th width="90" style="text-align: center;">Thao Tác</th>
                     </tr>
                   </thead>
                   <tbody id="chatLogsTableBody">
-                    <tr><td colspan="5" style="text-align: center; padding: 20px;">Đang tải nhật ký hội thoại...</td></tr>
+                    <tr><td colspan="7" style="text-align: center; padding: 25px;">Đang tải danh sách phiên làm việc...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -854,7 +867,36 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL XEM CHI TIẾT MẠCH HỘI THOẠI (SESSION DETAIL DRAWER) ==================== -->
+  <div class="modal-backdrop" id="modalSessionDetail" style="display: none;">
+    <div class="modal-chs-card wide" style="max-width: 860px; height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-chs-header" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 16px 20px; border-radius: 12px 12px 0 0; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 26px;" id="drawerChannelIcon">💬</span>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h3 class="modal-chs-title" id="drawerCadreName" style="color: white; margin: 0; font-size: 17px; font-weight: 700;">Đoạn Hội Thoại Cán Bộ</h3>
+              <span id="drawerSessionBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.2); font-weight: 600;">Phiên</span>
+            </div>
+            <p style="margin: 2px 0 0 0; font-size: 12px; color: #94a3b8;" id="drawerSessionMeta">Mã phiên • Bắt đầu lúc</p>
+          </div>
+        </div>
+        <button id="btnCloseSessionModal" style="font-size: 22px; color: white; cursor: pointer; background: none; border: none;">✕</button>
+      </div>
+
+      <!-- Khung hiển thị các tin nhắn dạng bong bóng chat -->
+      <div class="modal-chs-body" id="sessionChatBody" style="padding: 20px; flex: 1; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; gap: 14px;">
+        <div style="text-align: center; color: #94a3b8; padding: 40px;">Đang tải mạch tin nhắn...</div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; background: white; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+        <span style="font-size: 12px; color: #64748b;" id="drawerMessageCount">0 lượt tin nhắn</span>
+        <button type="button" class="btn-chs-outline" id="btnCancelSessionModal">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <!-- NẠP JAVASCRIPT HẠT NHÂN -->
-  <script src="/static/app.js?v=2.2.5"></script>
+  <script src="/static/app.js?v=2.2.6"></script>
 </body>
 </html>
