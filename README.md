@@ -77,13 +77,16 @@ Hệ thống đóng vai trò là **Chuyên viên Ảo Tham mưu Tổng hợp To�
 * **Cơ chế Tự chuyển hướng Thông minh:** Nếu người dùng chọn DeepSeek nhưng chưa cấu hình khoá trong `.env`, hệ thống tự động hoán đổi sang Gemini Flash để duy trì hội thoại thông suốt, không báo lỗi gián đoạn.
 
 ### 3. Hệ thống Tra cứu Lai Thực chứng (Hybrid RAG Engine)
-* **Sliding Window Chunking:** Cắt đoạn 400 từ với **80 từ gối đầu (Overlap)**, chống đứt gãy ngữ cảnh điều khoản và bảo toàn cấu trúc bảng biểu.
-* **Vector Embedding & FTS5 BM25:** Tích hợp mô hình vector `nomic-embed-text` lưu dưới dạng BLOB trong SQLite kết hợp chỉ mục văn bản toàn văn SQLite FTS5.
+* **Chuẩn hoá & Chia Chunk Ngưỡng 20 Trang ([`boc-tach-van-ban-rag`](.agents/skills/boc-tach-van-ban-rag/SKILL.md)):**
+  * Văn bản $\le 20$ trang giữ nguyên **1 file = 1 chunk** để bảo toàn trọn vẹn ngữ cảnh; văn bản $> 20$ trang chia đúng **2 chunk** tại ranh giới tự nhiên (không cắt ngang bảng biểu/phụ lục).
+  * Tự động lược bỏ tiêu đề/tiêu ngữ lặp lại, khối `Nơi nhận:` và chữ ký, nén phần đầu thành 1 dòng định danh chuẩn kèm `Người ký:`; sàng lọc giữ văn bản nền tảng/cốt lõi/còn giá trị sử dụng, loại bỏ giao việc cũ và sự vụ ngắn hạn; đồng thời lưu trữ bản sạch tại cây 15 thư mục `references/Văn bản Đảng uỷ Ban hành 25-30/` theo tên chuẩn `A32.65-[Cơ_quan]-[Thể_loại]-[Số_4_chữ_số]-[Năm] [Trích yếu rút gọn].md`.
+  * Khớp nối 4 tầng theo `(Số hiệu + Thể loại + Năm)` với `data/danh_muc_van_ban_di_master.xlsx` (không phụ thuộc tên file vật lý).
+* **Vector Embedding & FTS5 BM25:** Kết hợp chỉ mục văn bản toàn văn SQLite FTS5 (`tokenchars '-/.'`) và Vector Embedding lưu dưới dạng BLOB trong SQLite.
 * **Thuật toán Dung hợp Điểm RRF (Reciprocal Rank Fusion):**
   $$RRF\_Score = \frac{1}{60 + Rank_{BM25}} + \frac{1}{60 + Rank_{Vector}}$$
 * **Chiến lược "Giỏ Ngữ Cảnh 2 - 4 - 2":** Tự động phân bổ tối đa 8 đoạn trích tinh hoa:
-  * *Slot 1–2 (Nền tảng):* Nghị quyết Đại hội Đảng bộ xã lần I, Quy chế làm việc.
-  * *Slot 3–6 (Chuyên đề):* Báo cáo, Kế hoạch mới nhất của Tỉnh uỷ và Đảng uỷ xã.
+  * *Slot 1–2 (Nền tảng):* Nghị quyết Đại hội Đảng bộ xã lần I, Quy chế làm việc (`CORE_DIRECTIVE`).
+  * *Slot 3–6 (Chuyên đề):* Báo cáo, Kế hoạch mới nhất của Tỉnh uỷ và Đảng uỷ xã (`THEMATIC_CASE`).
   * *Slot 7–8 (Đồ thị Căn cứ):* 1-Hop Citation lần theo các văn bản gốc năm trước.
 
 ### 4. Quản trị Sổ Nhiệm Vụ & Giám Sát Chỉ Tiêu (KPI Monitor)
@@ -118,7 +121,8 @@ e:\Viet Design\Chuyên viên ảo\
 │   ├── to-trinh/SKILL.md                    # Tờ trình xin chủ trương & trình duyệt (-TTr/ĐU)
 │   ├── chi-thi/SKILL.md                     # Chỉ thị & Chương trình hành động (-CT/ĐU, -CTr)
 │   ├── tham-dinh-van-ban/SKILL.md           # Thẩm định dự thảo 2 tầng & đối soát tiếp thu
-│   └── tham-muu-chuyen-doi-so/SKILL.md      # Tham mưu CĐS, Đề án 06 và Ban Chỉ đạo 57
+│   ├── tham-muu-chuyen-doi-so/SKILL.md      # Tham mưu CĐS, Đề án 06 và Ban Chỉ đạo 57
+│   └── boc-tach-van-ban-rag/SKILL.md        # Bóc tách, chuẩn hoá .md & nạp RAG (ngưỡng 20 trang)
 │
 ├── ⚙️ server/                                # MÁY CHỦ BACKEND FASTAPI MODULAR
 │   ├── app.py                               # Ứng dụng hạt nhân FastAPI tích hợp Zalo Polling
@@ -185,7 +189,8 @@ e:\Viet Design\Chuyên viên ảo\
     ├── chi_tieu_nhiem_ky.json               # 20 chỉ tiêu Đại hội Đảng bộ xã khoá I
     ├── so_ke_hoach_chi_dao.json             # Sổ Kế hoạch và chỉ đạo cấp Tỉnh - Xã
     ├── kien_truc_rag_lai.md                 # Đặc tả kiến trúc Hybrid RAG hành chính Đảng
-    └── Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md # Thẩm quyền, SLA, chức năng 5 cơ quan
+    ├── Cam_nang_Nghiep_vu_Tham_muu_Cap_uy.md # Thẩm quyền, SLA, chức năng 5 cơ quan
+    └── Văn bản Đảng uỷ Ban hành 25-30/      # Kho lưu trữ .md sạch (15 thư mục thể loại RAG)
 ```
 
 ---

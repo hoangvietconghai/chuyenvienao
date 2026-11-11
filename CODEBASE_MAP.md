@@ -68,7 +68,7 @@ Hệ thống được thiết kế theo mô hình **Modular Layered Architecture
 │   ├── scripts/export_docx.py        --> Engine sinh Word (.docx) chuẩn Hướng dẫn 05     │
 │   ├── scripts/doc_reader.py         --> Bóc tách PDF/DOCX & Chốt chặn Độ mật (Gatekeeper)│
 │   ├── data/chuyen_vien_ao.db        --> SQLite WAL Database                             │
-│   ├── references/                   --> Tri thức địa phương (Nghị quyết, Sổ chỉ tiêu)   │
+│   ├── references/                   --> Tri thức địa phương & Kho .md sạch 25-30        │
 │   └── van_ban_du_thao/2026/         --> Kho lưu trữ dự thảo kết quả (.docx)             │
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -224,6 +224,11 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
    - **Tuyệt đối KHÔNG đưa `data/*.db` vào Git:** Tệp CSDL bắt buộc nằm trong `.gitignore`. Máy tính cá nhân chỉ là môi trường phát triển code.
    - **Cơ chế tự động sao lưu trong `update_vps.sh`:** Kịch bản CI/CD trên VPS luôn tự động sao lưu dự phòng CSDL vào thư mục `backups/` và khôi phục lá chắn bảo vệ CSDL, đảm bảo lệnh `git reset --hard` không bao giờ ghi đè hay xoá mất dữ liệu thực tế của VPS.
    - **Đồng bộ một chiều (VPS -> Local):** Khi cần lấy dữ liệu thực tế từ VPS về máy cá nhân, sử dụng script [scripts/pull_db_from_vps.py](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/scripts/pull_db_from_vps.py), tuyệt đối không đẩy đè CSDL máy cá nhân lên VPS.
+10. **Quy chuẩn Bóc tách Kho Văn bản RAG & Lưu trữ Markdown (`.md`) ([`.agents/skills/boc-tach-van-ban-rag/SKILL.md`](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/.agents/skills/boc-tach-van-ban-rag/SKILL.md)):**
+   - **Ngưỡng chia Chunk cố định:** Văn bản $\le 20$ trang giữ **1 file = 1 chunk**; văn bản $> 20$ trang chia đúng **2 chunk** tại ranh giới tự nhiên (tuyệt đối không cắt ngang bảng biểu hoặc phụ lục).
+   - **Đơn giản hoá Header/Footer:** Bỏ Quốc hiệu, Tiêu ngữ, tên đơn vị lặp lại, `Nơi nhận:` và khối `Chữ ký` (giữ nguyên Phụ lục/Quy chế/Báo cáo cá nhân nằm sau chữ ký); thay đầu văn bản bằng 1 dòng định danh: `[Thể loại] số [Số hiệu] ngày [dd/mm/yyyy] của [Cơ quan/Thẩm quyền] về "[Trích yếu]". Người ký: [Họ tên].`
+   - **Sàng lọc & Khớp nối 4 tầng:** Đối chiếu với `data/danh_muc_van_ban_di_master.xlsx` bằng `(Số hiệu chuẩn hoá + Thể loại + Năm)` (không khớp bằng cột tên file); giữ văn bản nền tảng/cốt lõi/còn giá trị sử dụng (`CORE_DIRECTIVE`, `THEMATIC_CASE`), loại bỏ giao việc cũ và sự vụ ngắn hạn; cập nhật `BI_THAY_THE` vào `van_ban_lien_ket`.
+   - **Cây lưu trữ Markdown:** Lưu song song các tệp `.md` sạch theo 15 thư mục thể loại tại `references/Văn bản Đảng uỷ Ban hành 25-30/` với tên chuẩn `A32.65-[Cơ_quan]-[Thể_loại]-[Số_4_chữ_số]-[Năm] [Trích yếu rút gọn].md` (VD: `A32.65-ĐU-KH-0069-2026 ...md`).
 
 ---
 
