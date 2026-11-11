@@ -62,6 +62,18 @@ async def startup_event():
     # Khởi động Zalo Bot (Webhook hoặc Long Polling tự động)
     await zalo_bot_service.init_zalo_bot()
 
+    # Tự động đồng bộ Master Catalog vào kho RAG nếu kho RAG chưa có văn bản đi
+    try:
+        from server.services import rag_service, db_service
+        with db_service.get_db_connection() as conn:
+            cnt = conn.execute("SELECT COUNT(*) AS total FROM so_van_ban WHERE loai_luong = 'VAN_BAN_DI';").fetchone()["total"]
+            if cnt == 0:
+                logger.info("Kho RAG chưa có văn bản đi, bắt đầu tự động đồng bộ từ Master Excel...")
+                sync_res = rag_service.sync_outgoing_catalog_to_rag()
+                logger.info("Kết quả tự động đồng bộ Master Catalog: %s", sync_res.get("message"))
+    except Exception as ex_sync:
+        logger.warning("Không thể tự động đồng bộ Master Catalog lúc khởi động: %s", ex_sync)
+
 
 @app.on_event("shutdown")
 async def shutdown_event():

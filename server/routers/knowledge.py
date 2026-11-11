@@ -91,6 +91,15 @@ async def clear_rag_endpoint():
     return await run_in_threadpool(rag_service.clear_rag_data)
 
 
+@router.post("/sync-outgoing-catalog")
+async def sync_outgoing_catalog_endpoint():
+    """Đồng bộ toàn bộ danh mục văn bản đi từ tệp Excel Master vào kho CSDL SQLite RAG."""
+    res = await run_in_threadpool(rag_service.sync_outgoing_catalog_to_rag)
+    if not res.get("success"):
+        raise HTTPException(status_code=500, detail=res.get("message"))
+    return res
+
+
 @router.get("/stats")
 async def get_rag_stats_endpoint():
     """Lấy số liệu thống kê tổng thể kho RAG."""

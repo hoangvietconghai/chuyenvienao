@@ -231,8 +231,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 15:36:47*
-> *Quy mô: **51** tệp Python | **12,369** dòng mã | **51** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 16:23:52*
+> *Quy mô: **51** tệp Python | **12,646** dòng mã | **52** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -279,6 +279,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | **`GET`** | `/thematics` | `list_thematics_endpoint` | [`server/routers/knowledge.py`](server/routers/knowledge.py) | Lấy danh mục các chuyên đề công tác. |
 | **`POST`** | `/thematics` | `create_thematic_endpoint` | [`server/routers/knowledge.py`](server/routers/knowledge.py) | Cán bộ tự thêm chuyên đề mới vào CSDL. |
 | **`POST`** | `/clear` | `clear_rag_endpoint` | [`server/routers/knowledge.py`](server/routers/knowledge.py) | Xoá sạch toàn bộ dữ liệu RAG trong CSDL để nạp lại từ đầu. |
+| **`POST`** | `/sync-outgoing-catalog` | `sync_outgoing_catalog_endpoint` | [`server/routers/knowledge.py`](server/routers/knowledge.py) | Đồng bộ toàn bộ danh mục văn bản đi từ tệp Excel Master vào kho CSDL SQLite RAG. |
 | **`GET`** | `/stats` | `get_rag_stats_endpoint` | [`server/routers/knowledge.py`](server/routers/knowledge.py) | Lấy số liệu thống kê tổng thể kho RAG. |
 | **`GET`** | `/documents` | `list_rag_documents_endpoint` | [`server/routers/knowledge.py`](server/routers/knowledge.py) | Liệt kê các văn bản đã được kiểm duyệt và nạp vào kho RAG. |
 | **`GET`** | `/documents/{doc_id:path}` | `get_rag_document_endpoint` | [`server/routers/knowledge.py`](server/routers/knowledge.py) | Lấy chi tiết 1 văn bản trong kho RAG kèm các đoạn trích chunks và liên kết. |
@@ -296,7 +297,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | :--- | :---: | :---: | :--- |
 | [`server/__init__.py`](server/__init__.py) | 2 | 0 Funcs | Package server cho Hệ thống Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải. |
 | [`server/ai_connector.py`](server/ai_connector.py) | 643 | 1 Classes | server/ai_connector.py |
-| [`server/app.py`](server/app.py) | 115 | 3 Endpoints | server/app.py |
+| [`server/app.py`](server/app.py) | 127 | 3 Endpoints | server/app.py |
 | [`server/chat_engine.py`](server/chat_engine.py) | 886 | 21 Funcs | server/chat_engine.py |
 | [`server/config.py`](server/config.py) | 202 | 0 Funcs | server/config.py |
 | [`server/logger.py`](server/logger.py) | 88 | 2 Funcs | server/logger.py |
@@ -314,14 +315,14 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/routers/admin.py`](server/routers/admin.py) | 677 | 24 Endpoints, 9 Classes | server/routers/admin.py |
 | [`server/routers/auth.py`](server/routers/auth.py) | 249 | 4 Endpoints, 3 Classes | server/routers/auth.py |
 | [`server/routers/chat.py`](server/routers/chat.py) | 198 | 7 Endpoints, 2 Classes | server/routers/chat.py |
-| [`server/routers/knowledge.py`](server/routers/knowledge.py) | 194 | 11 Endpoints, 3 Classes | server/routers/knowledge.py |
+| [`server/routers/knowledge.py`](server/routers/knowledge.py) | 203 | 12 Endpoints, 3 Classes | server/routers/knowledge.py |
 | [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 367 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
 | [`server/services/db_service.py`](server/services/db_service.py) | 1,528 | 43 Funcs | server/services/db_service.py |
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 86 | 3 Funcs | server/services/embedding_service.py |
 | [`server/services/gdrive_service.py`](server/services/gdrive_service.py) | 201 | 4 Funcs | server/services/gdrive_service.py |
 | [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 148 | 4 Funcs | server/services/knowledge_loader.py |
-| [`server/services/rag_service.py`](server/services/rag_service.py) | 681 | 11 Funcs | server/services/rag_service.py |
+| [`server/services/rag_service.py`](server/services/rag_service.py) | 937 | 13 Funcs | server/services/rag_service.py |
 | [`server/services/scheduler_service.py`](server/services/scheduler_service.py) | 278 | 9 Funcs | server/services/scheduler_service.py |
 | [`server/services/zalo_api.py`](server/services/zalo_api.py) | 143 | 6 Funcs | server/services/zalo_api.py |
 | [`server/services/zalo_bot_service.py`](server/services/zalo_bot_service.py) | 213 | 7 Funcs | server/services/zalo_bot_service.py |

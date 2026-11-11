@@ -63,6 +63,7 @@ fi
 # 3. Đồng bộ cơ sở dữ liệu (Database Migration & WAL setup)
 echo -e "${BLUE}>> [3/4] Kiểm tra và đối soát cơ sở dữ liệu SQLite WAL...${NC}"
 .venv/bin/python -c "from server.services.db_service import init_database; init_database()"
+.venv/bin/python -c "from server.services.rag_service import sync_outgoing_catalog_to_rag; print(sync_outgoing_catalog_to_rag())"
 
 # 4. Khởi động lại dịch vụ hệ thống
 echo -e "${BLUE}>> [4/4] Khởi động lại dịch vụ hệ thống chuyenvienao.service...${NC}"

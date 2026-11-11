@@ -44,6 +44,72 @@ def clear_rag_data() -> Dict[str, Any]:
     return {"success": True, "message": "Đã xoá sạch toàn bộ dữ liệu trong kho RAG."}
 
 
+def append_outgoing_document_to_master(
+    so_hieu: str,
+    trich_yeu: str,
+    the_loai: str,
+    nguoi_ky: str = "",
+    ngay_ban_hanh: str = "",
+    file_name: str = ""
+) -> bool:
+    """
+    Tự động ghi nối 1 dòng mới vào tệp Excel Master `data/danh_muc_van_ban_di_master.xlsx`.
+    Đảm bảo STT luôn được tăng tiến tự động và cập nhật ngày chốt số liệu.
+    """
+    try:
+        import openpyxl
+        from server.config import DATA_DIR
+        master_path = DATA_DIR / "danh_muc_van_ban_di_master.xlsx"
+        if not master_path.exists():
+            return False
+
+        wb = openpyxl.load_workbook(master_path)
+        ws = wb.active
+
+        # Đọc STT dòng đầu tiên hiện tại (dòng 10)
+        current_max_stt = 0
+        try:
+            val_stt = ws.cell(10, 1).value
+            current_max_stt = int(val_stt) if val_stt else (ws.max_row - 9)
+        except Exception:
+            current_max_stt = ws.max_row - 9
+
+        new_stt = current_max_stt + 1
+
+        # Chèn 1 dòng mới ngay tại dòng 10 (đưa văn bản mới nhất lên đầu bảng)
+        ws.insert_rows(10)
+
+        # Định dạng ngày giờ dạng DD/MM/YYYY 00:00:00
+        now_str = datetime.now().strftime("%d/%m/%Y 00:00:00")
+        if ngay_ban_hanh and "-" in ngay_ban_hanh:
+            parts = ngay_ban_hanh.split("-")
+            if len(parts) == 3:
+                now_str = f"{parts[2]}/{parts[1]}/{parts[0]} 00:00:00"
+
+        # Ghi các cột: STT, ID, Trích yếu, Số ký hiệu, Độ mật, Độ khẩn, Sổ văn bản, Thể loại, Người ký, Ngày tạo, File
+        ws.cell(10, 1, new_stt)
+        ws.cell(10, 2, f"AUTO_{int(datetime.now().timestamp())}")
+        ws.cell(10, 3, trich_yeu)
+        ws.cell(10, 4, so_hieu)
+        ws.cell(10, 5, "Thường")
+        ws.cell(10, 6, "Thường")
+        ws.cell(10, 7, "SỔ VĂN BẢN ĐI ĐẢNG ỦY NHIỆM KỲ 2025-2030")
+        ws.cell(10, 8, the_loai)
+        ws.cell(10, 9, nguoi_ky or "Vũ Thị Thuỳ Trang")
+        ws.cell(10, 10, now_str)
+        ws.cell(10, 11, file_name or f"{so_hieu}.pdf")
+
+        # Cập nhật ngày chốt dữ liệu tại ô H7
+        ws['H7'] = f"Ngày chốt dữ liệu báo cáo: {datetime.now().strftime('%d/%m/%Y')}"
+
+        wb.save(master_path)
+        logger.info(f"✓ Đã tự động chèn văn bản '{so_hieu}' vào tệp Excel Master (STT mới: {new_stt})")
+        return True
+    except Exception as ex:
+        logger.warning(f"Lỗi khi nối văn bản vào Excel Master: {ex}")
+        return False
+
+
 def get_rag_stats() -> Dict[str, Any]:
     """Lấy số liệu thống kê tổng thể của kho RAG."""
     with db_service.get_db_connection() as conn:
@@ -248,6 +314,181 @@ def classify_thematic_domain(trich_yeu: str, full_text: str = "") -> str:
             best_code = cat["ma_chuyen_de"]
 
     return best_code
+
+
+def sync_outgoing_catalog_to_rag(catalog_path: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Đồng bộ toàn bộ danh mục văn bản đi từ tệp Excel Master vào kho CSDL SQLite RAG
+    (bảng `so_van_ban`, `van_ban_chunks` và bảng ảo `van_ban_fts`).
+    Cho phép hệ thống tra cứu FTS5 BM25 tức thì 2.021+ văn bản đi từ 2025 đến nay.
+    """
+    try:
+        import openpyxl
+        from server.config import DATA_DIR
+
+        target_path = Path(catalog_path) if catalog_path else (DATA_DIR / "danh_muc_van_ban_di_master.xlsx")
+        if not target_path.exists():
+            fallback = BASE_DIR / "references" / "Danh mục vị trí việc làm" / "Danh mục văn bản đi Đảng uỷ xã Công Hải (Toàn bộ 2025 - 11-11-2026).xlsx"
+            if fallback.exists():
+                target_path = fallback
+            else:
+                return {"success": False, "message": f"Không tìm thấy tệp danh mục: {target_path}", "total_synced": 0}
+
+        wb = openpyxl.load_workbook(target_path, read_only=True)
+        ws = wb.active
+
+        map_the_loai = {
+            'Công văn': 'CV', 'Báo cáo': 'BC', 'Kế hoạch': 'KH', 'Thông báo': 'TB',
+            'Quyết định': 'QĐ', 'Chương trình': 'CTr', 'Tờ trình': 'TTr', 'Hướng dẫn': 'HD',
+            'Nghị quyết': 'NQ', 'Kết luận': 'KL', 'Quy định': 'QĐi', 'Quy chế': 'QC',
+            'Giấy mời': 'GM', 'Đề án': 'ĐA', 'Chỉ thị': 'CT', 'Bản sao': 'BS',
+            'Giấy giới thiệu': 'GGT', 'Phương án': 'PA', 'Giấy nghỉ phép': 'GNP'
+        }
+
+        total_scanned = 0
+        total_synced = 0
+
+        with db_service.get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            for r in ws.iter_rows(min_row=10, values_only=True):
+                if not r or not any(r):
+                    continue
+
+                stt = r[0] if len(r) > 0 and r[0] is not None else (total_scanned + 1)
+                id_eoffice = str(r[1] or '').strip() if len(r) > 1 else ''
+                trich_yeu = str(r[2] or '').strip() if len(r) > 2 else ''
+                so_hieu = str(r[3] or '').strip() if len(r) > 3 else ''
+                so_van_ban_col = str(r[6] or 'SỔ VĂN BẢN ĐI ĐẢNG ỦY NHIỆM KỲ 2025-2030').strip() if len(r) > 6 else ''
+                ten_the_loai = str(r[7] or 'Công văn').strip() if len(r) > 7 else 'Công văn'
+                nguoi_ky = str(r[8] or '').strip() if len(r) > 8 else ''
+                ngay_tao_raw = str(r[9] or '').strip() if len(r) > 9 else ''
+                file_van_ban = str(r[10] or '').strip() if len(r) > 10 else ''
+
+                if not so_hieu or not trich_yeu:
+                    continue
+
+                total_scanned += 1
+
+                iso_date = "2026-01-01"
+                nam_ban_hanh = 2026
+                if ngay_tao_raw:
+                    date_part = ngay_tao_raw.split()[0]
+                    if '/' in date_part:
+                        parts = date_part.split('/')
+                        if len(parts) == 3:
+                            try:
+                                iso_date = f"{parts[2]}-{int(parts[1]):02d}-{int(parts[0]):02d}"
+                                nam_ban_hanh = int(parts[2])
+                            except Exception:
+                                pass
+                    elif '-' in date_part:
+                        parts = date_part.split('-')
+                        if len(parts) == 3:
+                            try:
+                                iso_date = date_part
+                                nam_ban_hanh = int(parts[0])
+                            except Exception:
+                                pass
+
+                the_loai_code = map_the_loai.get(ten_the_loai, 'CV')
+
+                if the_loai_code in ['NQ', 'QC', 'QĐi']:
+                    trong_so = 100
+                elif the_loai_code in ['CT', 'CTr', 'KH', 'KL', 'QĐ']:
+                    trong_so = 80
+                elif the_loai_code in ['BC', 'TTr', 'HD']:
+                    trong_so = 60
+                elif the_loai_code in ['CV', 'TB', 'GM']:
+                    trong_so = 40
+                else:
+                    trong_so = 30
+
+                if 'BCĐ' in so_hieu or '57' in so_hieu:
+                    co_quan_ban_hanh = "Ban Chỉ đạo 57 Đảng uỷ xã Công Hải"
+                    co_quan_code = "BCD57"
+                else:
+                    co_quan_ban_hanh = "Đảng uỷ xã Công Hải"
+                    co_quan_code = "DU"
+
+                if the_loai_code in ['NQ', 'QC', 'QĐi']:
+                    nhom_vong_doi = "LONG_TERM_DIRECTIVE"
+                elif 'kiểm điểm' in trich_yeu.lower():
+                    nhom_vong_doi = "ANNUAL_ASSESSMENT"
+                else:
+                    nhom_vong_doi = "THEMATIC_CASE"
+
+                ma_chuyen_de = classify_thematic_domain(trich_yeu)
+
+                doc_id = f"VB-DI-{id_eoffice}" if id_eoffice else f"VB-DI-{stt}"
+                file_hash = hashlib.sha256(f"CATALOG_{id_eoffice}_{so_hieu}_{stt}".encode('utf-8')).hexdigest()
+                file_path = f"master_catalog:row_{stt}:{file_van_ban[:200]}"
+
+                cursor.execute("""
+                INSERT INTO so_van_ban (
+                    doc_id, file_hash, ma_ho_so_eoffice, so_hieu_vb, loai_luong,
+                    the_loai_vb, cap_ban_hanh, co_quan_ban_hanh, co_quan_ban_hanh_code,
+                    ngay_ban_hanh, nam_ban_hanh, giai_doan_lich_su, trich_yeu,
+                    nhom_vong_doi, trong_so_tham_quyen, ma_chuyen_de, trang_thai_hieu_luc,
+                    nguoi_ky, file_path, created_at
+                ) VALUES (?, ?, ?, ?, 'VAN_BAN_DI', ?, 'XA_CONG_HAI', ?, ?, ?, ?, 'SAU_SAP_NHAP', ?, ?, ?, ?, 'CON_HIEU_LUC', ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(doc_id) DO UPDATE SET
+                    so_hieu_vb=excluded.so_hieu_vb,
+                    trich_yeu=excluded.trich_yeu,
+                    the_loai_vb=excluded.the_loai_vb,
+                    ngay_ban_hanh=excluded.ngay_ban_hanh,
+                    nam_ban_hanh=excluded.nam_ban_hanh,
+                    nguoi_ky=excluded.nguoi_ky,
+                    ma_chuyen_de=excluded.ma_chuyen_de;
+                """, (
+                    doc_id, file_hash, id_eoffice, so_hieu, the_loai_code,
+                    co_quan_ban_hanh, co_quan_code, iso_date, nam_ban_hanh,
+                    trich_yeu, nhom_vong_doi, trong_so, ma_chuyen_de,
+                    nguoi_ky, file_path
+                ))
+
+                cursor.execute("DELETE FROM van_ban_chunks WHERE doc_id = ?;", (doc_id,))
+                cursor.execute("DELETE FROM van_ban_fts WHERE doc_id = ?;", (doc_id,))
+
+                context_hdr = f"[Văn bản đi: {so_hieu} | {co_quan_ban_hanh} | Ngày: {iso_date} | Thể loại: {ten_the_loai} | Người ký: {nguoi_ky}]"
+                chunk_text = (
+                    f"{context_hdr}\n"
+                    f"- Số ký hiệu: {so_hieu}\n"
+                    f"- Thể loại văn bản: {ten_the_loai} ({the_loai_code})\n"
+                    f"- Ngày ban hành: {iso_date}\n"
+                    f"- Người ký: {nguoi_ky}\n"
+                    f"- Cơ quan ban hành: {co_quan_ban_hanh}\n"
+                    f"- Sổ văn bản: {so_van_ban_col}\n"
+                    f"- Trích yếu nội dung: {trich_yeu}\n"
+                    f"- Danh mục tệp đính kèm: {file_van_ban}\n"
+                    f"- Mã lưu trữ eOffice: {id_eoffice}"
+                )
+
+                cursor.execute("""
+                INSERT INTO van_ban_chunks (
+                    doc_id, sub_doc_owner, section_path, chunk_type, context_header, chunk_text
+                ) VALUES (?, 'TAP_THE', 'Thông tin định danh & Trích yếu', 'PROSE', ?, ?);
+                """, (doc_id, context_hdr, chunk_text))
+                chunk_id = cursor.lastrowid
+
+                cursor.execute("""
+                INSERT INTO van_ban_fts (
+                    chunk_id, doc_id, so_hieu_vb, trich_yeu, section_path, chunk_text
+                ) VALUES (?, ?, ?, ?, 'Thông tin định danh & Trích yếu', ?);
+                """, (chunk_id, doc_id, so_hieu, trich_yeu, chunk_text))
+
+                total_synced += 1
+
+        logger.info(f"Đã đồng bộ {total_synced}/{total_scanned} văn bản đi từ Master Excel vào kho RAG.")
+        return {
+            "success": True,
+            "message": f"Đã đồng bộ thành công {total_synced} văn bản đi vào kho RAG và chỉ mục FTS5.",
+            "total_synced": total_synced,
+            "file_source": str(target_path.name)
+        }
+    except Exception as ex:
+        logger.error(f"Lỗi khi đồng bộ danh mục văn bản đi vào RAG: {ex}", exc_info=True)
+        return {"success": False, "message": f"Lỗi đồng bộ: {str(ex)}", "total_synced": 0}
 
 
 def preview_document_for_review(file_path: str) -> Tuple[bool, str, Dict[str, Any]]:
@@ -529,6 +770,21 @@ def commit_reviewed_document(reviewed: Dict[str, Any]) -> Tuple[bool, str, Dict[
             saved_chunks += 1
 
         logger.info(f"Cán bộ đã duyệt và nạp văn bản chính thức: {so_hieu} (Doc ID: {doc_id}, {saved_chunks} chunks)")
+
+        # TỰ ĐỘNG NỐI DÒNG VÀO FILE EXCEL MASTER NẾU LÀ VĂN BẢN ĐI
+        if "VAN_BAN_DI" in doc_record.get("loai_luong", "") or "ĐU" in so_hieu:
+            try:
+                append_outgoing_document_to_master(
+                    so_hieu=so_hieu,
+                    trich_yeu=trich_yeu,
+                    the_loai=the_loai,
+                    nguoi_ky=reviewed.get("nguoi_ky") or "",
+                    ngay_ban_hanh=ngay_ban_hanh,
+                    file_name=Path(file_path).name if file_path else ""
+                )
+            except Exception as ex_excel:
+                logger.warning(f"Lỗi khi nối vào file Excel Master: {ex_excel}")
+
         return True, f"Đã phê duyệt và nạp thành công văn bản {so_hieu} vào kho RAG ({saved_chunks} đoạn).", {
             "doc_id": doc_id,
             "so_hieu": so_hieu,
