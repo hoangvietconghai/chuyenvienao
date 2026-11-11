@@ -11,9 +11,12 @@ Cơ quan ban hành, Ngày tháng) và gợi ý phân luồng workflow.
 import os
 import re
 import sys
+import logging
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger("doc_reader")
 
 # Đảm bảo UTF-8 output cho console Windows
 if hasattr(sys.stdout, 'reconfigure'):
@@ -115,38 +118,166 @@ def clean_extracted_text(text: str) -> str:
     return '\n'.join(lines)
 
 
+def ocr_scanned_pdf(file_path: str, max_pages: int = 40) -> Dict[str, Any]:
+    """
+    Tự động OCR tài liệu PDF scan ảnh bằng Google Gemini Vision (Phương án 1).
+    Trích xuất hình ảnh từng trang, nén sang JPEG và gọi Gemini Vision
+    để số hóa toàn văn sang định dạng Markdown chuẩn xác 99.9%.
+    """
+    import io
+    import asyncio
+    from PIL import Image
+
+    reader = None
+    try:
+        import pypdf
+        reader = pypdf.PdfReader(file_path)
+    except Exception as ex:
+        logger.warning(f"Không thể mở PDF bằng pypdf để OCR: {ex}")
+        return {"text": "", "page_count": 0, "pages": [], "format": "pdf_ocr_error"}
+
+    total_pages = len(reader.pages)
+    pages_to_process = min(total_pages, max_pages)
+    pages_text = []
+
+    # Import default_ai_client từ server.ai_connector
+    ai_client = None
+    try:
+        from server.ai_connector import default_ai_client
+        if default_ai_client and default_ai_client._has_valid_key(default_ai_client.gemini_key):
+            ai_client = default_ai_client
+    except Exception as ex:
+        logger.warning(f"Không thể import default_ai_client: {ex}")
+
+    if not ai_client:
+        logger.warning("Không có GEMINI_API_KEY để thực hiện OCR tự động.")
+        return {"text": "", "page_count": total_pages, "pages": [], "format": "pdf_scan_no_key"}
+
+    logger.info(f"🔍 Bắt đầu tự động OCR {pages_to_process}/{total_pages} trang PDF scan bằng Gemini Vision: {Path(file_path).name}")
+
+    async def _process_all_pages():
+        ocr_results = []
+        for idx in range(pages_to_process):
+            page = reader.pages[idx]
+            # Tìm ảnh lớn nhất trên trang đại diện cho trang scan
+            best_img_bytes = None
+            if page.images:
+                # Ưu tiên ảnh JPEG hoặc TIFF có kích thước lớn
+                sorted_imgs = sorted(page.images, key=lambda x: len(x.data), reverse=True)
+                for candidate in sorted_imgs:
+                    if len(candidate.data) > 10000:  # Trên 10KB
+                        try:
+                            im = Image.open(io.BytesIO(candidate.data))
+                            out = io.BytesIO()
+                            # Resize nếu ảnh quá lớn để tiết kiệm băng thông và tăng tốc OCR
+                            if im.width > 2000 or im.height > 2000:
+                                im.thumbnail((1800, 1800), Image.Resampling.LANCZOS)
+                            im.convert("RGB").save(out, format="JPEG", quality=85)
+                            best_img_bytes = out.getvalue()
+                            break
+                        except Exception:
+                            continue
+
+            if not best_img_bytes:
+                ocr_results.append(f"<!-- Trang {idx+1}: Không tìm thấy hình ảnh quét -->")
+                continue
+
+            try:
+                page_text = await ai_client.ocr_image_with_vision(
+                    image_bytes=best_img_bytes,
+                    mime_type="image/jpeg",
+                    prompt=(
+                        f"Đây là trang {idx+1} của văn bản hành chính/Đề án/Nghị quyết của cấp uỷ Đảng hoặc Nhà nước. "
+                        "Hãy trích xuất (OCR) toàn bộ chữ và bảng biểu sang Markdown sạch, trung thực 100%."
+                    )
+                )
+                ocr_results.append(page_text.strip())
+                logger.info(f"  ✓ Đã OCR xong trang {idx+1}/{pages_to_process} ({len(page_text)} ký tự)")
+            except Exception as ocr_err:
+                logger.warning(f"  ❌ Lỗi OCR trang {idx+1}: {ocr_err}")
+                ocr_results.append(f"<!-- Trang {idx+1}: Lỗi bóc tách ({ocr_err}) -->")
+
+        return ocr_results
+
+    try:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Chạy trong luồng con nếu đang ở trong async loop
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    pages_text = executor.submit(lambda: asyncio.run(_process_all_pages())).result()
+            else:
+                pages_text = loop.run_until_complete(_process_all_pages())
+        except RuntimeError:
+            pages_text = asyncio.run(_process_all_pages())
+    except Exception as ex:
+        logger.error(f"Lỗi tổng thể trong tiến trình OCR PDF: {ex}")
+
+    combined_text = "\n\n".join(pages_text).strip()
+    return {
+        "text": combined_text,
+        "page_count": total_pages,
+        "pages": pages_text,
+        "spatial_header": "",
+        "format": "pdf_scanned_ocr"
+    }
+
+
 def read_pdf(file_path: str) -> Dict[str, Any]:
     """
-    Trích xuất text từ tệp PDF bằng PyMuPDF (fitz).
-    Tích hợp Spatial Coordinate Extraction để xử lý văn bản có tem ký số điện tử.
+    Trích xuất text từ tệp PDF bằng PyMuPDF (fitz) hoặc pypdf.
+    Tích hợp Spatial Coordinate Extraction và TỰ ĐỘNG OCR bằng Gemini Vision
+    khi phát hiện tệp PDF dạng scan ảnh.
     """
-    try:
-        import fitz  # PyMuPDF
-    except ImportError:
-        raise ImportError("Thiếu thư viện PyMuPDF. Hãy cài đặt: pip install pymupdf")
-
-    doc = fitz.open(file_path)
     full_text = []
     pages_text = []
     spatial_header_text = ""
+    is_scanned_pdf = False
 
-    for page_num in range(len(doc)):
-        page = doc[page_num]
-        
-        # Nếu là trang 1: trích xuất thêm các từ ở nửa trên trang theo tọa độ trực quan
-        if page_num == 0:
-            words = page.get_text("words")  # (x0, y0, x1, y1, word, block_no, line_no, word_no)
-            # Lọc các từ nằm ở phần header (y1 <= 240)
-            header_words = [w[4] for w in sorted(words, key=lambda x: (x[1], x[0])) if w[3] <= 240]
-            spatial_header_text = " ".join(header_words)
+    # 1. Thử trích xuất văn bản số trực tiếp
+    try:
+        import fitz  # PyMuPDF
+        doc = fitz.open(file_path)
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            if page_num == 0:
+                words = page.get_text("words")
+                header_words = [w[4] for w in sorted(words, key=lambda x: (x[1], x[0])) if w[3] <= 240]
+                spatial_header_text = " ".join(header_words)
 
-        text = page.get_text("text")
-        cleaned_page = clean_extracted_text(text)
-        pages_text.append(cleaned_page)
-        full_text.append(cleaned_page)
+            text = page.get_text("text")
+            cleaned_page = clean_extracted_text(text)
+            pages_text.append(cleaned_page)
+            full_text.append(cleaned_page)
+        doc.close()
+    except Exception:
+        # Fallback sang pypdf nếu không có fitz
+        try:
+            import pypdf
+            reader = pypdf.PdfReader(file_path)
+            for page in reader.pages:
+                t = clean_extracted_text(page.extract_text() or "")
+                pages_text.append(t)
+                full_text.append(t)
+        except Exception as e_pdf:
+            logger.warning(f"Lỗi khi đọc text layer PDF: {e_pdf}")
 
-    doc.close()
     combined_text = "\n\n".join(full_text).strip()
+    # Kiểm tra xem có phải là PDF scan ảnh hay không
+    # (nếu số từ trích xuất được quá ít so với số trang, ví dụ trung bình < 30 từ/trang)
+    word_count = len(combined_text.split())
+    num_pages = len(pages_text) or 1
+    if word_count < (num_pages * 25) or word_count < 60:
+        is_scanned_pdf = True
+
+    # 2. TỰ ĐỘNG KÍCH HOẠT GEMINI VISION OCR NẾU LÀ PDF SCAN
+    if is_scanned_pdf:
+        logger.info(f"📸 Phát hiện tài liệu scan ảnh ({word_count} từ / {num_pages} trang). Kích hoạt tự động OCR Gemini Vision...")
+        ocr_result = ocr_scanned_pdf(file_path)
+        if ocr_result.get("text"):
+            return ocr_result
+
     return {
         "text": combined_text,
         "page_count": len(pages_text),

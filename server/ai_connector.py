@@ -544,6 +544,79 @@ class DeepSeekClient:
                 "usage": usage,
             }
 
+    async def ocr_image_with_vision(
+        self,
+        image_bytes: bytes,
+        mime_type: str = "image/jpeg",
+        prompt: Optional[str] = None
+    ) -> str:
+        """
+        OCR ảnh chụp / bản scan văn bản hành chính sang văn bản số (Markdown).
+        Sử dụng trực tiếp khả năng Vision của Google Gemini qua OpenAI-compatible multimodal endpoint.
+        """
+        import base64
+
+        if not self.gemini_key or len(self.gemini_key.strip()) <= 5:
+            raise RuntimeError("Chưa cấu hình GEMINI_API_KEY để sử dụng tính năng OCR hình ảnh.")
+
+        b64_img = base64.b64encode(image_bytes).decode("utf-8")
+        data_url = f"data:{mime_type};base64,{b64_img}"
+
+        default_prompt = (
+            "Bạn là chuyên viên văn thư chuyên nghiệp. Hãy trích xuất toàn bộ chữ (OCR) từ hình ảnh văn bản này sang dạng văn bản thuần/Markdown.\n"
+            "Yêu cầu:\n"
+            "1. Giữ nguyên 100% nội dung, số liệu, ngày tháng, tên cơ quan, chức vụ và chữ ký.\n"
+            "2. Trình bày các bảng số liệu nếu có bằng định dạng bảng Markdown (| Cột 1 | Cột 2 |).\n"
+            "3. Giữ nguyên cấu trúc các đề mục (I, II, 1, 2, a, b, -, +).\n"
+            "4. Tuyệt đối không thêm lời bình luận hay giải thích, chỉ trả về đúng nội dung văn bản đã được bóc tách."
+        )
+        user_prompt = prompt or default_prompt
+
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": user_prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": data_url}
+                    }
+                ]
+            }
+        ]
+
+        endpoint = f"{self.gemini_base_url.rstrip('/')}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self.gemini_key.strip()}",
+            "Content-Type": "application/json"
+        }
+
+        # Ưu tiên các model hỗ trợ Vision cực nhanh của Gemini
+        candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", self.gemini_model]
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            last_err = None
+            for m in candidate_models:
+                try:
+                    payload = {
+                        "model": m,
+                        "messages": messages,
+                        "temperature": 0.1,
+                        "max_tokens": 4096
+                    }
+                    resp = await client.post(endpoint, headers=headers, json=payload)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        content = data["choices"][0]["message"]["content"] or ""
+                        return content.strip()
+                    elif resp.status_code == 404:
+                        continue
+                    else:
+                        last_err = f"HTTP {resp.status_code}: {resp.text}"
+                except Exception as ex:
+                    last_err = str(ex)
+
+            raise RuntimeError(f"Lỗi khi OCR ảnh qua Gemini Vision: {last_err}")
+
     def call_chat_sync(
         self,
         messages: List[Dict[str, str]],
