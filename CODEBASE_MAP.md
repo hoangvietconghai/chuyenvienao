@@ -231,8 +231,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 09/11/2026 14:57:19*
-> *Quy mô: **51** tệp Python | **11,818** dòng mã | **49** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 08:51:55*
+> *Quy mô: **51** tệp Python | **11,863** dòng mã | **49** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -303,7 +303,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/prompts/chat_mode.py`](server/prompts/chat_mode.py) | 39 | 0 Funcs | server/prompts/chat_mode.py |
 | [`server/prompts/intent_router.py`](server/prompts/intent_router.py) | 129 | 2 Funcs | server/prompts/intent_router.py |
 | [`server/prompts/system_base.py`](server/prompts/system_base.py) | 58 | 0 Funcs | server/prompts/system_base.py |
-| [`server/prompts/wf1_tong_hop_bao_cao.py`](server/prompts/wf1_tong_hop_bao_cao.py) | 99 | 1 Funcs | server/prompts/wf1_tong_hop_bao_cao.py |
+| [`server/prompts/wf1_tong_hop_bao_cao.py`](server/prompts/wf1_tong_hop_bao_cao.py) | 130 | 1 Funcs | server/prompts/wf1_tong_hop_bao_cao.py |
 | [`server/prompts/wf2_thong_bao_ket_luan.py`](server/prompts/wf2_thong_bao_ket_luan.py) | 94 | 1 Funcs | server/prompts/wf2_thong_bao_ket_luan.py |
 | [`server/prompts/wf3_giao_viec.py`](server/prompts/wf3_giao_viec.py) | 102 | 1 Funcs | server/prompts/wf3_giao_viec.py |
 | [`server/prompts/wf4_tham_dinh.py`](server/prompts/wf4_tham_dinh.py) | 159 | 1 Funcs | server/prompts/wf4_tham_dinh.py |
@@ -313,7 +313,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/routers/auth.py`](server/routers/auth.py) | 249 | 4 Endpoints, 3 Classes | server/routers/auth.py |
 | [`server/routers/chat.py`](server/routers/chat.py) | 198 | 7 Endpoints, 2 Classes | server/routers/chat.py |
 | [`server/routers/knowledge.py`](server/routers/knowledge.py) | 194 | 11 Endpoints, 3 Classes | server/routers/knowledge.py |
-| [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 296 | 2 Endpoints | server/routers/zalo_webhook.py |
+| [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 310 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
 | [`server/services/db_service.py`](server/services/db_service.py) | 1,356 | 40 Funcs | server/services/db_service.py |
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 86 | 3 Funcs | server/services/embedding_service.py |

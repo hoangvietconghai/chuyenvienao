@@ -167,9 +167,23 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
 
         # 4.1. Tự động liên kết tài khoản Zalo với số điện thoại trong danh bạ (Zalo 2FA Linking)
         import re
-        link_match = re.search(r'^(?:(?:lien\s*ket|dang\s*ky|link|sdt|so\s*dien\s*thoai)\s*)?(0[3|5|7|8|9][0-9]{8})$', text, re.IGNORECASE)
-        if link_match:
-            candidate_phone = link_match.group(1)
+        clean_text_digits = re.sub(r'[\s\.\-\(\)\+]', '', text)
+        is_pure_phone = bool(re.match(r'^(?:84|0)[35789]\d{8}$', clean_text_digits))
+        is_link_intent = bool(re.search(r'(?:liên\s*kết|lien\s*ket|đăng\s*ký|dang\s*ky|kích\s*hoạt|kich\s*hoat|sđt|sdt|số\s*điện\s*thoại|so\s*dien\s*thoai|link|phone)', text, re.IGNORECASE))
+
+        candidate_phone = None
+        if is_pure_phone:
+            m = re.search(r'(?:84|0)([35789]\d{8})', clean_text_digits)
+            if m:
+                candidate_phone = '0' + m.group(1)
+        elif is_link_intent or len(text.strip()) <= 45:
+            m = re.search(r'(?:(?:\+84|84|0))([35789][\s\.\-]?\d(?:[\s\.\-]?\d){7})', text)
+            if m:
+                raw_p = re.sub(r'[\s\.\-]', '', m.group(1))
+                if len(raw_p) == 9:
+                    candidate_phone = '0' + raw_p
+
+        if candidate_phone:
             from server.services import db_service
             can_bo_found = db_service.get_can_bo_by_phone(candidate_phone)
             if can_bo_found:
