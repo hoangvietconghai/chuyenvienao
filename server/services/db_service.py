@@ -867,13 +867,20 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
         if not words:
             return []
 
-        # Ghép query FTS5 chuẩn xác: AND kết hợp prefix matching ở từ cuối
+        # Ghép query FTS5 linh hoạt:
+        # 1. Nếu câu ngắn (<= 3 từ): Dùng AND để khớp chính xác
+        # 2. Nếu câu dài (câu hỏi tự nhiên của cán bộ): Chuyển sang OR kết hợp prefix matching
+        #    để không bị rớt kết quả chỉ vì 1-2 từ đệm/từ nối không xuất hiện trong tài liệu.
         if len(words) == 1:
             fts_query = f'"{words[0]}"*'
         elif len(words) <= 3:
             fts_query = " AND ".join(f'"{w}"' for w in words[:-1]) + f' AND "{words[-1]}"*'
         else:
-            fts_query = " AND ".join(f'"{w}"' for w in words[:5]) + f' AND "{words[5]}"*' if len(words) > 5 else " AND ".join(f'"{w}"' for w in words[:-1]) + f' AND "{words[-1]}"*'
+            # Lọc bỏ các hư từ / từ đệm thông thường tiếng Việt khi tìm kiếm câu dài
+            stopwords = {"của", "và", "các", "những", "này", "đó", "cho", "về", "trong", "được", "có", "là", "ai", "gì", "nào"}
+            meaningful_words = [w for w in words if w.lower() not in stopwords]
+            target_words = meaningful_words if len(meaningful_words) >= 2 else words
+            fts_query = " OR ".join(f'"{w}"*' for w in target_words[:8])
 
         try:
             cursor.execute("""

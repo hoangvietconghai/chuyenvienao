@@ -231,8 +231,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 14:15:53*
-> *Quy mô: **51** tệp Python | **12,184** dòng mã | **49** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 14:37:24*
+> *Quy mô: **51** tệp Python | **12,196** dòng mã | **49** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -315,7 +315,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/routers/knowledge.py`](server/routers/knowledge.py) | 194 | 11 Endpoints, 3 Classes | server/routers/knowledge.py |
 | [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 367 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
-| [`server/services/db_service.py`](server/services/db_service.py) | 1,398 | 40 Funcs | server/services/db_service.py |
+| [`server/services/db_service.py`](server/services/db_service.py) | 1,405 | 40 Funcs | server/services/db_service.py |
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 86 | 3 Funcs | server/services/embedding_service.py |
 | [`server/services/gdrive_service.py`](server/services/gdrive_service.py) | 201 | 4 Funcs | server/services/gdrive_service.py |
 | [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 148 | 4 Funcs | server/services/knowledge_loader.py |
@@ -334,7 +334,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`scripts/build_indicator_registry.py`](scripts/build_indicator_registry.py) | 325 | 1 Funcs | Tạo cơ sở dữ liệu các chỉ tiêu Nghị quyết Đại hội Đảng bộ xã Công Hải lần thứ I, nhiệm kỳ 2025 - 2030 |
 | [`scripts/build_plan_registry.py`](scripts/build_plan_registry.py) | 188 | 1 Funcs | Khởi tạo và biên soạn Sổ Kế hoạch - Chỉ đạo nghiệp vụ của Đảng uỷ xã Công Hải |
 | [`scripts/deploy_remote.py`](scripts/deploy_remote.py) | 184 | 3 Funcs | scripts/deploy_remote.py |
-| [`scripts/doc_reader.py`](scripts/doc_reader.py) | 562 | 10 Funcs | scripts/doc_reader.py |
+| [`scripts/doc_reader.py`](scripts/doc_reader.py) | 567 | 10 Funcs | scripts/doc_reader.py |
 | [`scripts/export_docx.py`](scripts/export_docx.py) | 820 | 1 Classes | scripts/export_docx.py |
 | [`scripts/generate_code_map.py`](scripts/generate_code_map.py) | 308 | 1 Classes | scripts/generate_code_map.py |
 | [`scripts/pull_db_from_vps.py`](scripts/pull_db_from_vps.py) | 117 | 1 Funcs | scripts/pull_db_from_vps.py |
