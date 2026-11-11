@@ -126,7 +126,12 @@ def ocr_scanned_pdf(file_path: str, max_pages: int = 40) -> Dict[str, Any]:
     """
     import io
     import asyncio
-    from PIL import Image
+
+    try:
+        from PIL import Image
+    except ImportError:
+        logger.warning("Chưa cài đặt thư viện Pillow (PIL). Hãy chạy: pip install Pillow")
+        return {"text": "", "page_count": 0, "pages": [], "format": "pdf_scan_missing_pil"}
 
     reader = None
     try:
