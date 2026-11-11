@@ -800,7 +800,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       if (viewChat) { viewChat.style.display = 'none'; viewChat.classList.remove('active'); }
-      if (viewAdmin) { viewAdmin.style.display = 'block'; viewAdmin.classList.add('active'); }
+      if (viewAdmin) { viewAdmin.style.display = 'flex'; viewAdmin.classList.add('active'); }
       if (btnSwitchAdmin) btnSwitchAdmin.classList.add('active');
       if (btnSwitchChat) btnSwitchChat.classList.remove('active');
 
