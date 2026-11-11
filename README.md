@@ -167,6 +167,7 @@ e:\Viet Design\Chuyên viên ảo\
 ├── ⚙️ scripts/                              # CÔNG CỤ TỰ ĐỘNG HOÁ & RUNNER
 │   ├── generate_code_map.py                 # Bộ phân tích AST & tự động đồng bộ CODEBASE_MAP
 │   ├── pull_db_from_vps.py                  # Đồng bộ an toàn CSDL thực tế từ VPS về máy cục bộ
+│   ├── push_rag_to_vps.py                   # Đồng bộ an toàn CHỈ 4 bảng RAG từ local lên VPS (giữ nguyên dữ liệu VPS)
 │   ├── export_docx.py                       # Engine cốt lõi sinh file Word (.docx) chuẩn HD 05
 │   ├── doc_reader.py                        # Trích xuất văn bản (.docx, .doc, .pdf)
 │   ├── deploy_remote.py                     # Tool điều phối triển khai và cập nhật VPS từ xa
@@ -239,6 +240,10 @@ curl.exe -X POST http://45.119.82.227/api/admin/system/deploy-webhook
 * **Đồng bộ CSDL thực tế từ VPS về máy tính cá nhân:** Khi đồng chí cần lấy dữ liệu thực tế mới nhất từ VPS về máy tính cá nhân để xem xét hoặc sao lưu:
 ```powershell
 python scripts/pull_db_from_vps.py
+```
+* **Đồng bộ CHỈ 4 bảng RAG từ máy cá nhân lên VPS:** Khi đồng chí vừa bóc tách/nạp mới kho văn bản RAG ở máy cá nhân và muốn đẩy lên VPS mà vẫn giữ nguyên 100% dữ liệu nghiệp vụ đang chạy trên server (danh bạ, nhiệm vụ, nhật ký chat, phiên đăng nhập):
+```powershell
+python scripts/push_rag_to_vps.py
 ```
 
 #### 🛠️ Triển khai mới toàn diện (Reset / Cài đặt sạch môi trường VPS):

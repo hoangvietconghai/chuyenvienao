@@ -223,7 +223,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
    - **VPS là nguồn dữ liệu duy nhất:** Dữ liệu hoạt động thực tế 24/7 của toàn thể cán bộ (nhật ký chat, nhiệm vụ 5 Rõ, KPI, OTP, RAG) lưu trữ tại máy chủ VPS (`/opt/chuyenvienao/data/chuyen_vien_ao.db`).
    - **Tuyệt đối KHÔNG đưa `data/*.db` vào Git:** Tệp CSDL bắt buộc nằm trong `.gitignore`. Máy tính cá nhân chỉ là môi trường phát triển code.
    - **Cơ chế tự động sao lưu trong `update_vps.sh`:** Kịch bản CI/CD trên VPS luôn tự động sao lưu dự phòng CSDL vào thư mục `backups/` và khôi phục lá chắn bảo vệ CSDL, đảm bảo lệnh `git reset --hard` không bao giờ ghi đè hay xoá mất dữ liệu thực tế của VPS.
-   - **Đồng bộ một chiều (VPS -> Local):** Khi cần lấy dữ liệu thực tế từ VPS về máy cá nhân, sử dụng script [scripts/pull_db_from_vps.py](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/scripts/pull_db_from_vps.py), tuyệt đối không đẩy đè CSDL máy cá nhân lên VPS.
+   - **Đồng bộ hai chiều có kiểm soát:** Khi cần lấy dữ liệu thực tế từ VPS về máy cá nhân, sử dụng script [scripts/pull_db_from_vps.py](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/scripts/pull_db_from_vps.py) (tuyệt đối không đẩy đè toàn bộ CSDL local lên VPS). Khi cần đẩy riêng 4 bảng RAG mới bóc tách ở máy cá nhân lên VPS mà vẫn bảo toàn nguyên vẹn toàn bộ bảng nghiệp vụ VPS, sử dụng [scripts/push_rag_to_vps.py](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/scripts/push_rag_to_vps.py).
 10. **Quy chuẩn Bóc tách Kho Văn bản RAG & Lưu trữ Markdown (`.md`) ([`.agents/skills/boc-tach-van-ban-rag/SKILL.md`](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/.agents/skills/boc-tach-van-ban-rag/SKILL.md)):**
    - **Ngưỡng chia Chunk cố định:** Văn bản $\le 20$ trang giữ **1 file = 1 chunk**; văn bản $> 20$ trang chia đúng **2 chunk** tại ranh giới tự nhiên (tuyệt đối không cắt ngang bảng biểu hoặc phụ lục).
    - **Đơn giản hoá Header/Footer:** Bỏ Quốc hiệu, Tiêu ngữ, tên đơn vị lặp lại, `Nơi nhận:` và khối `Chữ ký` (giữ nguyên Phụ lục/Quy chế/Báo cáo cá nhân nằm sau chữ ký); thay đầu văn bản bằng 1 dòng định danh: `[Thể loại] số [Số hiệu] ngày [dd/mm/yyyy] của [Cơ quan/Thẩm quyền] về "[Trích yếu]". Người ký: [Họ tên].`
@@ -236,8 +236,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 16:37:45*
-> *Quy mô: **51** tệp Python | **12,811** dòng mã | **52** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 22:47:53*
+> *Quy mô: **52** tệp Python | **13,262** dòng mã | **52** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -346,6 +346,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`scripts/export_docx.py`](scripts/export_docx.py) | 820 | 1 Classes | scripts/export_docx.py |
 | [`scripts/generate_code_map.py`](scripts/generate_code_map.py) | 308 | 1 Classes | scripts/generate_code_map.py |
 | [`scripts/pull_db_from_vps.py`](scripts/pull_db_from_vps.py) | 117 | 1 Funcs | scripts/pull_db_from_vps.py |
+| [`scripts/push_rag_to_vps.py`](scripts/push_rag_to_vps.py) | 451 | 9 Funcs | scripts/push_rag_to_vps.py |
 | [`scripts/run_zalo_bot.py`](scripts/run_zalo_bot.py) | 93 | 1 Funcs | scripts/run_zalo_bot.py |
 | [`scripts/seed_database.py`](scripts/seed_database.py) | 291 | 4 Funcs | scripts/seed_database.py |
 | [`scripts/test_doc_reader.py`](scripts/test_doc_reader.py) | 116 | 1 Classes | scripts/test_doc_reader.py |
