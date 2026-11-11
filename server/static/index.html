@@ -331,13 +331,74 @@
 
             <!-- ==================== SUBTAB 5: KHO VĂN BẢN RAG ==================== -->
             <div class="admin-subcontent" id="subtab-rag">
-              <div class="admin-card-table">
+              <!-- 4 THẺ THỐNG KÊ KHO RAG -->
+              <div class="admin-stats-row" style="margin-bottom: 20px;">
+                <div class="stat-card-chs">
+                  <div class="stat-icon-wrap" style="background: rgba(220, 38, 38, 0.1); color: var(--primary-red);">📚</div>
+                  <div>
+                    <div class="stat-value" id="statRagDocs">0</div>
+                    <div class="stat-label">Văn bản trong kho RAG</div>
+                  </div>
+                </div>
+                <div class="stat-card-chs">
+                  <div class="stat-icon-wrap" style="background: rgba(2, 132, 199, 0.1); color: #0284c7;">📑</div>
+                  <div>
+                    <div class="stat-value" id="statRagChunks">0</div>
+                    <div class="stat-label">Đoạn trích (Chunks)</div>
+                  </div>
+                </div>
+                <div class="stat-card-chs">
+                  <div class="stat-icon-wrap" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🏛️</div>
+                  <div>
+                    <div class="stat-value" id="statRagCore">0</div>
+                    <div class="stat-label">Văn bản Nền tảng</div>
+                  </div>
+                </div>
+                <div class="stat-card-chs">
+                  <div class="stat-icon-wrap" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">🎯</div>
+                  <div>
+                    <div class="stat-value" id="statRagThematic">0</div>
+                    <div class="stat-label">Văn bản Chuyên đề</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- KHU VỰC KÉO THẢ TỆP VĂN BẢN (DRAG & DROP ZONE) -->
+              <div class="rag-dropzone" id="ragDropZone" title="Bấm hoặc kéo thả tệp văn bản từ máy tính vào đây">
+                <div class="rag-dropzone-content">
+                  <div class="rag-dropzone-icon">📥</div>
+                  <div class="rag-dropzone-text">
+                    <span class="rag-dropzone-title">Kéo & Thả văn bản vào đây để nạp vào Kho Tri Thức RAG</span>
+                    <span class="rag-dropzone-subtitle">Hỗ trợ tệp <b>Word (.docx, .doc)</b>, <b>PDF (.pdf)</b>, <b>Text (.txt, .md)</b> — Tự động bóc tách & phân loại có kiểm duyệt</span>
+                  </div>
+                  <button type="button" class="btn-chs-primary btn-dropzone-browse" id="btnBrowseDropzone" style="cursor: pointer;">
+                    📂 Chọn tệp từ máy tính
+                  </button>
+                </div>
+                <div class="rag-dropzone-loading" id="ragDropLoading" style="display: none;">
+                  <div class="spinner-small"></div>
+                  <span>⏳ Đang tải lên và bóc tách siêu dữ liệu văn bản...</span>
+                </div>
+              </div>
+
+              <!-- BẢNG DANH MỤC VĂN BẢN RAG -->
+              <div class="admin-card-table" style="margin-top: 20px;">
                 <div class="table-header-bar">
-                  <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Kho Văn Bản Tri Thức & Pháp Quy Cấp Uỷ</h3>
-                  <div style="display: flex; gap: 8px;">
-                    <input type="text" id="ragSearchInput" class="form-input-chs" style="width: 260px; padding: 7px 12px;" placeholder="Tìm nhanh trong kho RAG...">
+                  <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Kho Văn Bản Tri Thức & Pháp Quy Cấp Uỷ</h3>
+                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">Cán bộ chủ động nạp tệp, đối soát siêu dữ liệu và phê duyệt trước khi lưu vào CSDL RAG.</p>
+                  </div>
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" id="ragSearchInput" class="form-input-chs" style="width: 240px; padding: 7px 12px;" placeholder="Tìm nhanh trong kho RAG...">
                     <button class="btn-chs-outline" id="btnRagSearch">🔍 Tìm</button>
                     <button class="btn-chs-outline" id="btnRefreshRagDocs">🔄 Làm mới</button>
+                    <button class="btn-chs-primary" id="btnUploadForRag" style="display: inline-flex; align-items: center; gap: 6px;">
+                      <span>📤 Nạp văn bản mới</span>
+                    </button>
+                    <button class="btn-chs-outline" id="btnClearRag" style="color: #ef4444; border-color: #ef4444;" title="Xoá sạch toàn bộ dữ liệu RAG để nạp lại">
+                      🗑️ Xoá sạch RAG
+                    </button>
+                    <input type="file" id="ragFileInput" accept=".pdf,.docx,.doc,.txt,.md" style="display: none;">
                   </div>
                 </div>
                 <div id="ragResultsWrap" style="padding: 12px; display: none;"></div>
@@ -601,7 +662,199 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL KIỂM DUYỆT VĂN BẢN (HUMAN-IN-THE-LOOP RAG REVIEW) ==================== -->
+  <div class="modal-backdrop" id="modalRagReview" style="display: none;">
+    <div class="modal-chs-card wide" style="max-width: 820px;">
+      <div class="modal-chs-header" style="background: linear-gradient(135deg, var(--primary-red), #991b1b); color: white; padding: 16px 20px; border-radius: 12px 12px 0 0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">🔍</span>
+          <div>
+            <h3 class="modal-chs-title" style="color: white; margin: 0; font-size: 17px; font-weight: 700;">Kiểm Duyệt & Đối Soát Siêu Dữ Liệu Trước Khi Nạp RAG</h3>
+            <p style="margin: 0; font-size: 12px; opacity: 0.9;" id="reviewFileNotice">Kiểm tra và hiệu chỉnh lại các trường thông tin bóc tách.</p>
+          </div>
+        </div>
+        <button id="btnCloseRagModal" style="font-size: 20px; color: white; cursor: pointer; background: none; border: none;">✕</button>
+      </div>
+
+      <div class="modal-chs-body" style="padding: 20px; max-height: calc(85vh - 120px); overflow-y: auto;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group-chs">
+            <label class="form-label-chs">Số hiệu văn bản (*)</label>
+            <input type="text" id="reviewSoHieu" class="form-input-chs" placeholder="VD: 140-BC/ĐU, 708-CV/ĐU">
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Ngày ban hành (YYYY-MM-DD) (*)</label>
+            <input type="date" id="reviewNgay" class="form-input-chs">
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Cơ quan ban hành (*)</label>
+            <input type="text" id="reviewCoQuan" class="form-input-chs" placeholder="VD: Đảng uỷ xã Công Hải">
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Mã cơ quan</label>
+            <select id="reviewCoQuanCode" class="form-input-chs">
+              <option value="DU">ĐU (Đảng uỷ xã)</option>
+              <option value="UBND">UBND (UBND xã)</option>
+              <option value="BXDD">BXDD (Ban Xây dựng Đảng)</option>
+              <option value="UBKT">UBKT (Uỷ ban Kiểm tra)</option>
+              <option value="VPDU">VPDU (Văn phòng Đảng uỷ)</option>
+              <option value="TU">TU (Tỉnh uỷ Khánh Hoà)</option>
+            </select>
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Thể loại văn bản</label>
+            <select id="reviewTheLoai" class="form-input-chs">
+              <option value="NQ">Nghị quyết (-NQ)</option>
+              <option value="KH">Kế hoạch (-KH)</option>
+              <option value="BC">Báo cáo (-BC)</option>
+              <option value="TB">Thông báo (-TB)</option>
+              <option value="CV">Công văn (-CV)</option>
+              <option value="QĐ">Quyết định (-QĐ)</option>
+              <option value="CTr">Chương trình (-CTr)</option>
+              <option value="QC">Quy chế (-QC)</option>
+              <option value="KL">Kết luận (-KL)</option>
+              <option value="TTr">Tờ trình (-TTr)</option>
+            </select>
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Nhóm vòng đời văn bản</label>
+            <select id="reviewVongDoi" class="form-input-chs">
+              <option value="THEMATIC_CASE">Chuyên đề (Báo cáo, Kế hoạch, Công văn...)</option>
+              <option value="CORE_DIRECTIVE">Nền tảng (Nghị quyết Đại hội, Quy chế làm việc...)</option>
+              <option value="EPHEMERAL_EVENT">Sự vụ ngắn hạn (Giấy mời, Báo cáo nhanh...)</option>
+            </select>
+          </div>
+          <div class="form-group-chs" style="grid-column: span 2;">
+            <label class="form-label-chs">Chuyên đề công tác (*)</label>
+            <select id="reviewChuyenDe" class="form-input-chs">
+              <!-- Được nạp động từ API -->
+            </select>
+          </div>
+          <div class="form-group-chs" id="wrapNewChuyenDe" style="display: none; grid-column: span 2; background: rgba(220, 38, 38, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed var(--border-red);">
+            <label class="form-label-chs" style="color: var(--primary-red); font-weight: 700;">✨ Tự thêm chuyên đề mới (hệ thống sẽ lưu cho các lần sau):</label>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+              <input type="text" id="inputNewChuyenDe" class="form-input-chs" placeholder="Nhập tên chuyên đề (VD: Đại hội Đảng bộ các cấp, Phòng chống bão lũ...)" style="flex: 1;">
+              <button type="button" class="btn-chs-primary" id="btnSaveNewChuyenDe" style="padding: 6px 14px; font-size: 13px;">+ Thêm ngay</button>
+            </div>
+          </div>
+          <div class="form-group-chs" style="grid-column: span 2;">
+            <label class="form-label-chs">Trích yếu nội dung (*)</label>
+            <textarea id="reviewTrichYeu" class="form-input-chs" rows="2" placeholder="Tóm tắt trích yếu nội dung văn bản..."></textarea>
+          </div>
+          <div class="form-group-chs" style="grid-column: span 2;">
+            <label class="form-label-chs">Văn bản bị thay thế / bãi bỏ (nếu có)</label>
+            <input type="text" id="reviewThayThe" class="form-input-chs" placeholder="VD: 43/QĐ-UBND (hệ thống sẽ tự động hạ hiệu lực văn bản cũ)">
+          </div>
+        </div>
+
+        <div class="review-chunks-section" style="margin-top: 14px;">
+          <div class="chunks-section-title">Xem trước các đoạn trích (Chunks) dự kiến bóc tách:</div>
+          <div id="reviewChunksPreview" class="review-chunks-list"></div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn-chs-outline" id="btnCancelRagReview">Huỷ bỏ</button>
+          <button type="button" class="btn-chs-primary" id="btnCommitRag">✓ Phê duyệt & Nạp vào Kho RAG</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL XEM CHI TIẾT & CHỈNH SỬA VĂN BẢN (UPDATE MODAL) ==================== -->
+  <div class="modal-backdrop" id="modalRagDetail" style="display: none;">
+    <div class="modal-chs-card wide" style="max-width: 820px;">
+      <div class="modal-chs-header" style="background: linear-gradient(135deg, #1e293b, #334155); color: white; padding: 16px 20px; border-radius: 12px 12px 0 0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">📄</span>
+          <div>
+            <h3 class="modal-chs-title" id="editModalTitle" style="color: white; margin: 0; font-size: 17px; font-weight: 700;">Chi Tiết & Hiệu Chỉnh Văn Bản Kho RAG</h3>
+            <p style="margin: 0; font-size: 12px; opacity: 0.9;" id="editModalNotice">Xem các đoạn trích chunks và cập nhật thông tin văn bản.</p>
+          </div>
+        </div>
+        <button id="btnCloseEditModal" style="font-size: 20px; color: white; cursor: pointer; background: none; border: none;">✕</button>
+      </div>
+
+      <div class="modal-chs-body" style="padding: 20px; max-height: calc(85vh - 120px); overflow-y: auto;">
+        <input type="hidden" id="editDocId">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group-chs">
+            <label class="form-label-chs">Số hiệu văn bản (*)</label>
+            <input type="text" id="editSoHieu" class="form-input-chs">
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Ngày ban hành (YYYY-MM-DD) (*)</label>
+            <input type="date" id="editNgay" class="form-input-chs">
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Cơ quan ban hành (*)</label>
+            <input type="text" id="editCoQuan" class="form-input-chs">
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Thể loại văn bản</label>
+            <select id="editTheLoai" class="form-input-chs">
+              <option value="NQ">Nghị quyết (-NQ)</option>
+              <option value="KH">Kế hoạch (-KH)</option>
+              <option value="BC">Báo cáo (-BC)</option>
+              <option value="TB">Thông báo (-TB)</option>
+              <option value="CV">Công văn (-CV)</option>
+              <option value="QĐ">Quyết định (-QĐ)</option>
+              <option value="CTr">Chương trình (-CTr)</option>
+              <option value="QC">Quy chế (-QC)</option>
+              <option value="KL">Kết luận (-KL)</option>
+              <option value="TTr">Tờ trình (-TTr)</option>
+            </select>
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Tầng vòng đời</label>
+            <select id="editVongDoi" class="form-input-chs">
+              <option value="THEMATIC_CASE">Chuyên đề (Báo cáo, Kế hoạch, Công văn...)</option>
+              <option value="CORE_DIRECTIVE">Nền tảng (Nghị quyết Đại hội, Quy chế...)</option>
+              <option value="EPHEMERAL_EVENT">Sự vụ ngắn hạn (Giấy mời, Báo cáo nhanh...)</option>
+            </select>
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Chuyên đề công tác (*)</label>
+            <select id="editChuyenDe" class="form-input-chs">
+              <!-- Nạp động -->
+            </select>
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Trạng thái hiệu lực</label>
+            <select id="editHieuLuc" class="form-input-chs">
+              <option value="CON_HIEU_LUC">Còn hiệu lực thi hành</option>
+              <option value="HET_HIEU_LUC">Hết hiệu lực thi hành</option>
+              <option value="BI_THAY_THE">Đã bị thay thế / bãi bỏ</option>
+            </select>
+          </div>
+          <div class="form-group-chs">
+            <label class="form-label-chs">Bị thay thế bởi văn bản (nếu có)</label>
+            <input type="text" id="editThayTheBoi" class="form-input-chs" placeholder="VD: 55-QĐ/ĐU">
+          </div>
+          <div class="form-group-chs" style="grid-column: span 2;">
+            <label class="form-label-chs">Trích yếu nội dung (*)</label>
+            <textarea id="editTrichYeu" class="form-input-chs" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="review-chunks-section" style="margin-top: 14px;">
+          <div class="chunks-section-title" id="editChunksTitle">Danh sách các đoạn trích (Chunks) lưu trong CSDL:</div>
+          <div id="editChunksList" class="review-chunks-list" style="max-height: 200px;"></div>
+        </div>
+
+        <div class="review-chunks-section" id="editCitationsSection" style="margin-top: 14px;">
+          <div class="chunks-section-title">Đồ thị liên kết căn cứ pháp lý & chỉ đạo:</div>
+          <div id="editCitationsList" style="font-size: 12.5px; color: #475569; display: flex; flex-direction: column; gap: 6px;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn-chs-outline" id="btnCancelEditModal">Đóng</button>
+          <button type="button" class="btn-chs-primary" id="btnSaveDocEdit">💾 Lưu chỉnh sửa văn bản</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- NẠP JAVASCRIPT HẠT NHÂN -->
-  <script src="/static/app.js?v=2.2.4"></script>
+  <script src="/static/app.js?v=2.2.5"></script>
 </body>
 </html>

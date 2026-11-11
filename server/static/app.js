@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('dragenter', (e) => {
     e.preventDefault();
     dragCounter++;
-    const isRagActive = document.getElementById('tab-rag')?.classList.contains('active');
+    const isRagActive = document.getElementById('subtab-rag')?.classList.contains('active') || document.getElementById('tab-rag')?.classList.contains('active');
     if (isRagActive) {
       const dropzone = document.getElementById('ragDropZone');
       if (dropzone) dropzone.classList.add('drag-active');
@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const files = Array.from(e.dataTransfer?.files || []);
     if (files.length === 0) return;
 
-    const isRagActive = document.getElementById('tab-rag')?.classList.contains('active');
+    const isRagActive = document.getElementById('subtab-rag')?.classList.contains('active') || document.getElementById('tab-rag')?.classList.contains('active');
     if (isRagActive) {
       // Đang ở Tab Kho RAG -> Chuyển sang nạp và kiểm duyệt RAG
       if (window.processRagFileForPreview) {
