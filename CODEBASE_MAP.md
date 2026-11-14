@@ -236,8 +236,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 11/11/2026 22:47:53*
-> *Quy mô: **52** tệp Python | **13,262** dòng mã | **52** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 14/11/2026 21:22:31*
+> *Quy mô: **54** tệp Python | **13,807** dòng mã | **52** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -303,8 +303,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/__init__.py`](server/__init__.py) | 2 | 0 Funcs | Package server cho Hệ thống Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải. |
 | [`server/ai_connector.py`](server/ai_connector.py) | 643 | 1 Classes | server/ai_connector.py |
 | [`server/app.py`](server/app.py) | 127 | 3 Endpoints | server/app.py |
-| [`server/chat_engine.py`](server/chat_engine.py) | 898 | 21 Funcs | server/chat_engine.py |
-| [`server/config.py`](server/config.py) | 202 | 0 Funcs | server/config.py |
+| [`server/chat_engine.py`](server/chat_engine.py) | 922 | 21 Funcs | server/chat_engine.py |
+| [`server/config.py`](server/config.py) | 204 | 0 Funcs | server/config.py |
 | [`server/logger.py`](server/logger.py) | 88 | 2 Funcs | server/logger.py |
 | [`server/plan_registry.py`](server/plan_registry.py) | 310 | 8 Funcs | server/plan_registry.py |
 | [`server/prompts/__init__.py`](server/prompts/__init__.py) | 2 | 0 Funcs | Package chứa các bộ Prompt chuyên sâu tối ưu riêng cho DeepSeek API. |
@@ -323,11 +323,12 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/routers/knowledge.py`](server/routers/knowledge.py) | 203 | 12 Endpoints, 3 Classes | server/routers/knowledge.py |
 | [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 367 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
-| [`server/services/db_service.py`](server/services/db_service.py) | 1,528 | 43 Funcs | server/services/db_service.py |
-| [`server/services/embedding_service.py`](server/services/embedding_service.py) | 86 | 3 Funcs | server/services/embedding_service.py |
+| [`server/services/db_service.py`](server/services/db_service.py) | 1,578 | 44 Funcs | server/services/db_service.py |
+| [`server/services/embedding_service.py`](server/services/embedding_service.py) | 137 | 5 Funcs | server/services/embedding_service.py |
 | [`server/services/gdrive_service.py`](server/services/gdrive_service.py) | 201 | 4 Funcs | server/services/gdrive_service.py |
 | [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 148 | 4 Funcs | server/services/knowledge_loader.py |
-| [`server/services/rag_service.py`](server/services/rag_service.py) | 1,090 | 14 Funcs | server/services/rag_service.py |
+| [`server/services/query_analyzer.py`](server/services/query_analyzer.py) | 272 | 5 Funcs | server/services/query_analyzer.py |
+| [`server/services/rag_service.py`](server/services/rag_service.py) | 1,158 | 15 Funcs | server/services/rag_service.py |
 | [`server/services/scheduler_service.py`](server/services/scheduler_service.py) | 278 | 9 Funcs | server/services/scheduler_service.py |
 | [`server/services/zalo_api.py`](server/services/zalo_api.py) | 143 | 6 Funcs | server/services/zalo_api.py |
 | [`server/services/zalo_bot_service.py`](server/services/zalo_bot_service.py) | 213 | 7 Funcs | server/services/zalo_bot_service.py |
@@ -346,7 +347,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`scripts/export_docx.py`](scripts/export_docx.py) | 820 | 1 Classes | scripts/export_docx.py |
 | [`scripts/generate_code_map.py`](scripts/generate_code_map.py) | 308 | 1 Classes | scripts/generate_code_map.py |
 | [`scripts/pull_db_from_vps.py`](scripts/pull_db_from_vps.py) | 117 | 1 Funcs | scripts/pull_db_from_vps.py |
-| [`scripts/push_rag_to_vps.py`](scripts/push_rag_to_vps.py) | 451 | 9 Funcs | scripts/push_rag_to_vps.py |
+| [`scripts/push_rag_to_vps.py`](scripts/push_rag_to_vps.py) | 452 | 9 Funcs | scripts/push_rag_to_vps.py |
+| [`scripts/reindex_gemini_embeddings.py`](scripts/reindex_gemini_embeddings.py) | 77 | 1 Funcs | scripts/reindex_gemini_embeddings.py |
 | [`scripts/run_zalo_bot.py`](scripts/run_zalo_bot.py) | 93 | 1 Funcs | scripts/run_zalo_bot.py |
 | [`scripts/seed_database.py`](scripts/seed_database.py) | 291 | 4 Funcs | scripts/seed_database.py |
 | [`scripts/test_doc_reader.py`](scripts/test_doc_reader.py) | 116 | 1 Classes | scripts/test_doc_reader.py |

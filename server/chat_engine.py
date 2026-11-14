@@ -704,28 +704,52 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
     local_facts = get_local_knowledge_summary()
     msgs = [{"role": "system", "content": f"{CHAT_SYSTEM_PROMPT}\n\n{core_rules}\n\n{local_facts}"}]
 
-    # 1. Kiểm tra nếu câu hỏi là dạng thống kê / đếm số lượng văn bản trong kho
-    stats_info = None
-    try:
-        from server.services.rag_service import check_and_get_aggregate_stats
-        stats_info = check_and_get_aggregate_stats(message)
-        if stats_info and stats_info.get("stats_text"):
-            msgs.append({"role": "system", "content": stats_info["stats_text"]})
-    except Exception as ex:
-        logger.warning(f"Lỗi khi kiểm tra thống kê văn bản: {ex}")
+    # 1. Phân tích ý định & thực thể câu truy vấn (Query Analyzer & Anaphora Resolver)
+    from server.services.query_analyzer import analyze_query
+    from server.services.rag_service import retrieve_direct_hit, retrieve_hybrid_context, check_and_get_aggregate_stats
 
-    # 2. Truy xuất Hybrid RAG từ Kho văn bản cấp uỷ (Giỏ Ngữ Cảnh 2 - 4 - 2)
+    analysis = analyze_query(message, s.get("history", []))
     citations = []
-    try:
-        from server.services.rag_service import retrieve_hybrid_context
-        rag_res = retrieve_hybrid_context(message, max_slots=6)
-        if rag_res.get("context_text"):
-            msgs.append({"role": "system", "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"})
-            # Nếu là câu hỏi thống kê số lượng -> không lấy citations gây nhầm lẫn là chỉ có 3-5 văn bản
-            if not stats_info:
+    stats_info = None
+
+    if analysis["type"] == "DIRECT_HIT":
+        logger.info(f"RAG: Kích hoạt nhánh DIRECT_HIT cho thực thể: {analysis.get('primary_canonical')}")
+        rag_res = retrieve_direct_hit(analysis["entities"])
+        if rag_res.get("not_found"):
+            nf_list = ", ".join(rag_res["not_found"])
+            msgs.append({
+                "role": "system",
+                "content": f"[THÔNG BÁO TRA CỨU]: Cán bộ hỏi thông tin về văn bản '{nf_list}', nhưng Kho CSDL hiện CHƯA LƯU TRỮ văn bản này. Đồng chí hãy trả lời trung thực, rõ ràng rằng hệ thống chưa có dữ liệu văn bản này trong kho và sẵn sàng tiếp nhận để nạp bổ sung nếu cán bộ có văn bản gốc."
+            })
+        elif rag_res.get("context_text"):
+            msgs.append({
+                "role": "system",
+                "content": f"Dữ liệu tra cứu thực chứng đích danh từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"
+            })
+            citations = rag_res.get("citations", [])
+
+    elif analysis["type"] == "AGGREGATE":
+        logger.info("RAG: Kích hoạt nhánh AGGREGATE thống kê số lượng văn bản")
+        try:
+            stats_info = check_and_get_aggregate_stats(message)
+            if stats_info and stats_info.get("stats_text"):
+                msgs.append({"role": "system", "content": stats_info["stats_text"]})
+        except Exception as ex:
+            logger.warning(f"Lỗi khi kiểm tra thống kê văn bản: {ex}")
+
+    else:
+        # Nhánh THEMATIC: True Hybrid RAG (FTS5 BM25 weighted + Gemini Embedding + RRF)
+        logger.info(f"RAG: Kích hoạt nhánh THEMATIC Hybrid RAG với query: '{analysis['enriched_query']}'")
+        try:
+            rag_res = retrieve_hybrid_context(analysis["enriched_query"], max_slots=4)
+            if rag_res.get("context_text"):
+                msgs.append({
+                    "role": "system",
+                    "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"
+                })
                 citations = rag_res.get("citations", [])
-    except Exception as ex:
-        logger.warning(f"Lỗi khi tra cứu Hybrid RAG: {ex}")
+        except Exception as ex:
+            logger.warning(f"Lỗi khi tra cứu Hybrid RAG: {ex}")
 
     new_atts = [a for a in s["attachments"] if not a["used"]]
     if new_atts:
@@ -747,7 +771,7 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
 
         if unique_citations:
             cite_lines = ["\n\n📚 **Căn cứ tra cứu thực chứng từ Kho văn bản:**"]
-            for c in unique_citations[:3]:
+            for c in unique_citations:
                 cite_lines.append(f"• **{c['so_hieu']}** ({c['tier']}): *{c['trich_yeu']}*")
             reply_content += "\n".join(cite_lines)
 

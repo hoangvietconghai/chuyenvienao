@@ -797,20 +797,82 @@ def commit_reviewed_document(reviewed: Dict[str, Any]) -> Tuple[bool, str, Dict[
 
 
 # ==============================================================================
-# 3. TRUY XUẤT GIỎ NGỮ CẢNH 2 - 4 - 2 (HYBRID RETRIEVAL)
+# 3. TRUY XUẤT ĐÍCH DANH & GIỎ NGỮ CẢNH HYBRID RAG
 # ==============================================================================
+
+def retrieve_direct_hit(entities: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Tra cứu đích danh văn bản theo thực thể số hiệu đã phân tích từ query_analyzer.
+    Không qua FTS5, không qua BM25, truy vấn trực tiếp CSDL SQLite.
+    Đảm bảo 100% độ chính xác cho các câu hỏi đích danh (NQ 11, Kế hoạch 69...).
+    """
+    if not entities:
+        return {
+            "context_text": "",
+            "citations": [],
+            "total_slots": 0,
+            "not_found": []
+        }
+
+    all_patterns = []
+    canonical_names = []
+    for ent in entities:
+        all_patterns.extend(ent.get("search_patterns", []))
+        canonical_names.append(ent.get("canonical", ""))
+
+    matched_chunks = db_service.lookup_by_so_hieu_patterns(all_patterns, limit=4)
+
+    if not matched_chunks:
+        logger.info(f"Tra cứu đích danh không tìm thấy văn bản trong kho: {canonical_names}")
+        return {
+            "context_text": "",
+            "citations": [],
+            "total_slots": 0,
+            "not_found": canonical_names
+        }
+
+    context_lines = [
+        "=== KHO TRI THỨC VĂN BẢN — TRA CỨU ĐÍCH DANH (DIRECT HIT) ===",
+        "[LƯU Ý: Đây là văn bản đích danh được truy xuất trực tiếp từ CSDL lưu trữ chính thức của Đảng uỷ xã Công Hải.]"
+    ]
+    citations = []
+
+    for idx, doc in enumerate(matched_chunks, 1):
+        so = doc.get("so_hieu_vb", "")
+        trich_yeu = doc.get("trich_yeu", "")
+        vong_doi = doc.get("nhom_vong_doi", "CORE_DIRECTIVE")
+        tier_label = "NỀN TẢNG" if vong_doi == "CORE_DIRECTIVE" else "CHUYÊN ĐỀ"
+        body = doc.get("chunk_text", "")
+        header = doc.get("context_header", "")
+
+        context_lines.append(f"\n[VĂN BẢN ĐÍCH DANH {idx} - {so} - TẦNG {tier_label}]:\n{body}")
+        citations.append({
+            "slot_index": idx,
+            "so_hieu": so,
+            "trich_yeu": trich_yeu,
+            "tier": tier_label,
+            "header": header
+        })
+
+    return {
+        "context_text": "\n".join(context_lines),
+        "citations": citations,
+        "total_slots": len(matched_chunks),
+        "not_found": []
+    }
+
 
 def retrieve_hybrid_context(
     query: str,
     workflow_type: Optional[str] = None,
-    max_slots: int = 8
+    max_slots: int = 6
 ) -> Dict[str, Any]:
     """
-    Chiến lược truy xuất "Giỏ Ngữ Cảnh 2 - 4 - 2":
-    - Bước 1: FTS5 BM25 lọc nhanh Top 30-50 ứng viên.
-    - Slot 1–2 (02 đoạn Nền tảng CORE_DIRECTIVE): Lấy từ Nghị quyết, Quy chế làm việc.
-    - Slot 3–6 (04 đoạn Chuyên đề mới nhất THEMATIC_CASE): Lấy từ Kế hoạch, Báo cáo gần nhất.
-    - Slot 7–8 (02 đoạn Kéo theo từ Đồ thị Căn cứ 1-Hop Citation): Lấy từ văn bản gốc được viện dẫn.
+    Chiến lược truy xuất True Hybrid RAG:
+    - Bước 1: FTS5 BM25 weighted lọc Top 40 ứng viên.
+    - Bước 2: Reranking bằng RRF (Reciprocal Rank Fusion) kết hợp Gemini Vector Embedding.
+    - Bước 3: Phân bổ Slot Thích ứng (Score-First) kết hợp Sàn Đa dạng (Diversity Floor).
+    - Bước 4: 1-Hop Citation Expansion kéo theo văn bản căn cứ liên kết.
     """
     empty_resp = {
         "context_text": "",
@@ -825,9 +887,9 @@ def retrieve_hybrid_context(
     if not candidates:
         return empty_resp
 
-    # BƯỚC 2: RERANKING BẰNG RRF (RECIPROCAL RANK FUSION) VỚI VECTOR EMBEDDING
+    # BƯỚC 2: RERANKING BẰNG RRF (RECIPROCAL RANK FUSION) VỚI GEMINI VECTOR EMBEDDING
     from server.services import embedding_service
-    query_emb_blob = embedding_service.get_embedding(query, timeout=2.0)
+    query_emb_blob = embedding_service.get_embedding(query, timeout=6.0)
     query_vec = embedding_service.unpack_embedding(query_emb_blob) if query_emb_blob else []
 
     bm25_ranks = {c["chunk_id"]: idx + 1 for idx, c in enumerate(candidates)}
@@ -850,70 +912,76 @@ def retrieve_hybrid_context(
         r_vec = vector_ranks.get(cid, 60) if vector_ranks else r_bm25
         c["rrf_score"] = (1.0 / (60.0 + r_bm25)) + (1.0 / (60.0 + r_vec))
 
-    # Tái sắp xếp ứng viên theo RRF score
+    # Tái sắp xếp ứng viên theo RRF score giảm dần
     candidates.sort(key=lambda x: x.get("rrf_score", 0.0), reverse=True)
 
-    # Phân bổ động số lượng slot theo max_slots
-    core_limit = 2 if max_slots >= 6 else 1
-    thematic_limit = 4 if max_slots >= 8 else (3 if max_slots >= 6 else 2)
-    citation_limit = max_slots - (core_limit + thematic_limit)
-    if citation_limit <= 0:
-        citation_limit = 1
-
-    slot_core: List[Dict[str, Any]] = []
-    slot_thematic: List[Dict[str, Any]] = []
+    # BƯỚC 3: PHÂN BỔ SLOT THÍCH ỨNG THEO ĐIỂM (SCORE-FIRST) + SÀN ĐA DẠNG (DIVERSITY FLOOR)
+    selected_slots: List[Dict[str, Any]] = []
     selected_doc_ids = set()
 
     for cand in candidates:
-        vong_doi = cand.get("nhom_vong_doi", "THEMATIC_CASE")
-        doc_id = cand["doc_id"]
+        if cand["doc_id"] not in selected_doc_ids and len(selected_slots) < max_slots:
+            selected_slots.append(cand)
+            selected_doc_ids.add(cand["doc_id"])
 
-        if vong_doi == "CORE_DIRECTIVE" and len(slot_core) < core_limit:
-            slot_core.append(cand)
-            selected_doc_ids.add(doc_id)
-        elif vong_doi == "THEMATIC_CASE" and len(slot_thematic) < thematic_limit:
-            slot_thematic.append(cand)
-            selected_doc_ids.add(doc_id)
+    # Diversity Floor: Nếu không có văn bản CORE_DIRECTIVE nào trong các slot đã chọn,
+    # nhưng có ứng viên CORE_DIRECTIVE trong top candidates với điểm tương đối tốt (>= 30% top score),
+    # thay thế slot cuối cùng bằng văn bản nền tảng này để đảm bảo định hướng chính trị tổng thể.
+    has_core = any(s.get("nhom_vong_doi") == "CORE_DIRECTIVE" for s in selected_slots)
+    if not has_core and len(selected_slots) >= 2:
+        top_score = selected_slots[0].get("rrf_score", 0.0)
+        best_core = next(
+            (c for c in candidates if c.get("nhom_vong_doi") == "CORE_DIRECTIVE" and c["doc_id"] not in selected_doc_ids),
+            None
+        )
+        if best_core and best_core.get("rrf_score", 0.0) >= top_score * 0.3:
+            selected_slots[-1] = best_core
+            selected_doc_ids.add(best_core["doc_id"])
 
-        if len(slot_core) >= core_limit and len(slot_thematic) >= thematic_limit:
-            break
-
-    for cand in candidates:
-        if cand not in slot_core and cand not in slot_thematic:
-            if len(slot_thematic) < thematic_limit:
-                slot_thematic.append(cand)
-                selected_doc_ids.add(cand["doc_id"])
-            elif len(slot_core) < core_limit:
-                slot_core.append(cand)
-                selected_doc_ids.add(cand["doc_id"])
-
-    # Kéo theo từ Đồ thị Căn cứ (1-Hop Citation Expansion)
+    # Kéo theo từ Đồ thị Căn cứ (1-Hop Citation Expansion) nếu còn chỗ
+    citation_limit = 1 if max_slots >= 4 else 0
     slot_citations: List[Dict[str, Any]] = []
-    for item in (slot_thematic + slot_core)[:core_limit + thematic_limit]:
-        so_hieu = item.get("so_hieu_vb")
-        if so_hieu:
-            links = db_service.get_linked_documents(so_hieu)
-            for l in links:
-                linked_so = l["vb_dich_so_hieu"]
-                linked_chunks = db_service.search_fts_bm25(query=linked_so, limit=2)
-                for lc in linked_chunks:
-                    if lc["doc_id"] not in selected_doc_ids and len(slot_citations) < citation_limit:
-                        slot_citations.append(lc)
-                        selected_doc_ids.add(lc["doc_id"])
-                        break
-        if len(slot_citations) >= citation_limit:
-            break
+    if citation_limit > 0:
+        for item in selected_slots[:3]:
+            so_hieu = item.get("so_hieu_vb")
+            if so_hieu:
+                links = db_service.get_linked_documents(so_hieu)
+                for l in links:
+                    linked_so = l["vb_dich_so_hieu"]
+                    linked_chunks = db_service.search_fts_bm25(query=linked_so, limit=1)
+                    for lc in linked_chunks:
+                        if lc["doc_id"] not in selected_doc_ids and len(slot_citations) < citation_limit:
+                            slot_citations.append(lc)
+                            selected_doc_ids.add(lc["doc_id"])
+                            break
+            if len(slot_citations) >= citation_limit:
+                break
 
-    final_slots = (slot_core[:core_limit] + slot_thematic[:thematic_limit] + slot_citations[:citation_limit])[:max_slots]
+    if slot_citations:
+        final_slots = (selected_slots[:max_slots - len(slot_citations)] + slot_citations)[:max_slots]
+    else:
+        final_slots = selected_slots[:max_slots]
 
     context_lines = [
         "=== KHO TRI THỨC VÀ CĂN CỨ VĂN BẢN ĐÃ ĐỐI SOÁT (HYBRID RAG) ===",
-        "[LƯU Ý QUAN TRỌNG: Kho CSDL văn bản Đảng uỷ xã hiện lưu trữ hơn 2.000 văn bản đi nhiệm kỳ 2025-2030. Các đoạn trích dưới đây chỉ là các đoạn trích nội dung liên quan nhất được trích xuất phục vụ câu hỏi hiện tại, KHÔNG PHẢI là toàn bộ số lượng văn bản trong kho.]"
+        "[LƯU Ý QUAN TRỌNG: Kho CSDL văn bản Đảng uỷ xã hiện lưu trữ các văn bản đi nhiệm kỳ 2025-2030. Các đoạn trích dưới đây là các đoạn trích nội dung liên quan nhất được trích xuất phục vụ câu hỏi hiện tại.]"
     ]
     citations = []
 
+    core_count = 0
+    thematic_count = 0
     for idx, slot in enumerate(final_slots, 1):
-        tier_label = "NỀN TẢNG" if slot in slot_core else ("CHUYÊN ĐỀ" if slot in slot_thematic else "VĂN BẢN GỐC LIÊN QUAN")
+        is_cit = slot in slot_citations
+        vong_doi = slot.get("nhom_vong_doi", "THEMATIC_CASE")
+        if is_cit:
+            tier_label = "VĂN BẢN GỐC LIÊN QUAN"
+        elif vong_doi == "CORE_DIRECTIVE":
+            tier_label = "NỀN TẢNG"
+            core_count += 1
+        else:
+            tier_label = "CHUYÊN ĐỀ"
+            thematic_count += 1
+
         header = slot.get("context_header", "")
         body = slot.get("chunk_text", "")
         so = slot.get("so_hieu_vb", "")
@@ -933,9 +1001,9 @@ def retrieve_hybrid_context(
         "citations": citations,
         "total_slots": len(final_slots),
         "slot_breakdown": {
-            "core_directive": len(slot_core[:2]),
-            "thematic_case": len(slot_thematic[:4]),
-            "citation_linked": len(slot_citations[:2])
+            "core_directive": core_count,
+            "thematic_case": thematic_count,
+            "citation_linked": len(slot_citations)
         }
     }
 

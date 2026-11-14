@@ -876,8 +876,13 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
         elif len(words) <= 3:
             fts_query = " AND ".join(f'"{w}"' for w in words[:-1]) + f' AND "{words[-1]}"*'
         else:
-            # Lọc bỏ các hư từ / từ đệm thông thường tiếng Việt khi tìm kiếm câu dài
-            stopwords = {"của", "và", "các", "những", "này", "đó", "cho", "về", "trong", "được", "có", "là", "ai", "gì", "nào"}
+            # Lọc bỏ các hư từ / từ đệm thông thường tiếng Việt (37 từ chuẩn, không lọc từ hành chính)
+            stopwords = {
+                "của", "và", "các", "những", "này", "đó", "cho", "về", "trong",
+                "được", "có", "là", "ai", "gì", "nào", "theo", "đối", "với",
+                "từ", "đến", "tại", "khi", "đã", "sẽ", "cần", "phải", "nên",
+                "như", "thì", "vào", "bị", "do", "lại", "hay", "hoặc", "mà", "nếu"
+            }
             meaningful_words = [w for w in words if w.lower() not in stopwords]
             target_words = meaningful_words if len(meaningful_words) >= 2 else words
             fts_query = " OR ".join(f'"{w}"*' for w in target_words[:8])
@@ -891,7 +896,7 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
                 fts.trich_yeu,
                 fts.section_path,
                 fts.chunk_text,
-                bm25(van_ban_fts) AS bm25_rank,
+                bm25(van_ban_fts, 10.0, 8.0, 3.0, 1.0) AS bm25_rank,
                 c.context_header,
                 c.sub_doc_owner,
                 c.chunk_type,
@@ -905,7 +910,7 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
             JOIN so_van_ban vb ON fts.doc_id = vb.doc_id
             WHERE van_ban_fts MATCH ?
               AND vb.trang_thai_hieu_luc != 'BI_THAY_THE'
-            ORDER BY bm25(van_ban_fts) ASC, vb.trong_so_tham_quyen DESC
+            ORDER BY bm25(van_ban_fts, 10.0, 8.0, 3.0, 1.0) ASC, vb.trong_so_tham_quyen DESC
             LIMIT ?;
             """, (fts_query, limit))
             return [dict(row) for row in cursor.fetchall()]
@@ -926,6 +931,51 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
             LIMIT ?;
             """, (f"%{safe_q}%", f"%{safe_q}%", f"%{safe_q}%", limit))
             return [dict(row) for row in cursor.fetchall()]
+
+
+def lookup_by_so_hieu_patterns(patterns: List[str], limit: int = 4) -> List[Dict[str, Any]]:
+    """
+    Tra cứu đích danh văn bản theo danh sách mẫu LIKE của số hiệu (ví dụ: '11-NQ%', '%11-NQ%').
+    Trả về danh sách đầy đủ thông tin văn bản kèm chunk_text, context_header, embedding.
+    """
+    if not patterns:
+        return []
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        where_clauses = ["vb.so_hieu_vb LIKE ?" for _ in patterns]
+        where_sql = " OR ".join(where_clauses)
+
+        sql = f"""
+        SELECT 
+            c.chunk_id,
+            c.doc_id,
+            vb.so_hieu_vb,
+            vb.trich_yeu,
+            vb.the_loai_vb,
+            vb.co_quan_ban_hanh,
+            vb.ngay_ban_hanh,
+            vb.nhom_vong_doi,
+            vb.trang_thai_hieu_luc,
+            vb.trong_so_tham_quyen,
+            c.section_path,
+            c.chunk_text,
+            c.context_header,
+            c.sub_doc_owner,
+            c.chunk_type,
+            c.embedding,
+            0.0 AS bm25_rank
+        FROM so_van_ban vb
+        JOIN van_ban_chunks c ON vb.doc_id = c.doc_id
+        WHERE ({where_sql})
+          AND vb.trang_thai_hieu_luc != 'BI_THAY_THE'
+        ORDER BY vb.trong_so_tham_quyen DESC, vb.ngay_ban_hanh DESC
+        LIMIT ?;
+        """
+        params = list(patterns) + [limit]
+        cursor.execute(sql, params)
+        return [dict(row) for row in cursor.fetchall()]
+
 
 
 # ==============================================================================
