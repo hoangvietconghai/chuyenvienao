@@ -308,6 +308,12 @@ def init_database() -> None:
         # Tự động dọn dẹp các bản ghi log giả lập kênh 'web' bị trùng lặp của phiên Zalo (do lỗi phiên bản trước)
         cursor.execute("DELETE FROM nhat_ky_hoi_thoai WHERE channel = 'web' AND session_id LIKE 'zalo_%';")
 
+        # Tự động nâng cấp cột rag_sources cho bảng nhat_ky_hoi_thoai nếu chưa có
+        cursor.execute("PRAGMA table_info(nhat_ky_hoi_thoai);")
+        chat_log_cols = {row["name"] for row in cursor.fetchall()}
+        if "rag_sources" not in chat_log_cols:
+            cursor.execute("ALTER TABLE nhat_ky_hoi_thoai ADD COLUMN rag_sources TEXT DEFAULT '';")
+
         # Đảm bảo tài khoản Quản trị viên của đồng chí Ngô Hoàng Việt luôn tồn tại
         cursor.execute("""
         INSERT INTO danh_ba_can_bo (can_bo_id, ho_ten, chuc_vu, co_quan, co_quan_code, co_quan_loai, so_dien_thoai, vai_tro, is_active)
@@ -1302,10 +1308,10 @@ def save_chat_log(log_data: Dict[str, Any]) -> int:
         cursor.execute("""
         INSERT INTO nhat_ky_hoi_thoai (
             session_id, channel, can_bo_id, so_dien_thoai, ho_ten, co_quan, vai_tro,
-            message_text, attachment_names, bot_reply, model_used, latency_ms
+            message_text, attachment_names, bot_reply, model_used, latency_ms, rag_sources
         ) VALUES (
             :session_id, :channel, :can_bo_id, :so_dien_thoai, :ho_ten, :co_quan, :vai_tro,
-            :message_text, :attachment_names, :bot_reply, :model_used, :latency_ms
+            :message_text, :attachment_names, :bot_reply, :model_used, :latency_ms, :rag_sources
         );
         """, {
             "session_id": session_id,
@@ -1317,9 +1323,10 @@ def save_chat_log(log_data: Dict[str, Any]) -> int:
             "vai_tro": log_data.get("vai_tro", "can_bo"),
             "message_text": message_text,
             "attachment_names": log_data.get("attachment_names", ""),
-            "bot_reply": log_data.get("bot_reply", "")[:4000],
+            "bot_reply": log_data.get("bot_reply", "")[:15000],
             "model_used": log_data.get("model_used", ""),
             "latency_ms": log_data.get("latency_ms", 0),
+            "rag_sources": log_data.get("rag_sources", ""),
         })
         return cursor.lastrowid
 

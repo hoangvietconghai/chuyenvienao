@@ -106,6 +106,19 @@ class TestHybridRAG(unittest.TestCase):
         self.assertEqual(rag_res["citations"][0]["so_hieu"], "11-NQ/ĐU")
         print("  [PASSED] Test 6: Tra cứu viết tắt 'NQ 11' thành công 100%")
 
+    def test_07_congress_named_alias(self):
+        """Test Case 7: Tra cứu Nghị quyết Đại hội (không ghi số) -> Nhận diện trúng 01-NQ/ĐH."""
+        query = "Nghị quyết Đại hội Đảng bộ xã gồm bao nhiêu chỉ tiêu, bao nhiêu nhiệm vụ trọng tâm"
+        analysis = analyze_query(query)
+        self.assertEqual(analysis["type"], "DIRECT_HIT")
+        self.assertEqual(analysis["primary_canonical"], "01-NQ/ĐH")
+
+        rag_res = retrieve_direct_hit(analysis["entities"])
+        self.assertGreater(rag_res["total_slots"], 0)
+        self.assertEqual(rag_res["citations"][0]["so_hieu"], "01-NQ/ĐH")
+        self.assertIn("nhiệm kỳ 2025 - 2030", rag_res["citations"][0]["trich_yeu"])
+        print("  [PASSED] Test 7: Nhận diện danh xưng 'Nghị quyết Đại hội' -> DIRECT_HIT 01-NQ/ĐH thành công 100%")
+
 
 if __name__ == "__main__":
     print("=" * 60)

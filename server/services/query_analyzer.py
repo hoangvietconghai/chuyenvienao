@@ -56,6 +56,62 @@ STATS_PATTERNS = [
 ]
 
 
+# Các danh xưng văn bản đặc biệt / không ghi số hiệu cụ thể (Named Document Aliases)
+NAMED_DOCUMENT_ALIASES = [
+    {
+        "patterns": [
+            r'nghị\s*quyết\s*đại\s*hội',
+            r'nq\s*đại\s*hội',
+            r'đại\s*hội\s*(?:đại\s*biểu\s*)?đảng\s*bộ\s*xã',
+            r'đại\s*hội\s*lần\s*thứ\s*i\b',
+            r'đại\s*hội\s*i\b',
+            r'nq\s*[-/]?\s*đh\b',
+            r'01\s*[-/]?\s*nq\s*[-/]?\s*đh\b',
+            r'chỉ\s*tiêu\s*đại\s*hội',
+        ],
+        "the_loai": "NQ",
+        "so": "01",
+        "co_quan": "ĐH",
+        "canonical": "01-NQ/ĐH",
+        "search_patterns": ["01-NQ/ĐH%", "%01-NQ/ĐH%"]
+    },
+    {
+        "patterns": [
+            r'nghị\s*quyết\s*(?:về\s*)?(?:chuyển\s*đổi\s*số|cđs)',
+            r'nq\s*(?:về\s*)?(?:chuyển\s*đổi\s*số|cđs)',
+            r'nghị\s*quyết\s*57\s*(?:của\s*xã|xã|đảng\s*uỷ)',
+        ],
+        "the_loai": "NQ",
+        "so": "02",
+        "co_quan": "ĐU",
+        "canonical": "02-NQ/ĐU",
+        "search_patterns": ["02-NQ/ĐU%", "%02-NQ/ĐU%"]
+    },
+    {
+        "patterns": [
+            r'nghị\s*quyết\s*(?:nhiệm\s*vụ|phương\s*hướng)?\s*năm\s*2026',
+            r'nq\s*(?:nhiệm\s*vụ|phương\s*hướng)?\s*năm\s*2026',
+        ],
+        "the_loai": "NQ",
+        "so": "05",
+        "co_quan": "ĐU",
+        "canonical": "05-NQ/ĐU",
+        "search_patterns": ["05-NQ/ĐU%", "%05-NQ/ĐU%"]
+    },
+    {
+        "patterns": [
+            r'kế\s*hoạch\s*(?:về\s*)?(?:chuẩn\s*hoá|rà\s*soát|làm\s*sạch)\s*dữ\s*liệu\s*(?:đảng\s*viên|đv)',
+            r'kh\s*(?:về\s*)?(?:chuẩn\s*hoá|rà\s*soát|làm\s*sạch)\s*dữ\s*liệu\s*(?:đảng\s*viên|đv)',
+        ],
+        "the_loai": "KH",
+        "so": "144",
+        "co_quan": "ĐU",
+        "canonical": "144-KH/ĐU",
+        "search_patterns": ["144-KH/ĐU%", "%144-KH/ĐU%"]
+    },
+]
+
+
 def _normalize_num(num_str: str) -> Tuple[str, str]:
     """Trả về cả dạng có số 0 đầu và dạng gốc: e.g. '1' -> ('01', '1'), '11' -> ('11', '11')"""
     num_str = num_str.strip()
@@ -81,6 +137,22 @@ def extract_entities(query: str) -> List[Dict[str, Any]]:
 
     results: List[Dict[str, Any]] = []
     seen_keys = set()
+
+    # Mẫu 0: Nhận diện danh xưng văn bản đặc biệt / không ghi số hiệu cụ thể (Named Aliases)
+    for alias in NAMED_DOCUMENT_ALIASES:
+        for p in alias["patterns"]:
+            if re.search(p, query, re.IGNORECASE):
+                canon = alias["canonical"]
+                if canon not in seen_keys:
+                    seen_keys.add(canon)
+                    results.append({
+                        "the_loai": alias["the_loai"],
+                        "so": alias["so"],
+                        "co_quan": alias.get("co_quan"),
+                        "canonical": canon,
+                        "search_patterns": list(alias["search_patterns"])
+                    })
+                break
 
     # Mẫu 1: Dạng chuẩn đầy đủ: e.g. "11-NQ/ĐU", "01-NQ/ĐH", "69-KH/ĐU"
     pat1 = re.compile(r'(\d+)\s*[-–]\s*(NQ|KH|BC|QĐ|QD|CV|TB|KL|CT|TTr|CTr|HD|QĐi|QC)\s*/\s*([a-zA-ZđĐ]+)', re.IGNORECASE)

@@ -759,23 +759,23 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
     res = await default_ai_client.call_chat_async(msgs, temperature=0.3, max_tokens=2000, json_mode=False)
 
     reply_content = res.get("content", "").strip() or "Xin lỗi, tôi chưa có câu trả lời."
-    # Bổ sung trích dẫn nguồn RAG ở cuối câu trả lời nếu có (tự động khử trùng lặp theo số hiệu)
+    
+    # Khử trùng lặp trích dẫn RAG để lưu ngầm vào audit log (không in ra khung chat để giữ phản hồi ngắn gọn)
+    unique_citations = []
     if citations:
         seen_so_hieu = set()
-        unique_citations = []
         for c in citations:
             so = (c.get("so_hieu") or "").strip()
             if so and so not in seen_so_hieu:
                 seen_so_hieu.add(so)
                 unique_citations.append(c)
 
-        if unique_citations:
-            cite_lines = ["\n\n📚 **Căn cứ tra cứu thực chứng từ Kho văn bản:**"]
-            for c in unique_citations:
-                cite_lines.append(f"• **{c['so_hieu']}** ({c['tier']}): *{c['trich_yeu']}*")
-            reply_content += "\n".join(cite_lines)
+    # Khuyến cáo trách nhiệm công vụ bắt buộc ở cuối câu trả lời
+    disclaimer = "\n\n*Lưu ý: Cán bộ tham mưu chịu trách nhiệm toàn diện về tính chính xác và tính pháp lý của thông tin khi sử dụng thông tin từ AI.*"
+    if disclaimer.strip() not in reply_content:
+        reply_content += disclaimer
 
-    return _reply(s, reply_content)
+    return _reply(s, reply_content, rag_sources=unique_citations if citations else [])
 
 
 # ==============================================================================
@@ -856,7 +856,17 @@ async def handle_chat(session_id: Optional[str], message: str = "", action: str 
                     "bot_reply": reply_text,
                     "model_used": getattr(default_ai_client, "model", "gemini-3.5-flash-lite"),
                     "latency_ms": latency_ms,
+                    "rag_sources": json.dumps(result.get("rag_sources", []), ensure_ascii=False) if result.get("rag_sources") else "",
                 })
+                # Ghi nhật ký audit chuẩn hoá ra log file
+                rag_list = result.get("rag_sources", [])
+                rag_summary = ", ".join(f"{c.get('so_hieu')} ({c.get('tier')})" for c in rag_list) if rag_list else "Không dùng RAG"
+                logger.info(
+                    f"[CHAT_AUDIT] Session: {session_id} | Cán bộ: {ho_ten} ({vai_tro}) | Kênh: web | {latency_ms}ms\n"
+                    f"  • CÂU HỎI: {message[:120]}\n"
+                    f"  • RAG NẠP: {rag_summary}\n"
+                    f"  • TRẢ LỜI: {reply_text[:150]}..."
+                )
             except Exception as log_ex:
                 logger.warning(f"Lỗi lưu nhật ký chat: {log_ex}")
 
