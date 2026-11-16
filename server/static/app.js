@@ -1060,49 +1060,762 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 2. Tải danh mục văn bản đã duyệt trong kho
+  // 2. State & Điều khiển Kho RAG Đa Chiều (Phân Trang, Bộ Lọc & Gom Nhóm)
+  let allRagDocs = [];
+  let filteredRagDocs = [];
+  let currentRagPage = 1;
+  let ragPageSize = 15;
+  let currentRagView = 'table'; // 'table' | 'category' | 'year'
+  let ragSortField = 'ngay_ban_hanh';
+  let ragSortOrder = 'desc';
+  let ragSearchDebounceTimer = null;
+
+  // DOM Elements Kho RAG
+  const ragViewSwitcher = document.getElementById('ragViewSwitcher');
+  const ragTableView = document.getElementById('ragTableView');
+  const ragCategoryView = document.getElementById('ragCategoryView');
+  const ragYearView = document.getElementById('ragYearView');
+
+  const ragQuickSearch = document.getElementById('ragQuickSearch');
+  const btnClearQuickSearch = document.getElementById('btnClearQuickSearch');
+  const ragFilterType = document.getElementById('ragFilterType');
+  const ragFilterYear = document.getElementById('ragFilterYear');
+  const ragFilterLifecycle = document.getElementById('ragFilterLifecycle');
+  const ragFilterIssuer = document.getElementById('ragFilterIssuer');
+  const btnResetRagFilters = document.getElementById('btnResetRagFilters');
+
+  const btnToggleFtsWrap = document.getElementById('btnToggleFtsWrap');
+  const ragFtsPanel = document.getElementById('ragFtsPanel');
+  const btnCloseFtsPanel = document.getElementById('btnCloseFtsPanel');
+
+  const ragCountVisible = document.getElementById('ragCountVisible');
+  const ragCountTotal = document.getElementById('ragCountTotal');
+  const ragFilterNotice = document.getElementById('ragFilterNotice');
+  const ragPageSizeSelect = document.getElementById('ragPageSizeSelect');
+  const ragSortSelect = document.getElementById('ragSortSelect');
+
+  const ragPaginationBar = document.getElementById('ragPaginationBar');
+  const ragPaginationInfo = document.getElementById('ragPaginationInfo');
+  const ragPaginationControls = document.getElementById('ragPaginationControls');
+
+  const ragCategoryGroupsWrap = document.getElementById('ragCategoryGroupsWrap');
+  const btnExpandAllCats = document.getElementById('btnExpandAllCats');
+  const btnCollapseAllCats = document.getElementById('btnCollapseAllCats');
+
+  const ragYearGroupsWrap = document.getElementById('ragYearGroupsWrap');
+  const btnExpandAllYears = document.getElementById('btnExpandAllYears');
+  const btnCollapseAllYears = document.getElementById('btnCollapseAllYears');
+
+  // Helper ánh xạ tên thể loại văn bản Đảng chuẩn
+  const THE_LOAI_MAP = {
+    'KH': 'Kế hoạch (-KH/ĐU)',
+    'NQ': 'Nghị quyết (-NQ/ĐU)',
+    'CV': 'Công văn (-CV/ĐU)',
+    'BC': 'Báo cáo (-BC/ĐU)',
+    'QĐ': 'Quyết định (-QĐ/ĐU)',
+    'KL': 'Kết luận (-KL/ĐU)',
+    'TB': 'Thông báo (-TB/ĐU)',
+    'TTr': 'Tờ trình (-TTr/ĐU)',
+    'CT': 'Chỉ thị (-CT/ĐU)',
+    'CTr': 'Chương trình (-CTr/ĐU)',
+    'HD': 'Hướng dẫn (-HD/ĐU)',
+    'QC': 'Quy chế (-QC/ĐU)',
+    'QD': 'Quy định (-QyĐ/ĐU)',
+    'PA': 'Phương án (-PA/ĐU)',
+    'DA': 'Đề án (-ĐA/ĐU)'
+  };
+
+  function getTheLoaiFullName(code) {
+    if (!code) return 'Khác';
+    const c = String(code).trim().toUpperCase();
+    return THE_LOAI_MAP[c] || `Văn bản thể loại ${c}`;
+  }
+
+  // Helper sinh dòng HTML cho 1 văn bản
+  function buildDocTableRowHtml(doc) {
+    let badgeVongDoi = '<span class="status-badge status-inprogress">Chuyên đề</span>';
+    if (doc.nhom_vong_doi === 'CORE_DIRECTIVE') {
+      badgeVongDoi = '<span class="status-badge status-completed">Nền tảng</span>';
+    } else if (doc.nhom_vong_doi === 'EPHEMERAL_EVENT') {
+      badgeVongDoi = '<span class="status-badge status-rescheduled">Sự vụ</span>';
+    }
+
+    return `
+      <tr>
+        <td><b style="color:#38bdf8;">${escapeHtml(doc.so_hieu_vb || '-')}</b></td>
+        <td><span class="badge-theloai">${escapeHtml(doc.the_loai_vb || doc.the_loai || '-')}</span></td>
+        <td style="font-size:13px;">${escapeHtml(doc.co_quan_ban_hanh || '-')}</td>
+        <td><code>${escapeHtml(doc.ngay_ban_hanh || '-')}</code></td>
+        <td>${badgeVongDoi}</td>
+        <td><span class="badge-theloai" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-weight:600;">${escapeHtml(doc.ten_chuyen_de || doc.ma_chuyen_de || 'Chung')}</span></td>
+        <td style="max-width: 320px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${escapeHtml(doc.trich_yeu || '')}">${escapeHtml(doc.trich_yeu || '-')}</td>
+        <td style="text-align: center;"><span class="badge-theloai" style="background: rgba(255,255,255,0.08); color: #cbd5e1; font-weight: 600;">${doc.chunk_count || 0}</span></td>
+        <td style="text-align: center; white-space: nowrap;">
+          <button class="btn-edit-doc" onclick="window.openRagDocDetail('${escapeHtml(doc.doc_id)}')" title="Xem chi tiết các đoạn trích và chỉnh sửa văn bản">👁️ Sửa</button>
+          <button class="btn-delete-doc" onclick="window.deleteRagDocument('${escapeHtml(doc.doc_id)}', '${escapeHtml(doc.so_hieu_vb || '')}')" title="Xoá văn bản này khỏi kho">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }
+
+  // Tự động trích xuất các tuỳ chọn lọc từ dữ liệu thực tế
+  function populateFilterDropdowns(docs) {
+    if (!docs || docs.length === 0) return;
+
+    // 1. Thể loại
+    if (ragFilterType) {
+      const currentVal = ragFilterType.value;
+      const typeCounts = {};
+      docs.forEach(d => {
+        const t = (d.the_loai_vb || d.the_loai || 'KHAC').trim().toUpperCase();
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+      });
+      const sortedTypes = Object.keys(typeCounts).sort((a, b) => typeCounts[b] - typeCounts[a]);
+      let typeHtml = `<option value="">Tất cả Thể loại (${docs.length})</option>`;
+      sortedTypes.forEach(t => {
+        const label = THE_LOAI_MAP[t] || t;
+        typeHtml += `<option value="${escapeHtml(t)}">${escapeHtml(label)} (${typeCounts[t]})</option>`;
+      });
+      ragFilterType.innerHTML = typeHtml;
+      if (currentVal && typeCounts[currentVal]) ragFilterType.value = currentVal;
+    }
+
+    // 2. Năm ban hành
+    if (ragFilterYear) {
+      const currentVal = ragFilterYear.value;
+      const yearCounts = {};
+      docs.forEach(d => {
+        let y = d.nam_ban_hanh;
+        if (!y && d.ngay_ban_hanh) {
+          const parts = String(d.ngay_ban_hanh).split(/[-\/]/);
+          if (parts.length >= 3) y = parts[0].length === 4 ? parts[0] : parts[2];
+        }
+        if (y) yearCounts[y] = (yearCounts[y] || 0) + 1;
+      });
+      const sortedYears = Object.keys(yearCounts).sort((a, b) => b - a);
+      let yearHtml = `<option value="">Tất cả Năm (${docs.length})</option>`;
+      sortedYears.forEach(y => {
+        yearHtml += `<option value="${escapeHtml(y)}">Năm ${escapeHtml(y)} (${yearCounts[y]})</option>`;
+      });
+      ragFilterYear.innerHTML = yearHtml;
+      if (currentVal && yearCounts[currentVal]) ragFilterYear.value = currentVal;
+    }
+
+    // 3. Cơ quan ban hành
+    if (ragFilterIssuer) {
+      const currentVal = ragFilterIssuer.value;
+      const issuerCounts = {};
+      docs.forEach(d => {
+        const issuer = (d.co_quan_ban_hanh || 'Khác').trim();
+        issuerCounts[issuer] = (issuerCounts[issuer] || 0) + 1;
+      });
+      const sortedIssuers = Object.keys(issuerCounts).sort((a, b) => issuerCounts[b] - issuerCounts[a]);
+      let issuerHtml = `<option value="">Tất cả Cơ quan (${docs.length})</option>`;
+      sortedIssuers.forEach(iss => {
+        issuerHtml += `<option value="${escapeHtml(iss)}">${escapeHtml(iss)} (${issuerCounts[iss]})</option>`;
+      });
+      ragFilterIssuer.innerHTML = issuerHtml;
+      if (currentVal && issuerCounts[currentVal]) ragFilterIssuer.value = currentVal;
+    }
+  }
+
+  // Tải danh mục văn bản đã duyệt trong kho
   async function loadRagDocuments() {
     if (!ragDocsTableBody) return;
     ragDocsTableBody.innerHTML = '<tr><td colspan="9" class="loading-td">Đang tải danh mục văn bản trong kho...</td></tr>';
     try {
-      const res = await fetch('/api/rag/documents');
+      const res = await fetch('/api/rag/documents?limit=1000');
       if (!res.ok) throw new Error('Không thể lấy danh sách văn bản');
       const d = await res.json();
-      const docs = d.documents || [];
+      allRagDocs = d.documents || [];
 
-      if (docs.length === 0) {
-        ragDocsTableBody.innerHTML = '<tr><td colspan="9" class="loading-td">Kho RAG hiện đang trống. Bấm "Nạp văn bản mới" để bắt đầu nạp có kiểm duyệt.</td></tr>';
-        return;
-      }
+      // Cập nhật các dropdown bộ lọc
+      populateFilterDropdowns(allRagDocs);
 
-      ragDocsTableBody.innerHTML = docs.map(doc => {
-        let badgeVongDoi = '<span class="status-badge status-inprogress">Chuyên đề</span>';
-        if (doc.nhom_vong_doi === 'CORE_DIRECTIVE') {
-          badgeVongDoi = '<span class="status-badge status-completed">Nền tảng</span>';
-        } else if (doc.nhom_vong_doi === 'EPHEMERAL_EVENT') {
-          badgeVongDoi = '<span class="status-badge status-rescheduled">Sự vụ</span>';
-        }
-
-        return `
-          <tr>
-            <td><b style="color:#38bdf8;">${escapeHtml(doc.so_hieu_vb || '-')}</b></td>
-            <td><span class="badge-theloai">${escapeHtml(doc.the_loai_vb || doc.the_loai || '-')}</span></td>
-            <td>${escapeHtml(doc.co_quan_ban_hanh || '-')}</td>
-            <td><code>${escapeHtml(doc.ngay_ban_hanh || '-')}</code></td>
-            <td>${badgeVongDoi}</td>
-            <td><span class="badge-theloai" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-weight:600;">${escapeHtml(doc.ten_chuyen_de || doc.ma_chuyen_de || 'Chung')}</span></td>
-            <td style="max-width: 280px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${escapeHtml(doc.trich_yeu || '')}">${escapeHtml(doc.trich_yeu || '-')}</td>
-            <td style="text-align: center;"><span class="badge-theloai" style="background: rgba(255,255,255,0.08); color: #cbd5e1; font-weight: 600;">${doc.chunk_count || 0}</span></td>
-            <td style="text-align: center; white-space: nowrap;">
-              <button class="btn-edit-doc" onclick="window.openRagDocDetail('${escapeHtml(doc.doc_id)}')" title="Xem chi tiết các đoạn trích và chỉnh sửa văn bản">👁️ Sửa</button>
-              <button class="btn-delete-doc" onclick="window.deleteRagDocument('${escapeHtml(doc.doc_id)}', '${escapeHtml(doc.so_hieu_vb || '')}')" title="Xoá văn bản này khỏi kho">🗑️</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+      // Áp dụng bộ lọc & render view hiện tại
+      applyRagFiltersAndRender();
     } catch (err) {
       ragDocsTableBody.innerHTML = `<tr><td colspan="9" style="color:#ef4444; padding:20px;">Lỗi: ${escapeHtml(err.message)}</td></tr>`;
     }
+  }
+
+  // Lọc và sắp xếp toàn bộ danh sách văn bản RAG
+  function applyRagFiltersAndRender() {
+    const kw = ragQuickSearch ? ragQuickSearch.value.trim().toLowerCase() : '';
+    const selType = ragFilterType ? ragFilterType.value.trim().toUpperCase() : '';
+    const selYear = ragFilterYear ? ragFilterYear.value.trim() : '';
+    const selLifecycle = ragFilterLifecycle ? ragFilterLifecycle.value.trim() : '';
+    const selIssuer = ragFilterIssuer ? ragFilterIssuer.value.trim() : '';
+
+    filteredRagDocs = allRagDocs.filter(d => {
+      // 1. Lọc theo từ khoá tìm kiếm tức thì
+      if (kw) {
+        const soHieu = (d.so_hieu_vb || '').toLowerCase();
+        const trichYeu = (d.trich_yeu || '').toLowerCase();
+        const coQuan = (d.co_quan_ban_hanh || '').toLowerCase();
+        const nguoiKy = (d.nguoi_ky || '').toLowerCase();
+        const theLoai = (d.the_loai_vb || d.the_loai || '').toLowerCase();
+        const chuyenDe = (d.ten_chuyen_de || d.ma_chuyen_de || '').toLowerCase();
+
+        const match = soHieu.includes(kw) ||
+                      trichYeu.includes(kw) ||
+                      coQuan.includes(kw) ||
+                      nguoiKy.includes(kw) ||
+                      theLoai.includes(kw) ||
+                      chuyenDe.includes(kw);
+        if (!match) return false;
+      }
+
+      // 2. Lọc theo Thể loại
+      if (selType) {
+        const t = (d.the_loai_vb || d.the_loai || '').trim().toUpperCase();
+        if (t !== selType) return false;
+      }
+
+      // 3. Lọc theo Năm
+      if (selYear) {
+        let y = String(d.nam_ban_hanh || '');
+        if (!y && d.ngay_ban_hanh) {
+          const parts = String(d.ngay_ban_hanh).split(/[-\/]/);
+          if (parts.length >= 3) y = parts[0].length === 4 ? parts[0] : parts[2];
+        }
+        if (y !== selYear) return false;
+      }
+
+      // 4. Lọc theo Vòng đời
+      if (selLifecycle) {
+        if (d.nhom_vong_doi !== selLifecycle) return false;
+      }
+
+      // 5. Lọc theo Cơ quan
+      if (selIssuer) {
+        if ((d.co_quan_ban_hanh || '').trim() !== selIssuer) return false;
+      }
+
+      return true;
+    });
+
+    // Sắp xếp dữ liệu
+    filteredRagDocs.sort((a, b) => {
+      let valA, valB;
+      if (ragSortField === 'ngay_ban_hanh') {
+        valA = a.ngay_ban_hanh || '';
+        valB = b.ngay_ban_hanh || '';
+      } else if (ragSortField === 'so_hieu') {
+        valA = a.so_hieu_vb || '';
+        valB = b.so_hieu_vb || '';
+      } else if (ragSortField === 'the_loai') {
+        valA = a.the_loai_vb || a.the_loai || '';
+        valB = b.the_loai_vb || b.the_loai || '';
+      } else if (ragSortField === 'co_quan') {
+        valA = a.co_quan_ban_hanh || '';
+        valB = b.co_quan_ban_hanh || '';
+      } else if (ragSortField === 'chunks') {
+        valA = Number(a.chunk_count || 0);
+        valB = Number(b.chunk_count || 0);
+        return ragSortOrder === 'asc' ? valA - valB : valB - valA;
+      } else {
+        valA = a.ngay_ban_hanh || '';
+        valB = b.ngay_ban_hanh || '';
+      }
+
+      if (ragSortOrder === 'asc') {
+        return String(valA).localeCompare(String(valB), 'vi');
+      } else {
+        return String(valB).localeCompare(String(valA), 'vi');
+      }
+    });
+
+    // Cập nhật trạng thái hiển thị số lượng
+    if (ragCountVisible) ragCountVisible.textContent = filteredRagDocs.length;
+    if (ragCountTotal) ragCountTotal.textContent = allRagDocs.length;
+    if (ragFilterNotice) {
+      if (filteredRagDocs.length !== allRagDocs.length) {
+        ragFilterNotice.textContent = `(Đã lọc từ tổng số ${allRagDocs.length} văn bản trong kho)`;
+      } else {
+        ragFilterNotice.textContent = '';
+      }
+    }
+
+    // Hiển thị nút xoá nhanh tìm kiếm
+    if (btnClearQuickSearch) {
+      btnClearQuickSearch.style.display = kw ? 'inline-block' : 'none';
+    }
+
+    // Đảm bảo trang hiện tại hợp lệ
+    const totalPages = Math.ceil(filteredRagDocs.length / ragPageSize) || 1;
+    if (currentRagPage > totalPages) currentRagPage = totalPages;
+    if (currentRagPage < 1) currentRagPage = 1;
+
+    // Render View tương ứng
+    if (currentRagView === 'category') {
+      renderRagCategoryGroups();
+    } else if (currentRagView === 'year') {
+      renderRagYearGroups();
+    } else {
+      renderRagTable();
+      renderRagPagination();
+    }
+  }
+
+  // Render Dạng Bảng Phân Trang (Table View)
+  function renderRagTable() {
+    if (!ragDocsTableBody) return;
+
+    if (filteredRagDocs.length === 0) {
+      ragDocsTableBody.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 40px 20px;">
+            <div class="rag-empty-filter-state">
+              <div class="rag-empty-filter-icon">🔍</div>
+              <div class="rag-empty-filter-text">Không tìm thấy văn bản nào phù hợp với bộ lọc hiện tại.</div>
+              <button type="button" class="btn-chs-outline" onclick="window.resetRagFiltersAndReload()" style="margin-top: 6px;">↺ Đặt lại bộ lọc</button>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const startIdx = (currentRagPage - 1) * ragPageSize;
+    const endIdx = startIdx + ragPageSize;
+    const pageDocs = filteredRagDocs.slice(startIdx, endIdx);
+
+    ragDocsTableBody.innerHTML = pageDocs.map(buildDocTableRowHtml).join('');
+  }
+
+  // Render Thanh Phân Trang (Pagination Bar)
+  function renderRagPagination() {
+    if (!ragPaginationControls || !ragPaginationInfo) return;
+
+    const total = filteredRagDocs.length;
+    if (total === 0) {
+      ragPaginationInfo.textContent = 'Hiển thị 0 - 0 trong 0 văn bản';
+      ragPaginationControls.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(total / ragPageSize) || 1;
+    const startNum = (currentRagPage - 1) * ragPageSize + 1;
+    const endNum = Math.min(currentRagPage * ragPageSize, total);
+
+    ragPaginationInfo.innerHTML = `Hiển thị <b>${startNum} – ${endNum}</b> trong tổng số <b>${total}</b> văn bản (Trang ${currentRagPage}/${totalPages})`;
+
+    let html = '';
+
+    // Nút Đầu & Trước
+    html += `<button type="button" class="rag-page-btn" ${currentRagPage === 1 ? 'disabled' : ''} onclick="window.changeRagPage(1)" title="Trang đầu">«</button>`;
+    html += `<button type="button" class="rag-page-btn" ${currentRagPage === 1 ? 'disabled' : ''} onclick="window.changeRagPage(${currentRagPage - 1})" title="Trang trước">‹</button>`;
+
+    // Sinh dải số trang thông minh
+    const pageRange = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentRagPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (startPage > 1) {
+      pageRange.push(1);
+      if (startPage > 2) pageRange.push('...');
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+      pageRange.push(p);
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) pageRange.push('...');
+      pageRange.push(totalPages);
+    }
+
+    pageRange.forEach(p => {
+      if (p === '...') {
+        html += `<span class="rag-page-ellipsis">…</span>`;
+      } else {
+        const activeClass = p === currentRagPage ? 'active' : '';
+        html += `<button type="button" class="rag-page-btn ${activeClass}" onclick="window.changeRagPage(${p})">${p}</button>`;
+      }
+    });
+
+    // Nút Sau & Cuối
+    html += `<button type="button" class="rag-page-btn" ${currentRagPage === totalPages ? 'disabled' : ''} onclick="window.changeRagPage(${currentRagPage + 1})" title="Trang sau">›</button>`;
+    html += `<button type="button" class="rag-page-btn" ${currentRagPage === totalPages ? 'disabled' : ''} onclick="window.changeRagPage(${totalPages})" title="Trang cuối">»</button>`;
+
+    ragPaginationControls.innerHTML = html;
+  }
+
+  // Đổi trang
+  window.changeRagPage = function(page) {
+    const totalPages = Math.ceil(filteredRagDocs.length / ragPageSize) || 1;
+    if (page < 1 || page > totalPages) return;
+    currentRagPage = page;
+    renderRagTable();
+    renderRagPagination();
+
+    // Cuộn nhẹ lên đầu bảng nếu đang ở xa
+    if (ragDocsTableBody) {
+      const rect = ragDocsTableBody.getBoundingClientRect();
+      if (rect.top < 0) {
+        ragDocsTableBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  // Render Gom nhóm Thể loại (Category Accordion View)
+  function renderRagCategoryGroups() {
+    if (!ragCategoryGroupsWrap) return;
+
+    if (filteredRagDocs.length === 0) {
+      ragCategoryGroupsWrap.innerHTML = `
+        <div class="rag-empty-filter-state">
+          <div class="rag-empty-filter-icon">📁</div>
+          <div class="rag-empty-filter-text">Không có văn bản nào phù hợp với bộ lọc trong chế độ Gom nhóm Thể loại.</div>
+          <button type="button" class="btn-chs-outline" onclick="window.resetRagFiltersAndReload()" style="margin-top: 6px;">↺ Đặt lại bộ lọc</button>
+        </div>
+      `;
+      return;
+    }
+
+    // Nhóm văn bản theo thể loại
+    const groups = {};
+    filteredRagDocs.forEach(d => {
+      const code = (d.the_loai_vb || d.the_loai || 'KHAC').trim().toUpperCase();
+      if (!groups[code]) groups[code] = [];
+      groups[code].push(d);
+    });
+
+    const sortedCodes = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
+
+    let html = '';
+    sortedCodes.forEach((code, idx) => {
+      const list = groups[code];
+      const fullName = getTheLoaiFullName(code);
+      const isExpanded = idx === 0 ? 'expanded' : ''; // Mặc định mở nhóm đầu tiên
+
+      const coreCount = list.filter(d => d.nhom_vong_doi === 'CORE_DIRECTIVE').length;
+      const thematicCount = list.length - coreCount;
+
+      html += `
+        <div class="rag-category-card ${isExpanded}" id="ragCatCard_${escapeHtml(code)}">
+          <div class="rag-category-header" onclick="window.toggleRagCategoryGroup('ragCatCard_${escapeHtml(code)}')">
+            <div class="rag-category-title-group">
+              <span class="rag-category-icon">📁</span>
+              <div>
+                <span class="rag-category-name">${escapeHtml(fullName)}</span>
+                <span style="font-size:12px; color:#94a3b8; margin-left:6px;">(${escapeHtml(code)})</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="rag-category-badges">
+                <span class="rag-badge-count">Tổng: <b>${list.length}</b> văn bản</span>
+                ${coreCount > 0 ? `<span class="badge-theloai" style="background:#ecfdf5; color:#059669; border-color:#a7f3d0;">${coreCount} Nền tảng</span>` : ''}
+                ${thematicCount > 0 ? `<span class="badge-theloai" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">${thematicCount} Chuyên đề</span>` : ''}
+              </div>
+              <span class="rag-category-toggle-arrow">▼</span>
+            </div>
+          </div>
+          <div class="rag-category-body">
+            <table class="chs-table">
+              <thead>
+                <tr>
+                  <th width="140">Số Hiệu</th>
+                  <th width="150">Cơ Quan Ban Hành</th>
+                  <th width="100">Ngày BH</th>
+                  <th width="90">Vòng Đời</th>
+                  <th width="115">Chuyên Đề</th>
+                  <th>Trích Yếu Nội Dung</th>
+                  <th width="70" style="text-align: center;">Chunks</th>
+                  <th width="100" style="text-align: center;">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${list.map(d => {
+                  let badgeVongDoi = '<span class="status-badge status-inprogress">Chuyên đề</span>';
+                  if (d.nhom_vong_doi === 'CORE_DIRECTIVE') {
+                    badgeVongDoi = '<span class="status-badge status-completed">Nền tảng</span>';
+                  } else if (d.nhom_vong_doi === 'EPHEMERAL_EVENT') {
+                    badgeVongDoi = '<span class="status-badge status-rescheduled">Sự vụ</span>';
+                  }
+                  return `
+                    <tr>
+                      <td><b style="color:#38bdf8;">${escapeHtml(d.so_hieu_vb || '-')}</b></td>
+                      <td style="font-size:13px;">${escapeHtml(d.co_quan_ban_hanh || '-')}</td>
+                      <td><code>${escapeHtml(d.ngay_ban_hanh || '-')}</code></td>
+                      <td>${badgeVongDoi}</td>
+                      <td><span class="badge-theloai" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-weight:600;">${escapeHtml(d.ten_chuyen_de || d.ma_chuyen_de || 'Chung')}</span></td>
+                      <td style="max-width: 320px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${escapeHtml(d.trich_yeu || '')}">${escapeHtml(d.trich_yeu || '-')}</td>
+                      <td style="text-align: center;"><span class="badge-theloai" style="background: rgba(255,255,255,0.08); color: #cbd5e1; font-weight: 600;">${d.chunk_count || 0}</span></td>
+                      <td style="text-align: center; white-space: nowrap;">
+                        <button class="btn-edit-doc" onclick="window.openRagDocDetail('${escapeHtml(d.doc_id)}')" title="Xem chi tiết các đoạn trích và chỉnh sửa văn bản">👁️ Sửa</button>
+                        <button class="btn-delete-doc" onclick="window.deleteRagDocument('${escapeHtml(d.doc_id)}', '${escapeHtml(d.so_hieu_vb || '')}')" title="Xoá văn bản này khỏi kho">🗑️</button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    });
+
+    ragCategoryGroupsWrap.innerHTML = html;
+  }
+
+  // Render Gom nhóm Năm ban hành (Year Accordion View)
+  function renderRagYearGroups() {
+    if (!ragYearGroupsWrap) return;
+
+    if (filteredRagDocs.length === 0) {
+      ragYearGroupsWrap.innerHTML = `
+        <div class="rag-empty-filter-state">
+          <div class="rag-empty-filter-icon">📅</div>
+          <div class="rag-empty-filter-text">Không có văn bản nào phù hợp với bộ lọc trong chế độ Gom nhóm Năm.</div>
+          <button type="button" class="btn-chs-outline" onclick="window.resetRagFiltersAndReload()" style="margin-top: 6px;">↺ Đặt lại bộ lọc</button>
+        </div>
+      `;
+      return;
+    }
+
+    // Nhóm văn bản theo năm
+    const groups = {};
+    filteredRagDocs.forEach(d => {
+      let y = d.nam_ban_hanh;
+      if (!y && d.ngay_ban_hanh) {
+        const parts = String(d.ngay_ban_hanh).split(/[-\/]/);
+        if (parts.length >= 3) y = parts[0].length === 4 ? parts[0] : parts[2];
+      }
+      y = y || 'Chưa rõ năm';
+      if (!groups[y]) groups[y] = [];
+      groups[y].push(d);
+    });
+
+    const sortedYears = Object.keys(groups).sort((a, b) => {
+      if (a === 'Chưa rõ năm') return 1;
+      if (b === 'Chưa rõ năm') return -1;
+      return Number(b) - Number(a);
+    });
+
+    let html = '';
+    sortedYears.forEach((year, idx) => {
+      const list = groups[year];
+      const isExpanded = idx === 0 ? 'expanded' : '';
+
+      html += `
+        <div class="rag-category-card ${isExpanded}" id="ragYearCard_${escapeHtml(year)}">
+          <div class="rag-category-header" onclick="window.toggleRagCategoryGroup('ragYearCard_${escapeHtml(year)}')">
+            <div class="rag-category-title-group">
+              <span class="rag-category-icon">📅</span>
+              <span class="rag-category-name">Năm ${escapeHtml(year)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="rag-badge-count">Tổng: <b>${list.length}</b> văn bản</span>
+              <span class="rag-category-toggle-arrow">▼</span>
+            </div>
+          </div>
+          <div class="rag-category-body">
+            <table class="chs-table">
+              <thead>
+                <tr>
+                  <th width="140">Số Hiệu</th>
+                  <th width="90">Thể Loại</th>
+                  <th width="150">Cơ Quan Ban Hành</th>
+                  <th width="100">Ngày BH</th>
+                  <th width="90">Vòng Đời</th>
+                  <th width="115">Chuyên Đề</th>
+                  <th>Trích Yếu Nội Dung</th>
+                  <th width="70" style="text-align: center;">Chunks</th>
+                  <th width="100" style="text-align: center;">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${list.map(buildDocTableRowHtml).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    });
+
+    ragYearGroupsWrap.innerHTML = html;
+  }
+
+  // Helper toggle Accordion Group
+  window.toggleRagCategoryGroup = function(cardId) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    card.classList.toggle('expanded');
+  };
+
+  // Helper đặt lại bộ lọc
+  window.resetRagFiltersAndReload = function() {
+    if (ragQuickSearch) ragQuickSearch.value = '';
+    if (ragFilterType) ragFilterType.value = '';
+    if (ragFilterYear) ragFilterYear.value = '';
+    if (ragFilterLifecycle) ragFilterLifecycle.value = '';
+    if (ragFilterIssuer) ragFilterIssuer.value = '';
+    if (ragSortSelect) ragSortSelect.value = 'ngay_ban_hanh_desc';
+    ragSortField = 'ngay_ban_hanh';
+    ragSortOrder = 'desc';
+    currentRagPage = 1;
+    applyRagFiltersAndRender();
+  };
+
+  // Gắn sự kiện Chuyển đổi Chế độ Xem (View Switcher)
+  if (ragViewSwitcher) {
+    const viewButtons = ragViewSwitcher.querySelectorAll('.rag-view-btn');
+    viewButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetView = btn.getAttribute('data-view');
+        if (!targetView || targetView === currentRagView) return;
+
+        viewButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentRagView = targetView;
+
+        if (ragTableView) ragTableView.style.display = targetView === 'table' ? 'block' : 'none';
+        if (ragCategoryView) ragCategoryView.style.display = targetView === 'category' ? 'block' : 'none';
+        if (ragYearView) ragYearView.style.display = targetView === 'year' ? 'block' : 'none';
+
+        applyRagFiltersAndRender();
+      });
+    });
+  }
+
+  // Gắn sự kiện Tìm kiếm Tức thì (Realtime Quick Search)
+  if (ragQuickSearch) {
+    ragQuickSearch.addEventListener('input', () => {
+      clearTimeout(ragSearchDebounceTimer);
+      ragSearchDebounceTimer = setTimeout(() => {
+        currentRagPage = 1;
+        applyRagFiltersAndRender();
+      }, 200);
+    });
+  }
+
+  if (btnClearQuickSearch) {
+    btnClearQuickSearch.addEventListener('click', () => {
+      if (ragQuickSearch) {
+        ragQuickSearch.value = '';
+        ragQuickSearch.focus();
+      }
+      currentRagPage = 1;
+      applyRagFiltersAndRender();
+    });
+  }
+
+  // Gắn sự kiện thay đổi các Dropdown bộ lọc
+  if (ragFilterType) ragFilterType.addEventListener('change', () => { currentRagPage = 1; applyRagFiltersAndRender(); });
+  if (ragFilterYear) ragFilterYear.addEventListener('change', () => { currentRagPage = 1; applyRagFiltersAndRender(); });
+  if (ragFilterLifecycle) ragFilterLifecycle.addEventListener('change', () => { currentRagPage = 1; applyRagFiltersAndRender(); });
+  if (ragFilterIssuer) ragFilterIssuer.addEventListener('change', () => { currentRagPage = 1; applyRagFiltersAndRender(); });
+
+  // Gắn sự kiện đặt lại bộ lọc
+  if (btnResetRagFilters) {
+    btnResetRagFilters.addEventListener('click', window.resetRagFiltersAndReload);
+  }
+
+  // Gắn sự kiện số lượng bản ghi mỗi trang
+  if (ragPageSizeSelect) {
+    ragPageSizeSelect.addEventListener('change', () => {
+      ragPageSize = parseInt(ragPageSizeSelect.value, 10) || 15;
+      currentRagPage = 1;
+      applyRagFiltersAndRender();
+    });
+  }
+
+  // Gắn sự kiện Sắp xếp từ Dropdown
+  if (ragSortSelect) {
+    ragSortSelect.addEventListener('change', () => {
+      const val = ragSortSelect.value;
+      if (val === 'ngay_ban_hanh_desc') { ragSortField = 'ngay_ban_hanh'; ragSortOrder = 'desc'; }
+      else if (val === 'ngay_ban_hanh_asc') { ragSortField = 'ngay_ban_hanh'; ragSortOrder = 'asc'; }
+      else if (val === 'so_hieu_asc') { ragSortField = 'so_hieu'; ragSortOrder = 'asc'; }
+      else if (val === 'chunks_desc') { ragSortField = 'chunks'; ragSortOrder = 'desc'; }
+
+      updateSortableHeadersUI();
+      applyRagFiltersAndRender();
+    });
+  }
+
+  // Gắn sự kiện Click sắp xếp trên Tiêu đề cột Table
+  function updateSortableHeadersUI() {
+    const headers = document.querySelectorAll('.chs-table th.sortable-th');
+    headers.forEach(th => {
+      const sortKey = th.getAttribute('data-sort');
+      const icon = th.querySelector('.sort-icon');
+      if (sortKey === ragSortField) {
+        th.classList.add('active-sort');
+        if (icon) icon.textContent = ragSortOrder === 'asc' ? '▲' : '▼';
+      } else {
+        th.classList.remove('active-sort');
+        if (icon) icon.textContent = '↕';
+      }
+    });
+  }
+
+  const sortableHeaders = document.querySelectorAll('.chs-table th.sortable-th');
+  sortableHeaders.forEach(th => {
+    th.addEventListener('click', () => {
+      const sortKey = th.getAttribute('data-sort');
+      if (!sortKey) return;
+
+      if (ragSortField === sortKey) {
+        ragSortOrder = ragSortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        ragSortField = sortKey;
+        ragSortOrder = (sortKey === 'ngay_ban_hanh' || sortKey === 'chunks') ? 'desc' : 'asc';
+      }
+
+      updateSortableHeadersUI();
+      applyRagFiltersAndRender();
+    });
+  });
+
+  // Gắn sự kiện Toggle FTS5 Tra cứu toàn văn Panel
+  if (btnToggleFtsWrap && ragFtsPanel) {
+    btnToggleFtsWrap.addEventListener('click', () => {
+      const isVisible = ragFtsPanel.style.display !== 'none';
+      ragFtsPanel.style.display = isVisible ? 'none' : 'block';
+      if (!isVisible && ragSearchInput) ragSearchInput.focus();
+    });
+  }
+
+  if (btnCloseFtsPanel && ragFtsPanel) {
+    btnCloseFtsPanel.addEventListener('click', () => {
+      ragFtsPanel.style.display = 'none';
+    });
+  }
+
+  // Mở/Thu gọn tất cả nhóm Thể loại
+  if (btnExpandAllCats) {
+    btnExpandAllCats.addEventListener('click', () => {
+      const cards = document.querySelectorAll('#ragCategoryGroupsWrap .rag-category-card');
+      cards.forEach(c => c.classList.add('expanded'));
+    });
+  }
+  if (btnCollapseAllCats) {
+    btnCollapseAllCats.addEventListener('click', () => {
+      const cards = document.querySelectorAll('#ragCategoryGroupsWrap .rag-category-card');
+      cards.forEach(c => c.classList.remove('expanded'));
+    });
+  }
+
+  // Mở/Thu gọn tất cả nhóm Năm
+  if (btnExpandAllYears) {
+    btnExpandAllYears.addEventListener('click', () => {
+      const cards = document.querySelectorAll('#ragYearGroupsWrap .rag-category-card');
+      cards.forEach(c => c.classList.add('expanded'));
+    });
+  }
+  if (btnCollapseAllYears) {
+    btnCollapseAllYears.addEventListener('click', () => {
+      const cards = document.querySelectorAll('#ragYearGroupsWrap .rag-category-card');
+      cards.forEach(c => c.classList.remove('expanded'));
+    });
   }
 
   // --- MODAL CHI TIẾT & CHỈNH SỬA VĂN BẢN (READ & UPDATE) ---

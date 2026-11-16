@@ -370,9 +370,14 @@
                     <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">Cán bộ chủ động nạp tệp, đối soát siêu dữ liệu và phê duyệt trước khi lưu vào CSDL RAG.</p>
                   </div>
                   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <input type="text" id="ragSearchInput" class="form-input-chs" style="width: 240px; padding: 7px 12px;" placeholder="Tìm nhanh trong kho RAG...">
-                    <button class="btn-chs-outline" id="btnRagSearch">🔍 Tìm</button>
-                    <button class="btn-chs-outline" id="btnRefreshRagDocs">🔄 Làm mới</button>
+                    <!-- CHẾ ĐỘ XEM (VIEW SWITCHER) -->
+                    <div class="rag-view-switcher" id="ragViewSwitcher">
+                      <button type="button" class="rag-view-btn active" data-view="table" title="Hiển thị dạng bảng có phân trang">📋 Dạng Bảng</button>
+                      <button type="button" class="rag-view-btn" data-view="category" title="Gom nhóm văn bản theo Thể loại văn bản Đảng">📁 Theo Thể Loại</button>
+                      <button type="button" class="rag-view-btn" data-view="year" title="Gom nhóm văn bản theo Năm ban hành">📅 Theo Năm</button>
+                    </div>
+
+                    <button class="btn-chs-outline" id="btnRefreshRagDocs" title="Tải lại danh sách văn bản">🔄 Làm mới</button>
                     <button class="btn-chs-primary" id="btnUploadForRag" style="display: inline-flex; align-items: center; gap: 6px;">
                       <span>📤 Nạp văn bản mới</span>
                     </button>
@@ -382,25 +387,124 @@
                     <input type="file" id="ragFileInput" accept=".pdf,.docx,.doc,.txt,.md" style="display: none;">
                   </div>
                 </div>
-                <div id="ragResultsWrap" style="padding: 12px; display: none;"></div>
-                <table class="chs-table" id="ragDocsTable">
-                  <thead>
-                    <tr>
-                      <th width="130">Số Hiệu</th>
-                      <th width="80">Thể Loại</th>
-                      <th width="140">Cơ Quan Ban Hành</th>
-                      <th width="100">Ngày BH</th>
-                      <th width="90">Vòng Đời</th>
-                      <th width="110">Chuyên Đề</th>
-                      <th>Trích Yếu Nội Dung</th>
-                      <th width="70" style="text-align: center;">Chunks</th>
-                      <th width="100" style="text-align: center;">Thao Tác</th>
-                    </tr>
-                  </thead>
-                  <tbody id="ragDocsTableBody">
-                    <tr><td colspan="9" style="text-align: center; padding: 20px;">Đang nạp danh mục văn bản RAG...</td></tr>
-                  </tbody>
-                </table>
+
+                <!-- BỘ LỌC ĐA TIÊU CHÍ ĐỘNG -->
+                <div class="rag-filter-toolbar">
+                  <div class="rag-filter-row-primary">
+                    <div class="rag-search-box-wrap">
+                      <span class="search-icon">🔍</span>
+                      <input type="text" id="ragQuickSearch" placeholder="Tìm theo số hiệu, trích yếu, người ký..." autocomplete="off">
+                      <button type="button" class="btn-clear-search" id="btnClearQuickSearch" title="Xoá ô tìm kiếm">✕</button>
+                    </div>
+                    <select id="ragFilterType" class="rag-filter-select" title="Lọc theo Thể loại văn bản">
+                      <option value="">Tất cả Thể loại</option>
+                    </select>
+                    <select id="ragFilterYear" class="rag-filter-select" title="Lọc theo Năm ban hành">
+                      <option value="">Tất cả Năm</option>
+                    </select>
+                    <select id="ragFilterLifecycle" class="rag-filter-select" title="Lọc theo Vòng đời văn bản">
+                      <option value="">Tất cả Vòng đời</option>
+                      <option value="CORE_DIRECTIVE">🏛️ Nền tảng</option>
+                      <option value="THEMATIC_CASE">🎯 Chuyên đề</option>
+                      <option value="EPHEMERAL_EVENT">⏱️ Sự vụ</option>
+                    </select>
+                    <select id="ragFilterIssuer" class="rag-filter-select" title="Lọc theo Cơ quan ban hành" style="max-width: 220px;">
+                      <option value="">Tất cả Cơ quan</option>
+                    </select>
+                    <button type="button" class="btn-chs-outline" id="btnResetRagFilters" title="Khôi phục toàn bộ bộ lọc về mặc định">↺ Đặt lại</button>
+                    <button type="button" class="btn-chs-outline" id="btnToggleFtsWrap" title="Mở khung tra cứu toàn văn FTS5 BM25">🔎 Tra cứu toàn văn</button>
+                  </div>
+                </div>
+
+                <!-- DÒNG TRẠNG THÁI & ĐIỀU KHIỂN PHÂN TRANG -->
+                <div class="rag-status-bar">
+                  <div id="ragStatusBarInfo">
+                    Đang hiển thị <span class="rag-count-badge" id="ragCountVisible">0</span> / <span class="rag-count-badge" id="ragCountTotal">0</span> văn bản
+                    <span id="ragFilterNotice" style="color: #64748b; font-style: italic; margin-left: 6px;"></span>
+                  </div>
+                  <div class="rag-control-group">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px;">
+                      Hiển thị:
+                      <select id="ragPageSizeSelect" class="rag-filter-select" style="padding: 4px 8px; font-size: 12.5px;">
+                        <option value="15">15 / trang</option>
+                        <option value="30">30 / trang</option>
+                        <option value="50">50 / trang</option>
+                        <option value="100">100 / trang</option>
+                      </select>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px;">
+                      Sắp xếp:
+                      <select id="ragSortSelect" class="rag-filter-select" style="padding: 4px 8px; font-size: 12.5px;">
+                        <option value="ngay_ban_hanh_desc">Ngày BH (Mới nhất)</option>
+                        <option value="ngay_ban_hanh_asc">Ngày BH (Cũ nhất)</option>
+                        <option value="so_hieu_asc">Số hiệu (A-Z)</option>
+                        <option value="chunks_desc">Số Chunks (Nhiều nhất)</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- KHUNG TRA CỨU TOÀN VĂN FTS5 BM25 (ẨN MẶC ĐỊNH) -->
+                <div id="ragFtsPanel" style="display: none; padding: 14px 20px; background: #fff5f5; border-bottom: 1px solid #fca5a5;">
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" id="ragSearchInput" class="form-input-chs" style="flex: 1 1 300px; padding: 7px 12px;" placeholder="Nhập từ khoá để tra cứu FTS5 BM25 sâu trong nội dung các đoạn trích (Chunks)...">
+                    <button class="btn-chs-primary" id="btnRagSearch">🔍 Tra cứu sâu</button>
+                    <button class="btn-chs-outline" id="btnCloseFtsPanel">✕ Đóng</button>
+                  </div>
+                  <div id="ragResultsWrap" style="margin-top: 10px;"></div>
+                </div>
+
+                <!-- VIEW 1: DẠNG BẢNG PHÂN TRANG (DEFAULT) -->
+                <div id="ragTableView">
+                  <div style="overflow-x: auto;">
+                    <table class="chs-table" id="ragDocsTable">
+                      <thead>
+                        <tr>
+                          <th width="140" class="sortable-th" data-sort="so_hieu" title="Bấm để sắp xếp theo Số hiệu">Số Hiệu <span class="sort-icon">↕</span></th>
+                          <th width="90" class="sortable-th" data-sort="the_loai" title="Bấm để sắp xếp theo Thể loại">Thể Loại <span class="sort-icon">↕</span></th>
+                          <th width="150" class="sortable-th" data-sort="co_quan" title="Bấm để sắp xếp theo Cơ quan">Cơ Quan Ban Hành <span class="sort-icon">↕</span></th>
+                          <th width="100" class="sortable-th active-sort" data-sort="ngay_ban_hanh" title="Bấm để sắp xếp theo Ngày ban hành">Ngày BH <span class="sort-icon">▼</span></th>
+                          <th width="90">Vòng Đời</th>
+                          <th width="110">Chuyên Đề</th>
+                          <th>Trích Yếu Nội Dung</th>
+                          <th width="70" style="text-align: center;" class="sortable-th" data-sort="chunks" title="Bấm để sắp xếp theo số đoạn trích">Chunks <span class="sort-icon">↕</span></th>
+                          <th width="100" style="text-align: center;">Thao Tác</th>
+                        </tr>
+                      </thead>
+                      <tbody id="ragDocsTableBody">
+                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Đang nạp danh mục văn bản RAG...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- THANH PHÂN TRANG -->
+                  <div class="rag-pagination-wrap" id="ragPaginationBar">
+                    <div class="rag-pagination-info" id="ragPaginationInfo">Hiển thị 0 - 0 trong 0 văn bản</div>
+                    <div class="rag-pagination-controls" id="ragPaginationControls"></div>
+                  </div>
+                </div>
+
+                <!-- VIEW 2: GOM NHÓM THEO THỂ LOẠI (CATEGORY VIEW) -->
+                <div id="ragCategoryView" style="display: none;">
+                  <div style="padding: 10px 20px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px;">
+                    <button type="button" class="btn-chs-outline" id="btnExpandAllCats" style="font-size: 12px; padding: 4px 10px;">📂 Mở tất cả</button>
+                    <button type="button" class="btn-chs-outline" id="btnCollapseAllCats" style="font-size: 12px; padding: 4px 10px;">📁 Thu gọn tất cả</button>
+                  </div>
+                  <div class="rag-groups-container" id="ragCategoryGroupsWrap">
+                    <!-- Dynamic Category Accordions -->
+                  </div>
+                </div>
+
+                <!-- VIEW 3: GOM NHÓM THEO NĂM (YEAR VIEW) -->
+                <div id="ragYearView" style="display: none;">
+                  <div style="padding: 10px 20px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px;">
+                    <button type="button" class="btn-chs-outline" id="btnExpandAllYears" style="font-size: 12px; padding: 4px 10px;">📂 Mở tất cả</button>
+                    <button type="button" class="btn-chs-outline" id="btnCollapseAllYears" style="font-size: 12px; padding: 4px 10px;">📁 Thu gọn tất cả</button>
+                  </div>
+                  <div class="rag-groups-container" id="ragYearGroupsWrap">
+                    <!-- Dynamic Year Accordions -->
+                  </div>
+                </div>
               </div>
             </div>
 

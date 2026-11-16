@@ -1792,4 +1792,381 @@ details.doc-card summary {
   line-height: 1.5;
 }
 
+/* ==============================================================================
+   NÂNG CẤP KHO VĂN BẢN RAG: VIEW SWITCHER, MULTI-FILTER, PHÂN TRANG & GOM NHÓM
+   ============================================================================== */
+
+/* 1. Thanh Chuyển Đổi Chế Độ Xem (View Switcher Segmented Control) */
+.rag-view-switcher {
+  display: inline-flex;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 3px;
+}
+
+.rag-view-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rag-view-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.rag-view-btn.active {
+  background: #ffffff;
+  color: var(--primary-red);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* 2. Thanh Bộ Lọc Đa Tiêu Chí Động (Multi-Filter Toolbar) */
+.rag-filter-toolbar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-red);
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rag-filter-row-primary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rag-search-box-wrap {
+  position: relative;
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.rag-search-box-wrap .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.rag-search-box-wrap input {
+  width: 100%;
+  padding: 8px 32px 8px 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13.5px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #f8fafc;
+}
+
+.rag-search-box-wrap input:focus {
+  background: #ffffff;
+  border-color: var(--primary-red);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+  outline: none;
+}
+
+.rag-search-box-wrap .btn-clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  display: none;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.rag-search-box-wrap .btn-clear-search:hover {
+  color: var(--primary-red);
+}
+
+.rag-filter-select {
+  padding: 7.5px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  background-color: #ffffff;
+  color: var(--text-main);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.rag-filter-select:focus {
+  border-color: var(--primary-red);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
+
+.rag-filter-select option {
+  padding: 6px;
+}
+
+/* 3. Dòng Trạng Thái & Điều Khiển Phân Trang Nhanh (Status & Control Bar) */
+.rag-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: #fffafa;
+  border-bottom: 1px solid #fecaca;
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rag-count-badge {
+  font-weight: 700;
+  color: var(--primary-red);
+}
+
+.rag-control-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 4. Tiêu đề Cột Có Thể Sắp Xếp (Sortable Table Headers) */
+.chs-table th.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.chs-table th.sortable-th:hover {
+  background-color: #fee2e2;
+  color: var(--primary-red);
+}
+
+.chs-table th.sortable-th .sort-icon {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.chs-table th.sortable-th.active-sort {
+  color: var(--primary-red);
+  background-color: #fecaca;
+}
+
+.chs-table th.sortable-th.active-sort .sort-icon {
+  opacity: 1;
+}
+
+/* 5. Thanh Phân Trang Chuyên Nghiệp (Pagination Bar) */
+.rag-pagination-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: #ffffff;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rag-pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.rag-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rag-page-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.rag-page-btn:hover:not(:disabled) {
+  background: #fff5f5;
+  border-color: #fca5a5;
+  color: var(--primary-red);
+}
+
+.rag-page-btn.active {
+  background: var(--primary-red);
+  border-color: var(--primary-red);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+}
+
+.rag-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+
+.rag-page-ellipsis {
+  padding: 0 4px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+/* 6. Chế độ Xem Gom Nhóm Thể Loại / Thư Mục (Category / Folder Accordion View) */
+.rag-groups-container {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #f8fafc;
+}
+
+.rag-category-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rag-category-card:hover {
+  border-color: #fca5a5;
+  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.06);
+}
+
+.rag-category-header {
+  padding: 14px 18px;
+  background: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.rag-category-header:hover {
+  background-color: #fffafa;
+}
+
+.rag-category-card.expanded .rag-category-header {
+  background-color: #fff5f5;
+  border-bottom: 1px solid #fecaca;
+}
+
+.rag-category-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rag-category-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.rag-category-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.2px;
+}
+
+.rag-category-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rag-badge-count {
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+}
+
+.rag-category-card.expanded .rag-badge-count {
+  background: var(--red-50);
+  color: var(--primary-red);
+  border-color: #fecaca;
+}
+
+.rag-category-toggle-arrow {
+  font-size: 14px;
+  color: #94a3b8;
+  transition: transform 0.25s ease;
+  padding: 4px;
+}
+
+.rag-category-card.expanded .rag-category-toggle-arrow {
+  transform: rotate(180deg);
+  color: var(--primary-red);
+}
+
+.rag-category-body {
+  display: none;
+  max-height: 480px;
+  overflow-y: auto;
+  border-top: 1px solid #f1f5f9;
+}
+
+.rag-category-card.expanded .rag-category-body {
+  display: block;
+}
+
+.rag-empty-filter-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.rag-empty-filter-icon {
+  font-size: 42px;
+  opacity: 0.7;
+}
+
+.rag-empty-filter-text {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+
 

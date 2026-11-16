@@ -141,33 +141,71 @@ def get_rag_stats() -> Dict[str, Any]:
     }
 
 
-def list_rag_documents(limit: int = 100) -> List[Dict[str, Any]]:
-    """Liệt kê danh sách các văn bản đã nạp chính thức trong kho RAG."""
+def list_rag_documents(
+    limit: int = 1000,
+    the_loai: Optional[str] = None,
+    nam: Optional[int] = None,
+    nhom_vong_doi: Optional[str] = None,
+    co_quan: Optional[str] = None,
+    search: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Liệt kê danh sách các văn bản đã nạp chính thức trong kho RAG với bộ lọc tuỳ chọn."""
+    where_clauses = []
+    params = []
+
+    if the_loai and the_loai.strip():
+        where_clauses.append("vb.the_loai_vb = ?")
+        params.append(the_loai.strip())
+
+    if nam and nam > 0:
+        where_clauses.append("vb.nam_ban_hanh = ?")
+        params.append(nam)
+
+    if nhom_vong_doi and nhom_vong_doi.strip():
+        where_clauses.append("vb.nhom_vong_doi = ?")
+        params.append(nhom_vong_doi.strip())
+
+    if co_quan and co_quan.strip():
+        where_clauses.append("(vb.co_quan_ban_hanh LIKE ? OR vb.co_quan_ban_hanh_code LIKE ?)")
+        params.extend([f"%{co_quan.strip()}%", f"%{co_quan.strip()}%"])
+
+    if search and search.strip():
+        kw = f"%{search.strip()}%"
+        where_clauses.append("(vb.so_hieu_vb LIKE ? OR vb.trich_yeu LIKE ? OR vb.nguoi_ky LIKE ?)")
+        params.extend([kw, kw, kw])
+
+    where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+    sql = f"""
+    SELECT 
+        vb.doc_id,
+        vb.so_hieu_vb,
+        vb.the_loai_vb,
+        vb.co_quan_ban_hanh,
+        vb.co_quan_ban_hanh_code,
+        vb.ngay_ban_hanh,
+        vb.nam_ban_hanh,
+        vb.trich_yeu,
+        vb.nhom_vong_doi,
+        vb.ma_chuyen_de,
+        COALESCE(cd.ten_chuyen_de, vb.ma_chuyen_de) AS ten_chuyen_de,
+        vb.trang_thai_hieu_luc,
+        vb.file_path,
+        COUNT(c.chunk_id) AS chunk_count
+    FROM so_van_ban vb
+    LEFT JOIN danh_muc_chuyen_de cd ON vb.ma_chuyen_de = cd.ma_chuyen_de
+    LEFT JOIN van_ban_chunks c ON vb.doc_id = c.doc_id
+    {where_sql}
+    GROUP BY vb.doc_id
+    ORDER BY vb.ngay_ban_hanh DESC, vb.created_at DESC
+    """
+    if limit and limit > 0:
+        sql += " LIMIT ?"
+        params.append(limit)
+
     with db_service.get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-        SELECT 
-            vb.doc_id,
-            vb.so_hieu_vb,
-            vb.the_loai_vb,
-            vb.co_quan_ban_hanh,
-            vb.co_quan_ban_hanh_code,
-            vb.ngay_ban_hanh,
-            vb.nam_ban_hanh,
-            vb.trich_yeu,
-            vb.nhom_vong_doi,
-            vb.ma_chuyen_de,
-            COALESCE(cd.ten_chuyen_de, vb.ma_chuyen_de) AS ten_chuyen_de,
-            vb.trang_thai_hieu_luc,
-            vb.file_path,
-            COUNT(c.chunk_id) AS chunk_count
-        FROM so_van_ban vb
-        LEFT JOIN danh_muc_chuyen_de cd ON vb.ma_chuyen_de = cd.ma_chuyen_de
-        LEFT JOIN van_ban_chunks c ON vb.doc_id = c.doc_id
-        GROUP BY vb.doc_id
-        ORDER BY vb.ngay_ban_hanh DESC, vb.created_at DESC
-        LIMIT ?;
-        """, (limit,))
+        cursor.execute(sql, params)
         return [dict(row) for row in cursor.fetchall()]
 
 

@@ -107,9 +107,24 @@ async def get_rag_stats_endpoint():
 
 
 @router.get("/documents")
-async def list_rag_documents_endpoint(limit: int = 100):
-    """Liệt kê các văn bản đã được kiểm duyệt và nạp vào kho RAG."""
-    docs = await run_in_threadpool(rag_service.list_rag_documents, limit=limit)
+async def list_rag_documents_endpoint(
+    limit: int = 1000,
+    the_loai: Optional[str] = None,
+    nam: Optional[int] = None,
+    nhom_vong_doi: Optional[str] = None,
+    co_quan: Optional[str] = None,
+    search: Optional[str] = None,
+):
+    """Liệt kê các văn bản đã được kiểm duyệt và nạp vào kho RAG với bộ lọc đa tiêu chí."""
+    docs = await run_in_threadpool(
+        rag_service.list_rag_documents,
+        limit=limit,
+        the_loai=the_loai,
+        nam=nam,
+        nhom_vong_doi=nhom_vong_doi,
+        co_quan=co_quan,
+        search=search,
+    )
     return {"documents": docs, "total": len(docs)}
 
 
