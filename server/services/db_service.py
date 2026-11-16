@@ -915,7 +915,7 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
             JOIN van_ban_chunks c ON fts.chunk_id = c.chunk_id
             JOIN so_van_ban vb ON fts.doc_id = vb.doc_id
             WHERE van_ban_fts MATCH ?
-              AND vb.trang_thai_hieu_luc != 'BI_THAY_THE'
+              AND vb.trang_thai_hieu_luc NOT IN ('BI_THAY_THE', 'HET_HIEU_LUC', 'BI_BAI_BO')
             ORDER BY bm25(van_ban_fts, 10.0, 8.0, 3.0, 1.0) ASC, vb.trong_so_tham_quyen DESC
             LIMIT ?;
             """, (fts_query, limit))
@@ -932,7 +932,7 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
             FROM van_ban_chunks c
             JOIN so_van_ban vb ON c.doc_id = vb.doc_id
             WHERE (c.chunk_text LIKE ? OR vb.trich_yeu LIKE ? OR vb.so_hieu_vb LIKE ?)
-              AND vb.trang_thai_hieu_luc != 'BI_THAY_THE'
+              AND vb.trang_thai_hieu_luc NOT IN ('BI_THAY_THE', 'HET_HIEU_LUC', 'BI_BAI_BO')
             ORDER BY vb.trong_so_tham_quyen DESC
             LIMIT ?;
             """, (f"%{safe_q}%", f"%{safe_q}%", f"%{safe_q}%", limit))
@@ -974,7 +974,7 @@ def lookup_by_so_hieu_patterns(patterns: List[str], limit: int = 4) -> List[Dict
         FROM so_van_ban vb
         JOIN van_ban_chunks c ON vb.doc_id = c.doc_id
         WHERE ({where_sql})
-          AND vb.trang_thai_hieu_luc != 'BI_THAY_THE'
+          AND vb.trang_thai_hieu_luc NOT IN ('BI_THAY_THE', 'HET_HIEU_LUC', 'BI_BAI_BO')
         ORDER BY vb.trong_so_tham_quyen DESC, vb.ngay_ban_hanh DESC
         LIMIT ?;
         """
