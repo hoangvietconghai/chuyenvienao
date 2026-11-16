@@ -236,7 +236,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 14/11/2026 22:36:13*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 15/11/2026 09:11:41*
 > *Quy mô: **55** tệp Python | **13,911** dòng mã | **52** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
