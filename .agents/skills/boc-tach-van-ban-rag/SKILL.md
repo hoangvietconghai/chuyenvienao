@@ -6,10 +6,12 @@ description: >-
   bóc tách kho văn bản PDF/Word/scan vào RAG, làm mới hoặc nạp lại kho tri thức
   RAG, chuẩn hoá văn bản Đảng thành kho lưu trữ .md theo cây thư mục
   "Văn bản Đảng uỷ Ban hành 25-30/", hoặc xử lý lô văn bản ban hành của Đảng uỷ.
-  Quy định bất biến: chia 1 file = 1 chunk với văn bản <= 20 trang và đúng 2 chunk
-  với văn bản > 20 trang; lược bỏ tiêu ngữ/nơi nhận/chữ ký thành 1 dòng định danh
-  đầu bài kèm Người ký; khớp nối 4 tầng với Excel Master; sàng lọc bỏ văn bản sự
-  vụ/giao việc cũ.
+  Quy định bất biến: kiến trúc 2 bề mặt tri thức (100% văn bản lưu kho .md và sổ
+  bộ CSDL; chỉ nạp RAG vector văn bản CORE_DIRECTIVE và THEMATIC_CASE); chia 1
+  file = 1 chunk với văn bản <= 20 trang và đúng 2 chunk với văn bản > 20 trang;
+  lược bỏ tiêu ngữ/nơi nhận/chữ ký thành 1 dòng định danh đầu bài kèm Người ký;
+  khớp nối 4 tầng với Excel Master; phân hoá xử lý SCAN sự vụ vs SCAN cốt lõi;
+  giải nén tệp .rar/.zip; sanitize tên file Windows chống lỗi ký tự cấm.
 ---
 
 # KỸ NĂNG: BÓC TÁCH, CHUẨN HOÁ MARKDOWN & NẠP KHO RAG VĂN BẢN ĐẢNG UỶ
@@ -23,116 +25,163 @@ description: >-
 
 ---
 
-## PHẦN I. NGUYÊN TẮC BẤT BIẾN & AN TOÀN DỮ LIỆU
+## PHẦN I. NGUYÊN TẮC BẤT BIẾN & KIẾN TRÚC 2 BỀ MẶT TRI THỨC
 
-1. **Chốt chặn Độ mật (Secret Gatekeeper):**
-   - Trước khi đọc/bóc tách hoặc đưa lên AI, luôn quét dấu `MẬT`, `TỐI MẬT`, `TUYỆT MẬT` (theo Quyết định `37-QĐ/ĐU` và Nghị định `63/2026/NĐ-CP`).
-   - Phát hiện độ mật $\rightarrow$ **dừng ngay, tuyệt đối không lưu vào `.md` công cộng và không nạp vào RAG**, lập tức báo cáo cán bộ.
-2. **Bảo vệ dữ liệu khi làm mới RAG (Human-in-the-Loop):**
-   - Trước khi xoá sạch dữ liệu RAG cũ trong `data/chuyen_vien_ao.db`, phải **sao lưu tệp DB hiện tại** vào `backups/` và **xác nhận rõ với cán bộ** về phạm vi xoá/nạp.
-   - Kiểm tra `.gitignore` để bảo đảm thư mục `references/Văn bản Đảng uỷ Ban hành 25-30/` và `data/*.db` **không bị đẩy nhầm** lên kho Git công khai.
-3. **Chính tả & Mô hình 02 cấp:**
-   - Chuẩn hoá dấu Khối Đảng: `oà`, `uỷ`, `uý` (*Đảng uỷ*, *Khánh Hoà*, *Uỷ ban*); chuẩn Unicode NFC; sửa `Ð` (`U+00D0`) thành `Đ` (`U+0110`).
-   - Ngày tháng trong nội dung và dòng định danh ghi dạng số `dd/mm/yyyy`.
-   - Mô hình chính quyền địa phương **02 cấp** (Tỉnh Khánh Hoà $\rightarrow$ Xã Công Hải; **không còn cấp huyện**). Giữ nguyên 100% số liệu gốc trong văn bản, không tự làm tròn hay suy đoán.
-4. **Ưu tiên AI đọc & biên tập trực tiếp:**
-   - Không chạy công cụ chuyển đổi tự động mù quáng lên hàng loạt PDF (tránh dính từ, rớt số hiệu ký số, gãy bảng biểu).
-   - Xử lý **theo từng lô** (theo thể loại hoặc 10–15 tệp/đợt): agent trực tiếp đọc nội dung (với PDF scan thì kết xuất trang ảnh bằng PyMuPDF `fitz` để đọc trọn cả tem ký số đè và bảng biểu), tự tay sàng lọc, biên tập, chia chunk và xuất `.md`; chỉ dùng script Python gọn nhẹ cho khâu giải nén trang ảnh và ghi dữ liệu vào SQLite (và tự động xoá script tạm dùng 1 lần sau khi xong).
+### 1. Kiến trúc 2 Bề mặt Tri thức (Dual-Surface Knowledge Architecture)
+Để vừa bảo đảm **100% văn bản được số hoá phục vụ tra cứu sổ bộ hành chính**, vừa **triệt tiêu hoàn toàn ảo giác (anti-hallucination)** trong tra cứu văn kiện chỉ đạo, hệ thống phân tách độc lập 2 bề mặt dữ liệu:
+
+```mermaid
+flowchart TD
+    Raw["Kho Văn bản Gốc (1.494+ tệp PDF/Scan/RAR)"] --> Classify{"Phân loại Vòng đời & Giá trị Pháp lý"}
+    
+    Classify -->|"Tất cả 100% Văn bản<br>(Cốt lõi + Sự vụ + Lương + Lịch tuần)"| Surface1["BỀ MẶT 1: SỔ BỘ & KHO LƯU TRỮ .MD<br>- 100% tệp .md trong 15 thư mục thể loại<br>- 100% bản ghi metadata trong 'so_van_ban'<br>- Phục vụ đối soát, tra cứu lịch sử, xuất báo cáo"]
+    
+    Classify -->|"CHỈ Văn bản Cốt lõi & Chuyên đề<br>(CORE_DIRECTIVE & THEMATIC_CASE)"| Surface2["BỀ MẶT 2: KHO RAG VECTOR NGỮ NGHĨA<br>- Cắt chunk (1 chunk <= 20 tr; 2 chunk > 20 tr)<br>- Bảng 'van_ban_chunks' & 'van_ban_fts'<br>- Sinh Vector Embeddings (Gemini 3.072 dims)<br>- Phục vụ Chatbot AI tham mưu & viết báo cáo"]
+    
+    Classify -.->|"LOẠI BỎ KHỎI RAG:<br>ROUTINE_ADMIN, TASK_ASSIGNMENT,<br>EPHEMERAL_EVENT"| BlockRAG["CHẶN ẢO GIÁC:<br>Không cắt chunk RAG, không sinh embedding"]
+```
+
+- **Bề mặt 1 — Sổ bộ & Lưu trữ Toàn văn (`so_van_ban` & kho `.md`):** Đạt **100%** toàn bộ các văn bản ban hành của Đảng uỷ xã. Mọi quyết định lương, phụ cấp, xếp loại chi bộ tháng, lịch công tác tuần, công văn giao việc thời vụ đều phải có tệp `.md` chuẩn thể thức và bản ghi metadata trong CSDL.
+- **Bề mặt 2 — Kho Tri thức Tìm kiếm Ngữ nghĩa RAG Vector (`van_ban_chunks` & `van_ban_fts`):** **TUYỆT ĐỐI CHỈ NẠP** các văn bản nền tảng, định hướng lâu dài (`CORE_DIRECTIVE`) và chuyên đề lớn (`THEMATIC_CASE`). Không nạp văn bản sự vụ hành chính vào RAG vector.
+
+### 2. Chốt chặn Độ mật (Secret Gatekeeper)
+- Trước khi bóc tách hoặc gửi nội dung lên AI, luôn quét dấu `MẬT`, `TỐI MẬT`, `TUYỆT MẬT` (theo Quyết định `37-QĐ/ĐU` và Nghị định `63/2026/NĐ-CP`).
+- Phát hiện độ mật $\rightarrow$ **dừng ngay lập tức, tuyệt đối không lưu vào `.md` công khai, không nạp vào RAG**, báo cáo trực tiếp cán bộ.
+
+### 3. Bảo vệ CSDL & Sao lưu (Human-in-the-Loop)
+- Trước khi thực hiện bất kỳ thao tác làm mới, ghi đè hoặc xoá dữ liệu lớn trong `data/chuyen_vien_ao.db`, **bắt buộc sao lưu tệp DB** vào thư mục `backups/` và xác nhận rõ phạm vi với cán bộ.
+
+### 4. Quy tắc Chính tả Khối Đảng & Mô hình 02 Cấp
+- Chuẩn hoá dấu tiếng Việt khối Đảng: `oà`, `uỷ`, `uý` (*Đảng uỷ*, *Khánh Hoà*, *Uỷ ban*); chuẩn Unicode NFC; chuyển mã `Ð` (`U+00D0`) thành `Đ` (`U+0110`).
+- Ngày tháng trong nội dung và dòng định danh ghi dạng số `dd/mm/yyyy`.
+- Mô hình chính quyền địa phương **02 cấp** (Tỉnh Khánh Hoà $\rightarrow$ Xã Công Hải; **không còn cấp huyện**). Giữ nguyên 100% số liệu gốc trong văn bản, không tự làm tròn hay suy đoán.
+
+### 5. Quy tắc Quản lý Script & Tự động Dọn dẹp Script Dùng 1 Lần
+- Mọi script Python hỗ trợ xử lý theo đợt (Batch Processing) tạo ra trong phiên làm việc (như `process_batch*.py`, `tmp_*.py`) **bắt buộc phải tự động xoá bỏ ngay lập tức** sau khi thực thi hoàn tất, tuyệt đối không để tồn đọng gây rác thư mục `scripts/`.
 
 ---
 
-## PHẦN II. QUY TRÌNH 5 BƯỚC BẮT BUỘC
+## PHẦN II. QUY TRÌNH 6 BƯỚC BÓC TÁCH & CHUẨN HOÁ THỰC CHIẾN
 
-### Bước 1. Khớp nối 4 Tầng giữa File trên đĩa & Excel Master
+### Bước 1. Tiếp nhận, Giải nén & Phân loại Định dạng Tệp
+
+1. **Xử lý Tệp Nén (`.zip`, `.rar`):**
+   - Trong kho nguồn thực tế có thể tồn tại các tệp nén (như Tờ trình 15, 16 dạng `.rar`).
+   - Sử dụng thư viện giải nén tự động (Python `zipfile`, `rarfile` hoặc `patool`) để bung tệp vào thư mục tạm.
+   - Bóc tách riêng tệp văn bản chính (Tờ trình) và các tệp văn bản đính kèm (Dự thảo Kế hoạch, Đề án, Phụ lục số liệu) để xử lý độc lập, không để sót tài liệu bên trong tệp nén.
+2. **Nhận diện Tệp TEXT vs Tệp SCAN:**
+   - Dùng `pypdf.PdfReader` đọc lướt các trang. Nếu trích xuất được trên 100 ký tự chữ có nghĩa $\rightarrow$ gắn cờ `is_scan = False` (Văn bản Text).
+   - Nếu toàn bộ các trang không trích xuất được chữ (chỉ là ảnh quét mộc đỏ) $\rightarrow$ gắn cờ `is_scan = True` (Văn bản Scan).
+
+---
+
+### Bước 2. Khớp nối 4 Tầng & Xử lý Lệch pha Dữ liệu Master
+
 Vì tên tệp lưu trên đĩa và cột `File văn bản` trong `data/danh_muc_van_ban_di_master.xlsx` **không giống nhau**, tuyệt đối không so khớp theo tên tệp. Áp dụng tuần tự 4 tầng:
 
 1. **Tầng 1 — Chuẩn hoá `(Số hiệu + Thể loại + Năm)`:**
    - Rút trích `(Cơ quan, Thể loại, Số + hậu tố chữ cái, Năm)` từ tên file; chuẩn hoá `Ð` $\rightarrow$ `Đ`, bỏ khoảng trắng quanh dấu `-`, bỏ số `0` thừa ở đầu (ví dụ `A32.65-ĐU-QÐ-0008-2026` $\rightarrow$ `8-QĐ/ĐU`, năm `2026`).
    - Nếu tên file thiếu mã loại hoặc gõ nhầm (ví dụ `A32.65-ĐU-0150-2026`, `CU`), suy luận thể loại từ tên thư mục cha (`BÁO CÁO` $\rightarrow$ `BC`, `CÔNG VĂN` $\rightarrow$ `CV`).
-   - Khớp với cặp **`(Số ký hiệu chuẩn hoá, Năm ban hành)`** trong Excel Master (bắt buộc kèm `Năm` để tránh nhầm `2025` sang `2026`).
+   - Khớp với cặp **`(Số ký hiệu chuẩn hoá, Năm ban hành)`** trong Excel Master (bắt buộc kèm `Năm` để tránh nhầm giữa các năm).
 2. **Tầng 2 — Khớp theo Trích yếu trang 1:**
    - Với các tệp đặt tên tự do không có mã số (ví dụ `mời dự tập huấn...pdf`), đọc trang đầu để lấy trích yếu/số hiệu rồi đối chiếu với Excel Master.
 3. **Tầng 3 — Tự lập hồ sơ trực tiếp từ PDF gốc:**
-   - Khoảng ~4–5% tệp trên đĩa không có dòng tương ứng trong Excel Master (hoặc là văn bản lưu trữ/nội bộ riêng). Đọc trực tiếp trang đầu & trang cuối PDF để trích xuất đầy đủ metadata.
-4. **Tầng 4 — Quy tắc đối soát nguồn chuẩn:**
-   - **Nội dung, thẩm quyền ban hành, danh sách người ký/chức vụ:** lấy từ **văn bản PDF/Word gốc** làm chuẩn.
-   - **Số hiệu, Ngày ban hành (khi PDF bị tem ký số VNPT iOffice đè hoặc thiếu):** lấy từ **Excel Master** bổ sung vào cho đầy đủ.
-   - Với các tệp nén (`.zip`, `.rar`) hoặc tệp thiếu phần mở rộng: ghi nhận vào danh sách ngoại lệ báo cán bộ trước khi xử lý.
+   - Với các tệp năm 2025 hoặc văn bản nội bộ không có dòng trong Excel Master: Đọc trực tiếp trang đầu & trang cuối PDF để trích xuất đầy đủ metadata (Số hiệu, Ngày, Trích yếu, Người ký).
+4. **Tầng 4 — Xử lý Lệch pha & Số phụ hậu tố `a`:**
+   - **Lệch pha thời gian:** Excel Master quản lý đến tháng 11/2026 (hơn 2.000 bản ghi), trong khi đĩa nguồn chốt đến 30/09/2026 (1.494 tệp). Các số cao cuối 2026 không có file PDF thì không sinh file .md ảo.
+   - **Hậu tố chữ cái `a`:** Các văn bản phát sinh điều chỉnh mang số hiệu có chữ `a` (`137a-BC`, `160a-BC`, `161a-BC`, `174a-BC`, `129a-TB`, `0012a-KH`...) được định danh độc lập, bảo đảm không bị ghi đè vào văn bản số chính.
+   - **Xử lý trùng số trong cùng năm:** Nếu 2 văn bản có cùng số hiệu do chuyển giao bộ máy (ví dụ `01-QĐ/ĐU` ngày 10/07/2025 và `01-QĐ/ĐU` ngày 15/08/2025), bổ sung ngày tháng `(dd-mm)` vào tên file để phân biệt.
 
 ---
 
-### Bước 2. Sàng lọc Giá trị Sử dụng & Phân loại Ngay khi Bóc tách
+### Bước 3. Sàng lọc Giá trị Sử dụng & Phân loại 6 Nhóm Vòng đời
 
-Đọc nội dung từng tệp và phân loại ngay **3 thuộc tính** (`nhom_vong_doi`, `ma_chuyen_de`, `trang_thai_hieu_luc`) theo bảng quyết định sau:
+Đọc nội dung/trích yếu từng tệp và phân loại chính xác vào **6 nhóm vòng đời CSDL** theo bảng quyết định:
 
-| Phân loại | Tiêu chí nhận diện | Hành động với `.md` & RAG |
-| :--- | :--- | :--- |
-| **1. Nền tảng cốt lõi (`CORE_DIRECTIVE`)**<br>*(Trọng số `80–100`)* | `Nghị quyết`, `Quy định`, `Quy chế`, `Đề án`, `Chỉ thị`, `Phương án`; `Quyết định` thành lập tổ chức/BCĐ, phân công nhiệm vụ cấp uỷ, quy chế nội bộ; `Chương trình` công tác toàn khoá/năm/tháng còn hiệu lực. | **BẮT BUỘC** tạo `.md` sạch & nạp toàn văn vào `van_ban_chunks` + `van_ban_fts`. |
-| **2. Chuyên đề còn giá trị (`THEMATIC_CASE`)**<br>*(Trọng số `60–80`)* | `Kế hoạch` triển khai còn hiệu lực; `Báo cáo` tổng hợp, định kỳ (tháng/quý/6 tháng/năm/BCĐ 57/Đoàn kiểm tra-giám sát như `140`, `141`, `142-BC/ĐU`...); `Hướng dẫn` chuyên môn; `Kết luận` hội nghị BCH/BTV còn giá trị chỉ đạo; `Công văn` mang tính chỉ đạo/hướng dẫn khung lâu dài. | **NẠP TOÀN VĂN**: tạo `.md` sạch & nạp vào `van_ban_chunks` + `van_ban_fts`. |
-| **3. Giao việc cũ / Sự vụ ngắn hạn (`EPHEMERAL_EVENT` / `HET_HAN_SU_VU`)** | Giấy mời họp (`GM` hoặc CV mời họp); Bản sao chuyển tiếp đơn thuần (`BS`); Giấy nghỉ phép/giới thiệu; Công văn đôn đốc/giao việc thời vụ đã qua hạn hoặc đã hoàn thành; Quyết định khen thưởng/kỷ luật/nhân sự sự vụ cá nhân nhỏ lẻ không mang tính quy phạm. | **LOẠI BỎ khỏi kho toàn văn RAG** (không cắt chunk nội dung để tránh làm nhiễu kết quả tìm kiếm). Ghi vào danh mục tổng kết để cán bộ kiểm soát. |
-| **4. Văn bản đã bị thay thế (`BI_THAY_THE`)** | Khi phát hiện văn bản mới có cụm *"thay thế..."*, *"bãi bỏ..."*, *"điều chỉnh, bổ sung..."* văn bản trước đó. | Tạo bản ghi liên kết `THAY_THE` / `SUA_DOI_BO_SUNG` vào `van_ban_lien_ket`, đánh dấu `BI_THAY_THE` cho văn bản cũ. |
+| Nhóm Vòng đời (`nhom_vong_doi`) | Tiêu chí nhận diện nghiệp vụ | Xử lý Bề mặt 1 (Kho `.md` & `so_van_ban`) | Xử lý Bề mặt 2 (RAG Vector `chunks` & `fts`) |
+| :--- | :--- | :--- | :--- |
+| **1. `CORE_DIRECTIVE`**<br>*(Chỉ đạo Cốt lõi)* | `Nghị quyết`, `Quy chế`, `Quy định`, `Đề án`, `Chỉ thị`, `Phương án`; `Chương trình` hành động toàn khoá/năm; `Quyết định` ban hành quy chế, thành lập BCĐ/bộ máy; `Báo cáo` tổng kết/sơ kết thực hiện nghị quyết, kết luận, chỉ thị của Trung ương và Tỉnh uỷ. | **BẮT BUỘC** tạo file `.md` sạch & nạp metadata vào `so_van_ban`. | **BẮT BUỘC** cắt chunk (ngưỡng 20 tr), nạp `van_ban_chunks`, `van_ban_fts` và sinh Vector Embeddings (3.072 dims). |
+| **2. `THEMATIC_CASE`**<br>*(Chuyên đề còn giá trị)* | `Kế hoạch` công tác chuyên đề lớn còn hiệu lực; `Kết luận` hội nghị BCH/BTV; `Tờ trình` xin chủ trương quan trọng; `Hướng dẫn` chuyên môn nghiệp vụ của Đảng uỷ; `Báo cáo` chuyên đề/đoàn kiểm tra, giám sát. | **BẮT BUỘC** tạo file `.md` sạch & nạp metadata vào `so_van_ban`. | **BẮT BUỘC** nạp toàn văn vào RAG vector như nhóm 1. |
+| **3. `TASK_ASSIGNMENT`**<br>*(Giao việc, Đôn đốc)* | `Công văn` chỉ đạo, giao việc, đôn đốc các cơ quan chuyên môn theo thời hạn; công văn triển khai văn bản cấp trên có tính thời vụ. | **BẮT BUỘC** tạo file `.md` sạch & nạp metadata vào `so_van_ban`. | **LOẠI BỎ KHỎI RAG VECTOR** (tránh làm nhiễu ngữ nghĩa văn kiện nền tảng). |
+| **4. `ROUTINE_ADMIN`**<br>*(Hành chính Định kỳ)* | `Báo cáo` tình hình công tác tuần/tháng định kỳ; `Quyết định` nâng bậc lương, phụ cấp thâm niên, công nhận/kết nạp đảng viên cá nhân lẻ; `Thông báo` phân công lịch trực tết, xếp loại chi bộ hàng tháng. | **BẮT BUỘC** tạo file `.md` sạch & nạp metadata vào `so_van_ban`. | **LOẠI BỎ KHỎI RAG VECTOR** (chống ảo giác số liệu cũ). |
+| **5. `EPHEMERAL_EVENT`**<br>*(Sự vụ, Giấy mời)* | Giấy mời họp (`GM` hoặc CV mời dự hội nghị); Bản sao văn bản (`BS`); Giấy nghỉ phép, giới thiệu công tác; Thông báo thăm chúc mừng ngày truyền thống. | **BẮT BUỘC** tạo file `.md` sạch & nạp metadata vào `so_van_ban`. | **LOẠI BỎ KHỎI RAG VECTOR**. |
+| **6. `BI_THAY_THE`**<br>*(Đã Hết Hiệu Lực)* | Văn bản đã có văn bản mới tuyên bố *"thay thế"*, *"bãi bỏ"*, *"hủy bỏ"*. | Giữ file `.md` lưu trữ, cập nhật trạng thái `BI_THAY_THE` trong `so_van_ban`. | **LOẠI BỎ KHỎI RAG VECTOR**; ghi quan hệ vào bảng `van_ban_lien_ket`. |
 
-#### Quy tắc gắn `ma_chuyen_de`
-Gán theo 9 chuyên đề hiện có trong bảng `danh_muc_chuyen_de` (hoặc đề xuất tạo chuyên đề mới nếu cần). Chú ý gán dựa trên **ngữ nghĩa thực của văn bản**, tuyệt đối không gán máy móc theo từ đơn rời rạc (*hoạt, động, nâng, chất...*):
-- `CDS_DEAN06`: Chuyển đổi số, NQ 57, Đề án 06, BCĐ 57, IOC, Sổ tay ĐVĐT.
-- `XD_DANG_CAN_BO`: Tổ chức, cán bộ, đảng viên, chi bộ, tuyên giáo, dân vận.
-- `KT_GIAM_SAT`: Kiểm tra, giám sát, kỷ luật Đảng, phòng chống tham nhũng/tiêu cực.
-- `KINH_TE_NGAN_SACH`: Kinh tế, tài chính, ngân sách, đầu tư công, NTM.
-- `DAT_DAI_MOI_TRUONG`: Đất đai, GPMB, tài nguyên, khoáng sản, môi trường, xây dựng.
-- `VAN_HOA_XA_HOI`: Giáo dục, y tế, văn hoá, an sinh, giảm nghèo, dân tộc Raglai, tôn giáo.
-- `QUOC_PHONG_AN_NINH`: Quốc phòng, an ninh trật tự, công an, quân sự, PCCC.
-- `VAN_PHONG_THI_DUA`: Quy chế làm việc, văn thư lưu trữ, thi đua khen thưởng, tổng hợp chung của Văn phòng Đảng uỷ.
-- `CD_DE_AN_DOI_MOI_NANG_CAO_CH`: Đề án đổi mới, nâng cao chất lượng, hiệu quả hoạt động của xã Công Hải.
+#### Quy tắc Gắn `ma_chuyen_de` Chuẩn
+Gán chính xác theo 9 chuyên đề nghiệp vụ dựa trên ngữ nghĩa thực của văn bản:
+- `CDS_DEAN06`: Chuyển đổi số, Nghị quyết 57, Đề án 06, Ban Chỉ đạo 57, IOC, Sổ tay Đảng viên điện tử.
+- `XD_DANG_CAN_BO`: Tổ chức bộ máy, công tác cán bộ, đảng viên, bảo vệ chính trị nội bộ, tuyên giáo, dân vận.
+- `KT_GIAM_SAT`: Kiểm tra, giám sát, thi hành kỷ luật Đảng, phòng chống tham nhũng, lãng phí, tiêu cực.
+- `KINH_TE_NGAN_SACH`: Kinh tế, ngân sách, đầu tư công, nông thôn mới nâng cao, quản lý tài chính Đảng.
+- `DAT_DAI_MOI_TRUONG`: Đất đai, bồi thường GPMB, khoáng sản, môi trường, trật tự xây dựng.
+- `VAN_HOA_XA_HOI`: Giáo dục, y tế, văn hoá, chính sách an sinh, giảm nghèo, dân tộc Raglai, tôn giáo.
+- `QUOC_PHONG_AN_NINH`: Quân sự địa phương, an ninh trật tự, công an xã, PCCC, phòng chống thiên tai.
+- `VAN_PHONG_THI_DUA`: Quy chế làm việc, văn thư lưu trữ, thi đua khen thưởng, tổng hợp tham mưu của Văn phòng.
+- `CD_DE_AN_DOI_MOI_NANG_CAO_CH`: Đề án đổi mới, nâng cao chất lượng hoạt động của hệ thống chính trị xã Công Hải.
 
 ---
 
-### Bước 3. Quy chuẩn Rút gọn & Làm sạch Nội dung Văn bản
+### Bước 4. Quy chuẩn Bóc tách Nội dung & Xử lý Văn bản SCAN
 
-Khi biên tập nội dung sạch (dùng chung cho cả tệp `.md` và `chunk_text` trong RAG):
+#### 4.1. Cơ chế Phân hoá Xử lý SCAN vs TEXT
+- **Văn bản TEXT (`is_scan = False`):**
+  - Trích xuất toàn văn, làm sạch tiêu đề khuôn mẫu và chữ ký theo quy chuẩn mục 4.2.
+  - Xử lý mở dòng gãy tiếng Việt (`unwrap_vietnamese_text`), chuẩn hoá chính tả Khối Đảng (`oà`, `uỷ`, `uý`).
+- **Văn bản SCAN Sự vụ (`is_scan = True` & `nhom_vong_doi` $\in$ {ROUTINE_ADMIN, TASK_ASSIGNMENT, EPHEMERAL_EVENT}):**
+  - Không chạy OCR toàn trang tốn token; bóc tách metadata chuẩn xác từ Excel/tên file/trang 1.
+  - Tạo tệp `.md` lưu trữ theo mẫu:
+    ```markdown
+    [Thể loại] số [Số hiệu] ngày [dd/mm/yyyy] của [Cơ quan] về "[Trích yếu]". Người ký: [Họ tên].
 
+    *Nội dung trích yếu pháp lý:* [Trích yếu đầy đủ].
+
+    *Ghi chú:* Văn bản dạng ảnh quét (scan) lưu trữ phục vụ tra cứu sổ bộ và đối soát hành chính của Đảng bộ xã Công Hải nhiệm kỳ 2025 - 2030.
+    ```
+- **Văn bản SCAN Cốt lõi (`is_scan = True` & `nhom_vong_doi` $\in$ {CORE_DIRECTIVE, THEMATIC_CASE}):**
+  - Bắt buộc kích hoạt Subagent thị giác chuyên sâu (hoặc giải nén trang ảnh qua `fitz` kết hợp mô hình OCR) để chuyển đổi toàn văn thành văn bản sạch trước khi đưa vào RAG.
+
+#### 4.2. Quy chuẩn Rút gọn Thân bài Văn bản TEXT
 1. **Loại bỏ hoàn toàn phần Tiêu đề / Tiêu ngữ khuôn mẫu ở đầu trang:**
-   - Xoá: `ĐẢNG BỘ TỈNH KHÁNH HOÀ`, `ĐẢNG UỶ XÃ CÔNG HẢI` (hoặc `VĂN PHÒNG`, `BAN CHỈ ĐẠO...`), dấu `*`, `Số ...-.../ĐU`, `ĐẢNG CỘNG SẢN VIỆT NAM`, đường kẻ dưới tiêu ngữ, `Công Hải, ngày ... tháng ... năm ...`, và tên loại văn bản đứng riêng lẻ (`KẾ HOẠCH`, `NGHỊ QUYẾT`...).
-2. **Thay thế phần đầu bằng ĐÚNG 1 DÒNG ĐỊNH DANH CHUẨN HOÁ:**
+   - Xoá: `ĐẢNG BỘ TỈNH KHÁNH HOÀ`, `ĐẢNG UỶ XÃ CÔNG HẢI`, dấu `*`, `Số ...-.../ĐU`, `ĐẢNG CỘNG SẢN VIỆT NAM`, đường kẻ ngang, `Công Hải, ngày ... tháng ... năm ...`, và tên loại đứng riêng lẻ (`KẾ HOẠCH`, `NGHỊ QUYẾT`...).
+2. **Thay thế bằng ĐÚNG 1 DÒNG ĐỊNH DANH PHÁP LÝ ĐẦU BÀI:**
    ```text
-   [Thể loại] số [Số hiệu] ngày [dd/mm/yyyy] của [Thẩm quyền/Cơ quan ban hành] về [Trích yếu]. Người ký: [Họ tên].
+   [Thể loại] số [Số hiệu] ngày [dd/mm/yyyy] của [Thẩm quyền/Cơ quan ban hành] về "[Trích yếu]". Người ký: [Họ tên].
    ```
-   - *Ví dụ chuẩn:*  
-     `Kế hoạch số 144-KH/ĐU ngày 13/10/2026 của Ban Thường vụ Đảng uỷ xã về triển khai rà soát, làm sạch, chuẩn hoá, đối soát dữ liệu tổ chức đảng, đảng viên trong Đảng bộ xã Công Hải. Người ký: Nguyễn Xuân Hoàng.`
-   - **Thẩm quyền/Cơ quan ban hành** xác định từ khối ký gốc trước khi xoá:
-     - `T/M BAN THƯỜNG VỤ` $\rightarrow$ `Ban Thường vụ Đảng uỷ xã Công Hải`
-     - `T/M ĐẢNG UỶ` $\rightarrow$ `Ban Chấp hành Đảng bộ xã Công Hải`
-     - `PHÓ CHÁNH VĂN PHÒNG` / `CHÁNH VĂN PHÒNG` $\rightarrow$ `Văn phòng Đảng uỷ xã Công Hải`
-     - `T/M BAN CHỈ ĐẠO` (`BCĐ57`) $\rightarrow$ `Ban Chỉ đạo 57 Đảng uỷ xã Công Hải`
-   - **Nếu văn bản có `Kính gửi:`** (Công văn, Tờ trình): nén thành 1 dòng `Gửi: [Danh sách cơ quan].` đặt ngay dưới dòng định danh.
+   - *Quy chuẩn Cơ quan/Thẩm quyền:*
+     - Ký `T/M BAN THƯỜNG VỤ` $\rightarrow$ `Ban Thường vụ Đảng uỷ xã Công Hải`
+     - Ký `T/M ĐẢNG UỶ` $\rightarrow$ `Ban Chấp hành Đảng bộ xã Công Hải`
+     - Ký `CHÁNH VĂN PHÒNG` / `PHÓ CHÁNH VĂN PHÒNG` $\rightarrow$ `Văn phòng Đảng uỷ xã Công Hải`
+     - Ký `T/M BAN CHỈ ĐẠO` $\rightarrow$ `Ban Chỉ đạo 57 Đảng uỷ xã Công Hải`
 3. **Loại bỏ hoàn toàn phần `Nơi nhận:` và khối `Chữ ký` cuối văn bản:**
-   - Xoá toàn bộ danh sách `Nơi nhận:`, cụm `T/M...`, chức vụ, họ tên ký, chữ `Vũ Thị Thuỳ Trang` / `Nguyễn Xuân Hoàng` lặp lại, và toàn bộ rác đóng dấu/timestamp ký số điện tử (VD: `24-04-2026 15:21:14+07:00`, `CÔNG HAY`, `ĐẢNG CỘNG SẢN VIỆT NAM` đè dấu).
-   - **CHỐT BẢO VỆ PHỤ LỤC & VĂN BẢN GHÉP (QUAN TRỌNG):** Chỉ cắt **đoạn từ `Nơi nhận:` đến hết cụm chữ ký của phần đó**. Nếu phía dưới còn có **Phụ lục, Quy định/Quy chế ban hành kèm theo, Danh sách, hoặc Báo cáo kiểm điểm cá nhân** (như `140-BC/ĐU`), **bắt buộc giữ nguyên toàn bộ** phần phía sau và đánh tiêu đề phân tách rõ ràng.
-4. **Chuẩn hoá trình bày thân bài:**
-   - Bảng biểu chuyển về bảng Markdown chuẩn (`| Cột 1 | Cột 2 |`), không làm rơi tiêu đề cột.
-   - Giữ nguyên số hiệu các văn bản được viện dẫn ở phần *Căn cứ* / *Thực hiện* để ghi vào `van_ban_lien_ket`.
+   - Xoá toàn bộ khối Nơi nhận, chức vụ ký, timestamp điện tử lặp lại (`24-04-2026 15:21:14+07:00`, mộc ký số VNPT...).
+   - **CHỐT BẢO VỆ PHỤ LỤC & BÁO CÁO CÁ NHÂN:** Chỉ cắt bỏ từ dòng `Nơi nhận:` đến hết chữ ký của phần đó. Toàn bộ **Phụ lục số liệu, Quy chế đính kèm, Danh sách đảng viên hoặc Báo cáo kiểm điểm cá nhân** nằm phía sau chữ ký **BẮT BUỘC GIỮ NGUYÊN TOÀN VĂN**.
+4. **Chuẩn hoá Bảng biểu:**
+   - Chuyển đổi toàn bộ bảng biểu sang định dạng Markdown chuẩn (`| Cột 1 | Cột 2 |`), không làm rớt tiêu đề cột hoặc gộp dòng sai lệch.
 
 ---
 
-### Bước 4. Quy tắc Chia Chunk (Ngưỡng 20 Trang)
+### Bước 5. Quy tắc Chia Chunk & Giới hạn Ký tự Embedding
 
-Áp dụng thống nhất trên **số trang gốc của tệp văn bản**:
+Áp dụng thống nhất trên số trang gốc của văn bản:
 
 1. **Văn bản $\le 20$ trang:**
-   - **1 văn bản = 1 chunk duy nhất** (toàn bộ nội dung đã làm sạch ở Bước 3).
-   - Đặt đầu chunk bằng dòng định danh chuẩn hoá để AI nắm đủ ngữ cảnh.
+   - **1 văn bản = 1 chunk duy nhất** trong RAG (chứa toàn bộ nội dung sạch).
+   - Đặt đầu chunk bằng Dòng định danh pháp lý chuẩn hoá.
 2. **Văn bản $> 20$ trang:**
-   - **Chia làm đúng 2 chunk** (`Chunk 1/2` và `Chunk 2/2`).
-   - Chọn **điểm cắt tự nhiên gần giữa văn bản nhất** (tính theo số trang/số từ): ưu tiên ranh giới giữa các **Phần La Mã lớn**, ranh giới giữa **Báo cáo tập thể và Báo cáo cá nhân**, hoặc ranh giới giữa **Nội dung chính và Phần Phụ lục**.
-   - **Tuyệt đối không cắt ngang giữa một bảng biểu hoặc giữa một đoạn văn/điều khoản.**
-   - **Chunk 2/2 bắt buộc bắt đầu bằng dòng định danh lặp lại** kèm nhãn tiếp nối:
-     `[Thể loại] số [Số hiệu] ngày [dd/mm/yyyy] của [Cơ quan] về "[Trích yếu]". Người ký: [Họ tên]. (Phần 2/2 - Tiếp theo: [Tên phần/Phụ lục])`
+   - **Chia làm ĐÚNG 2 chunk** (`Chunk 1/2` và `Chunk 2/2`).
+   - Cắt tại **ranh giới tự nhiên gần giữa văn bản nhất**: ranh giới giữa các Phần La Mã lớn, giữa Báo cáo tập thể và Báo cáo cá nhân, hoặc giữa Thân bài và Phụ lục.
+   - **Tuyệt đối không cắt ngang giữa bảng biểu hoặc giữa một điều khoản.**
+   - Chunk 2/2 bắt buộc lặp lại Dòng định danh pháp lý đầu bài kèm nhãn tiếp nối:
+     `[Thể loại] số [Số hiệu] ngày [dd/mm/yyyy] của [Cơ quan] về "[Trích yếu]". Người ký: [Họ tên]. (Phần 2/2 - Tiếp theo: [Tên phần])`
+3. **Giới hạn an toàn API Vector Embedding:**
+   - Khi gọi `server.services.embedding_service.get_embedding(text)` (Gemini Embedding API, model `gemini-embedding-001`, 3.072 chiều), **bắt buộc cắt chuỗi `chunk_text[:5000]` ký tự** để sinh vector. Việc này vừa bảo đảm lấy trọn vẹn ngữ nghĩa trọng tâm phần đầu văn bản, vừa tránh triệt để lỗi timeout kết nối mạng hoặc lỗi vượt kích thước payload (HTTP 400/500).
 
 ---
 
-### Bước 5. Lưu trữ Kho Markdown (`.md`) & Nạp vào SQLite RAG
+### Bước 6. Lưu trữ Kho Markdown (`.md`) & Ghi nhận CSDL SQLite
 
-#### 5.1. Cây thư mục lưu trữ chuẩn
-Tạo cây thư mục tại `references/Văn bản Đảng uỷ Ban hành 25-30/` khớp đúng 15 thư mục thể loại của kho nguồn:
+#### 6.1. Cây Thư mục Lưu trữ 15 Thể loại
+Lưu trữ đồng bộ tại `references/Văn bản Đảng uỷ Ban hành 25-30/` gồm 15 thư mục chuẩn:
 
 ```text
 references/Văn bản Đảng uỷ Ban hành 25-30/
@@ -153,27 +202,26 @@ references/Văn bản Đảng uỷ Ban hành 25-30/
 └── Tờ trình/
 ```
 
-#### 5.2. Quy tắc đặt tên tệp `.md` thống nhất
-Đặt tên đồng bộ chuẩn mã định danh eOffice của Đảng uỷ xã Công Hải (`A32.65`), gọn gàng, sắp xếp thẳng hàng theo số hiệu/năm và dễ tra cứu:
+#### 6.2. Thuật toán Sanitize Tên File trên Windows
+Để chống triệt để lỗi `OSError: [Errno 22] Invalid argument` trên hệ điều hành Windows:
+1. Xoá toàn bộ ký tự ngắt dòng ẩn: `.replace("\n", " ").replace("\r", " ")`.
+2. Thay thế ký tự cấm hệ điều hành bằng khoảng trắng: `re.sub(r'[\/\\:\*\?"<>\|]', ' ', clean_ty)`.
+3. Thu gọn nhiều khoảng trắng liên tiếp và cắt độ dài an toàn $\le 60$ ký tự:
+   ```python
+   safe_title = re.sub(r'[\/\\:\*\?"<>\|\n\r]', ' ', clean_ty)
+   safe_title = re.sub(r'\s+', ' ', safe_title).strip()[:60]
+   ```
+4. **Cấu trúc tên file `.md` chuẩn:**
+   ```text
+   A32.65-[Cơ_quan]-[Thể_loại]-[Số_4_chữ_số]-[Năm] [Trích yếu rút gọn].md
+   ```
+   *Ví dụ:*
+   - `Kế hoạch/A32.65-ĐU-KH-0069-2026 Rà soát làm sạch dữ liệu ĐV.md`
+   - `Báo cáo/A32.65-ĐU-BC-0143-2026 Tổng kết 10 năm thực hiện Kết luận số 114-KL TW.md`
+   - `Quyết định/A32.65-ĐU-QĐ-0084-2026 Nâng lương thường xuyên đối với cán bộ.md`
 
-```text
-A32.65-[Cơ_quan]-[Thể_loại]-[Số_4_chữ_số]-[Năm] [Trích yếu rút gọn].md
-```
-- **Quy ước viết:**
-  - `A32.65`: Mã định danh đơn vị cố định của Đảng uỷ xã Công Hải.
-  - `[Cơ_quan]`: Mã cơ quan ban hành chuẩn (`ĐU` với Đảng uỷ/BTV/TTĐU; `VPĐU` với Văn phòng; `BCĐ57` với Ban Chỉ đạo 57; `UBKTĐU` với UBKT).
-  - `[Thể_loại]`: Ký hiệu thể loại chuẩn (`BC`, `CT`, `CTr`, `CV`, `ĐA`, `HD`, `KH`, `KL`, `NQ`, `PA`, `QC`, `QĐi`, `QĐ`, `TB`, `TTr` — dùng chữ `Đ` chuẩn `U+0110`, không dùng `Ð` `U+00D0`).
-  - `[Số_4_chữ_số]`: Đệm số hiệu lên đủ **4 chữ số** (ví dụ `0001`, `0069`, `0144`; nếu có hậu tố chữ cái giữ nguyên như `0137a`).
-  - `[Năm]`: Năm ban hành gồm 4 chữ số (`2025`, `2026`...).
-  - `[Trích yếu rút gọn]`: Tóm tắt nội dung chính bằng tiếng Việt chuẩn Khối Đảng (`oà`, `uỷ`, `uý`), dài tối đa ~60–70 ký tự (viết tắt chuẩn: `ĐV`, `CB`, `CĐS`, `BTV`, `BCH`, `NTM`, `KTGS`), không chứa ký tự cấm của Windows (`\/:*?"<>|`).
-  - *Xử lý ngoại lệ trùng số trong cùng năm (ID Collision):* Nếu có 2 văn bản trùng cả mã `A32.65-[Cơ_quan]-[Thể_loại]-[Số]-[Năm]` (như `01-QĐ/ĐU` năm 2025), thêm ngày `(dd-mm)` ngay sau năm để không ghi đè file.
-- **Ví dụ tên tệp chuẩn:**
-  - `Kế hoạch/A32.65-ĐU-KH-0069-2026 Rà soát làm sạch dữ liệu ĐV.md`
-  - `Nghị quyết/A32.65-ĐU-NQ-0001-2025 Nghị quyết Đại hội Đảng bộ xã lần thứ I.md`
-  - `Báo cáo/A32.65-ĐU-BC-0140-2026 Phục vụ Đoàn giám sát 327 TU.md`
-  - `Quyết định/A32.65-ĐU-QĐ-0001-2025 (10-07) Chức năng nhiệm vụ Văn phòng Đảng uỷ.md`
-
-#### 5.3. Mẫu chuẩn nội dung tệp `.md`
+#### 6.3. Mẫu Nội dung File `.md` Chuẩn Hoá
+Mỗi tệp `.md` đều chứa phần YAML Frontmatter đầy đủ để phục vụ máy học và công cụ tra cứu tự động:
 
 ```markdown
 ---
@@ -186,42 +234,39 @@ nguoi_ky: "Nguyễn Xuân Hoàng"
 nhom_vong_doi: "THEMATIC_CASE"
 ma_chuyen_de: "XD_DANG_CAN_BO"
 trang_thai_hieu_luc: "CON_HIEU_LUC"
-thay_the_so_hieu: ""
-can_cu_lien_ket:
-  - "81-KH/TU"
 so_trang_goc: 5
 so_chunks: 1
-nguon_file: "A32.65-ĐU-KH-0144-2026 ..."
+nguon_file: "A32.65-ĐU-KH-0144-2026 Rà soát dữ liệu ĐV.pdf"
 ---
 
 Kế hoạch số 144-KH/ĐU ngày 13/10/2026 của Ban Thường vụ Đảng uỷ xã Công Hải về "Triển khai rà soát, làm sạch, chuẩn hoá, đối soát dữ liệu tổ chức đảng, đảng viên trong Đảng bộ xã Công Hải". Người ký: Nguyễn Xuân Hoàng.
 
-[Toàn bộ nội dung sạch từ phần I đến hết nội dung văn bản + Phụ lục nếu có, đã bỏ Quốc hiệu, Tiêu ngữ, Nơi nhận và Chữ ký]
+[Nội dung toàn văn sạch từ phần I đến hết nội dung văn bản + Phụ lục đính kèm, đã loại bỏ Tiêu ngữ, Nơi nhận và Khối chữ ký]
 ```
 
-*Ghi chú với văn bản $> 20$ trang (2 chunks):* Chèn ranh giới rõ ràng trong tệp `.md` để đồng bộ 1-1 vào `van_ban_chunks`:
-```markdown
-<!-- CHUNK 1/2 | section: Nội dung chính & Đánh giá kết quả -->
-...
-<!-- CHUNK 2/2 | section: Phụ lục & Báo cáo kiểm điểm cá nhân -->
-Báo cáo số 140-BC/ĐU ngày 21/04/2026 của Ban Thường vụ Đảng uỷ xã Công Hải về "...". Người ký: Vũ Thị Thuỳ Trang. (Phần 2/2 - Tiếp theo: Phụ lục & Báo cáo kiểm điểm cá nhân)
-...
-```
-
-#### 5.4. Nạp vào `data/chuyen_vien_ao.db`
-- Ghi từng văn bản đã chọn vào `so_van_ban`, các chunk tương ứng (1 hoặc 2 chunk) vào `van_ban_chunks` và `van_ban_fts`, các căn cứ/thay thế vào `van_ban_lien_ket`.
-- Nếu `embedding_service` khả dụng thì sinh luôn vector vào cột `embedding` của `van_ban_chunks`.
+#### 6.4. Nạp vào CSDL `data/chuyen_vien_ao.db`
+- **Bảng `so_van_ban` (100% văn bản):** Ghi nhận `doc_id`, `file_hash` (MD5 bắt buộc), `so_hieu_vb`, `the_loai_vb`, `trich_yeu`, `nhom_vong_doi`, `ma_chuyen_de`, `nguoi_ky`, `ngay_ban_hanh`, `file_path`.
+- **Bảng `van_ban_chunks` & `van_ban_fts` (Chỉ văn bản Cốt lõi):** Ghi `chunk_text`, `context_header`, và `embedding` (BLOB vector 3.072 chiều).
+- **Bảng `van_ban_lien_ket`:** Ghi nhận các quan hệ `CAN_CU`, `THAY_THE`, `SUA_DOI_BO_SUNG`.
 
 ---
 
-## PHẦN III. TIÊU CHÍ NGHIỆM THU (QUALITY GATE) TRƯỚC KHI BÁO CÁO XONG
+## PHẦN III. BỘ TIÊU CHÍ NGHIỆM THU (QUALITY GATE) 6 CHỐT CHẶN
 
-Mỗi lô hoặc toàn đợt bóc tách chỉ được coi là hoàn thành khi đạt đủ 6 tiêu chí sau:
+Một đợt bóc tách chỉ được coi là hoàn tất khi vượt qua trọn vẹn 6 chốt chặn nghiệm thu sau:
 
-1. **Không lọt tài liệu MẬT:** 100% văn bản có dấu `MẬT` / `TỐI MẬT` / `TUYỆT MẬT` bị chặn và báo cáo riêng.
-2. **Sạch rác hành chính:** Không còn dòng `ĐẢNG CỘNG SẢN VIỆT NAM`, `ĐẢNG BỘ TỈNH KHÁNH HOÀ`, `Nơi nhận:`, chữ ký hoặc chuỗi timestamp ký số nằm lẫn trong thân văn bản `.md` và `chunk_text`.
-3. **Đủ dòng định danh đầu bài & đúng người ký:** Mỗi tệp `.md` và mỗi chunk đều mở đầu đúng cấu trúc `[Thể loại] số ... ngày dd/mm/yyyy của ... về "...". Người ký: ...`.
-4. **Đúng quy tắc trang:** 100% tệp $\le 20$ trang chỉ có **1 chunk**; 100% tệp $> 20$ trang có **đúng 2 chunk** không gãy bảng.
-5. **Khớp cây thư mục & đồng bộ DB:** Số lượng tệp `.md` đã duyệt trong `references/Văn bản Đảng uỷ Ban hành 25-30/` khớp 1-1 với số bản ghi toàn văn trong `so_van_ban` và `van_ban_chunks` / `van_ban_fts`.
-6. **Báo cáo kiểm kê minh bạch:** Trả cho cán bộ bảng tổng hợp rõ ràng: Tổng tệp đã quét, Số tệp giữ lại nạp RAG (Tầng 1 / Tầng 2), Số tệp loại bỏ (sự vụ/giao việc cũ), Số tệp `BI_THAY_THE`, và Danh sách tệp ngoại lệ/lỗi/nén (`.zip`, `.rar`) nếu có.
-
+1. **Chốt chặn 1 — Tuyệt đối Không Lọt Tài liệu MẬT:**
+   - 100% văn bản quét qua bộ lọc từ khoá mật. Phát hiện dấu mật phải dừng và báo cáo riêng cho cán bộ, không xuất file `.md` và không nạp DB.
+2. **Chốt chặn 2 — Phủ kín 100% Số hoá Kho `.md` và Sổ bộ (`so_van_ban`):**
+   - 100% tệp văn bản gốc có mặt trên đĩa đều có tệp `.md` chuẩn thể thức tương ứng trong 15 thư mục thể loại và có bản ghi đầy đủ trong bảng `so_van_ban` (kèm mã băm `file_hash`).
+3. **Chốt chặn 3 — Độ Thuần khiết Tuyệt đối của Kho RAG Vector:**
+   - Kho RAG (`van_ban_chunks` & `van_ban_fts`) chỉ chứa văn bản `CORE_DIRECTIVE` và `THEMATIC_CASE`.
+   - Tuyệt đối không để lọt văn bản `ROUTINE_ADMIN`, `TASK_ASSIGNMENT`, `EPHEMERAL_EVENT` vào kho vector.
+   - 100% chunks trong `van_ban_chunks` đều sinh thành công Vector Embedding (`embedding IS NOT NULL`).
+4. **Chốt chặn 4 — Sạch Rác Hành chính & Chuẩn Dòng Định danh Đầu bài:**
+   - 100% tệp `.md` và chunk RAG không còn tồn tại chuỗi `ĐẢNG CỘNG SẢN VIỆT NAM`, `Nơi nhận:`, rác timestamp ký số VNPT; mở đầu bằng đúng 1 dòng định danh pháp lý có đầy đủ Người ký.
+5. **Chốt chặn 5 — Chuẩn Ngưỡng Chunk 20 Trang:**
+   - 100% tệp $\le 20$ trang chỉ có đúng 1 chunk; 100% tệp $> 20$ trang có đúng 2 chunk cắt tại ranh giới tự nhiên, không làm gãy bảng biểu.
+6. **Chốt chặn 6 — Dọn dẹp Script Tạm & Đồng bộ Bản đồ Mã nguồn:**
+   - Toàn bộ các file script Python bổ trợ dùng một lần đã được tự động xoá sạch khỏi thư mục `scripts/`.
+   - Đã chạy lệnh `python scripts/generate_code_map.py --update-map` để cập nhật [CODEBASE_MAP.md](../../CODEBASE_MAP.md).
