@@ -9,13 +9,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css?v=2.2.4">
+  <link rel="stylesheet" href="/static/style.css?v=2.2.8">
 </head>
 <body>
   <div class="app-container">
     <!-- ==================== TOPBAR HEADER CÔNG HẢI SỐ ==================== -->
     <header class="topbar">
       <div class="topbar-left">
+        <!-- Nút đóng/mở Sidebar Lịch sử & Kỹ năng Đảng -->
+        <button class="btn-toggle-sidebar" id="btnToggleSidebar" title="Đóng/mở thanh bên Lịch sử & Kỹ năng Đảng" aria-label="Toggle Sidebar">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
         <img src="/static/assets/logo.png" alt="Công Hải Số Logo" class="brand-logo-img">
         <div class="brand-info">
           <div class="brand-title">
@@ -24,6 +28,12 @@
           </div>
           <div class="brand-subtitle">Văn phòng Đảng uỷ xã Công Hải</div>
         </div>
+      </div>
+
+      <!-- TRẠNG THÁI HỆ THỐNG TRỰC TUYẾN -->
+      <div class="system-status-indicator" id="topbarSystemStatus" title="Trạng thái kết nối động cơ AI">
+        <span class="status-pulse-dot"></span>
+        <span class="status-model-name" id="topbarModelName">Gemini 3.5 Flash Lite</span>
       </div>
 
       <!-- ĐIỀU HƯỚNG QUẢN TRỊ ADMIN (CHỈ XUẤT HIỆN KHI ADMIN ĐĂNG NHẬP) -->
@@ -37,6 +47,16 @@
       </div>
 
       <div class="topbar-right">
+        <!-- Nút xem nhanh các file Word dự thảo gần đây -->
+        <button class="btn-chs-icon" id="btnQuickRecentDocs" title="Xem danh sách các file Word dự thảo gần đây">
+          <span style="font-size: 16px;">📁</span>
+        </button>
+
+        <!-- Nút chuyển đổi Theme Sáng / Tối bảo vệ mắt -->
+        <button class="btn-chs-icon" id="btnThemeToggle" title="Chuyển chế độ Sáng / Tối bảo vệ mắt">
+          <span id="themeToggleIcon">🌙</span>
+        </button>
+
         <!-- Nút tạo cuộc trò chuyện mới -->
         <button class="btn-chs-outline" id="btnNewChat" title="Bắt đầu phiên hội thoại mới">
           <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
@@ -56,6 +76,39 @@
 
     <!-- ==================== THÂN ỨNG DỤNG ==================== -->
     <div class="app-body">
+      <!-- ==================== SIDEBAR LỊCH SỬ HỘI THOẠI ==================== -->
+      <aside class="chat-sidebar" id="chatSidebar">
+        <div class="sidebar-header">
+          <button class="btn-sidebar-newchat" id="btnNewChatSidebar" title="Bắt đầu phiên hội thoại mới">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+            <span>Cuộc trò chuyện mới</span>
+          </button>
+          <button class="btn-sidebar-close" id="btnCloseSidebarMobile" title="Đóng thanh bên">✕</button>
+        </div>
+
+        <!-- Thanh tìm kiếm phiên làm việc -->
+        <div class="sidebar-search-wrap">
+          <input type="text" id="inputSearchSessionsSidebar" class="sidebar-search-input" placeholder="🔍 Tìm kiếm lịch sử hội thoại...">
+        </div>
+
+        <!-- Khung cuộn Lịch sử hội thoại (Toàn bộ thanh bên) -->
+        <div class="sidebar-scroll-content">
+          <div class="sidebar-sessions-list" id="sidebarSessionsList">
+            <div class="sidebar-loading-item">Đang tải lịch sử...</div>
+          </div>
+        </div>
+
+        <!-- Footer Sidebar -->
+        <div class="sidebar-footer">
+          <div class="sidebar-footer-info">
+            <span class="version-tag">Phiên bản 2.2.0</span>
+            <span class="authority-tag">Công Hải 02 Cấp</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Backdrop cho Mobile -->
+      <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
       <!-- ====================================================================== -->
       <!-- PHÂN HỆ 1: TRANG CHAT DUY NHẤT (CHATCHS) CHUẨN CÔNG HẢI SỐ              -->
       <!-- ====================================================================== -->
@@ -75,7 +128,7 @@
               <h2 class="welcome-title-sub">Trợ lý AI Công Hải Số — Văn phòng Đảng uỷ</h2>
               <div style="font-size: 14.5px; font-weight: 600; color: var(--primary-red); margin-bottom: 8px;">Xin chào, <span id="welcomeUserName">đồng chí</span></div>
               <p class="welcome-desc">
-                Hệ thống tham mưu tổng hợp, chuẩn hoá thể thức Hướng dẫn số 05-HD/VPTW năm 2026, đối soát số liệu địa phương và hỗ trợ cán bộ cấp uỷ 24/7.
+                Hệ thống Trợ lý AI Tham mưu Tổng hợp, Văn thư và Tự động hoá công tác Đảng — Hỗ trợ cán bộ cấp uỷ 24/7.
               </p>
 
               <!-- 4 THẺ GỢI Ý NGHIỆP VỤ -->
@@ -104,10 +157,10 @@
                   <div class="chs-card-badge">🏛️</div>
                 </div>
 
-                <div class="chs-card suggest" data-prompt="Thẩm định dự thảo kế hoạch của UBND xã theo thể thức văn bản Đảng HD 05">
+                <div class="chs-card suggest" data-prompt="Thẩm định dự thảo kế hoạch của UBND xã theo thể thức và nội dung chuyên môn">
                   <div>
                     <span class="chs-card-title">Thẩm định dự thảo văn bản</span>
-                    <span class="chs-card-desc">Kiểm tra lỗi thể thức HD 05-HD/VPTW và đối soát chỉ tiêu số liệu</span>
+                    <span class="chs-card-desc">Kiểm tra tính chuẩn mực của văn bản và đối soát các chỉ tiêu số liệu chuyên môn</span>
                   </div>
                   <div class="chs-card-badge">🔍</div>
                 </div>
@@ -275,71 +328,170 @@
               </div>
             </div>
 
-            <!-- ==================== SUBTAB 4: SỔ NHIỆM VỤ ==================== -->
+            <!-- ==================== SUBTAB 4: SỔ NHIỆM VỤ (LINEAR / NOTION MINIMALIST) ==================== -->
             <div class="admin-subcontent" id="subtab-tasks">
               <div class="admin-card-table">
-                <div class="table-header-bar">
-                  <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Sổ Theo Dõi Nhiệm Vụ Giao Việc</h3>
-                  <div style="display: flex; gap: 8px;">
-                    <select id="filterTaskStatus" class="form-input-chs" style="width: 150px; padding: 7px 10px;">
-                      <option value="">Tất cả trạng thái</option>
-                      <option value="Chưa thực hiện">Chưa thực hiện</option>
-                      <option value="Đang thực hiện">Đang thực hiện</option>
-                      <option value="Hoàn thành">Hoàn thành</option>
-                      <option value="Chuyển tiếp tháng sau">Chuyển tiếp</option>
+                <!-- TOOLBAR TIÊU ĐỀ & ĐIỀU KHIỂN NHANH -->
+                <div class="table-header-bar tasks-header-bar">
+                  <div class="tasks-title-group">
+                    <h3 class="tasks-heading">📋 Sổ Theo Dõi Nhiệm Vụ Giao Việc</h3>
+                    <p class="tasks-subheading">Bóc tách nhiệm vụ giao việc 5 Rõ từ văn bản chỉ đạo của Tỉnh uỷ và Đảng uỷ xã.</p>
+                  </div>
+                  <div class="tasks-actions-group">
+                    <!-- Ô tìm kiếm tức thì Live Search -->
+                    <div class="tasks-search-wrap">
+                      <span class="search-icon">🔍</span>
+                      <input type="text" id="inputSearchTasks" class="tasks-search-input" placeholder="Tìm theo nội dung, số hiệu, đơn vị...">
+                      <button type="button" class="btn-clear-search" id="btnClearTaskSearch" style="display: none;">✕</button>
+                    </div>
+
+                    <!-- Lọc theo cơ quan chủ trì -->
+                    <select id="filterTaskUnit" class="tasks-select-filter" title="Lọc theo đơn vị phụ trách">
+                      <option value="">Tất cả đơn vị</option>
+                      <option value="UBND xã">UBND xã</option>
+                      <option value="Văn phòng Đảng uỷ">Văn phòng Đảng uỷ</option>
+                      <option value="Ban Xây dựng Đảng">Ban Xây dựng Đảng</option>
+                      <option value="UBKT Đảng uỷ">UBKT Đảng uỷ</option>
+                      <option value="MTTQ & Đoàn thể">MTTQ & Đoàn thể</option>
                     </select>
-                    <button class="btn-chs-outline" id="btnRefreshTasks">🔄 Làm mới</button>
+
+                    <!-- Bộ chuyển đổi Dạng Bảng vs Kanban (Segmented Control) -->
+                    <div class="rag-view-switcher" id="tasksViewSwitcher">
+                      <button type="button" class="rag-view-btn active" id="btnTaskViewTable" title="Chế độ danh sách tinh gọn">📋 Danh Sách</button>
+                      <button type="button" class="rag-view-btn" id="btnTaskViewKanban" title="Chế độ bảng Kanban trực quan">📌 Kanban</button>
+                    </div>
+
+                    <button class="btn-chs-outline btn-refresh-compact" id="btnRefreshTasks" title="Tải lại danh sách nhiệm vụ">🔄</button>
                   </div>
                 </div>
-                <table class="chs-table" id="tasksTable">
-                  <thead>
-                    <tr>
-                      <th width="120">Mã / Số Hiệu</th>
-                      <th width="160">Cơ Quan Chủ Trì</th>
-                      <th>Nội Dung Nhiệm Vụ</th>
-                      <th width="110">Hạn Chót</th>
-                      <th width="100">Ưu Tiên</th>
-                      <th width="120">Trạng Thái</th>
-                      <th width="90" style="text-align: center;">Thao Tác</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tasksTableBody">
-                    <tr><td colspan="7" style="text-align: center; padding: 20px;">Đang tải sổ nhiệm vụ...</td></tr>
-                  </tbody>
-                </table>
+
+                <!-- THANH FILTER TABS PHẲNG TÍCH HỢP CON SỐ ĐẾM (LINEAR STYLE) -->
+                <div class="task-tabs-row" id="taskStatusTabs">
+                  <button type="button" class="task-tab-btn active" data-status="">
+                    <span>Tất cả</span>
+                    <span class="task-tab-count" id="statTasksTotal">0</span>
+                  </button>
+                  <button type="button" class="task-tab-btn" data-status="Chưa thực hiện">
+                    <span class="status-dot dot-pending"></span>
+                    <span>Chưa làm</span>
+                    <span class="task-tab-count" id="statTasksPending">0</span>
+                  </button>
+                  <button type="button" class="task-tab-btn" data-status="Đang thực hiện">
+                    <span class="status-dot dot-inprogress"></span>
+                    <span>Đang làm</span>
+                    <span class="task-tab-count" id="statTasksInprogress">0</span>
+                  </button>
+                  <button type="button" class="task-tab-btn" data-status="Hoàn thành">
+                    <span class="status-dot dot-completed"></span>
+                    <span>Đã xong</span>
+                    <span class="task-tab-count" id="statTasksCompleted">0</span>
+                  </button>
+                  <button type="button" class="task-tab-btn" data-status="Chuyển tiếp tháng sau">
+                    <span class="status-dot dot-rescheduled"></span>
+                    <span>Chuyển tiếp</span>
+                    <span class="task-tab-count" id="statTasksRescheduled">0</span>
+                  </button>
+                </div>
+
+                <!-- VIEW 1: BẢNG DANH SÁCH TINH GỌN 4 CỘT (NOTION / LINEAR STYLE) -->
+                <div id="tasksTableView" class="tasks-table-container">
+                  <table class="chs-table tasks-clean-table" id="tasksTable">
+                    <thead>
+                      <tr>
+                        <th width="46" style="text-align: center;" title="Đánh dấu hoàn thành nhanh">✓</th>
+                        <th>Nhiệm Vụ & Căn Cứ Chỉ Đạo</th>
+                        <th width="180">Đơn Vị Chủ Trì</th>
+                        <th width="140">Hạn Chót</th>
+                        <th width="140" style="text-align: right;">Trạng Thái</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tasksTableBody">
+                      <tr><td colspan="5" class="loading-td">Đang tải sổ nhiệm vụ...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- VIEW 2: BẢNG KANBAN TỐI GIẢN (MINIMAL FLAT KANBAN) -->
+                <div id="tasksKanbanView" class="tasks-kanban-container" style="display: none;">
+                  <div class="kanban-board-grid">
+                    <div class="kanban-col col-pending">
+                      <div class="kanban-col-header">
+                        <div class="col-title-wrap">
+                          <span class="status-dot dot-pending"></span>
+                          <span>Chưa thực hiện</span>
+                        </div>
+                        <span class="kanban-col-count" id="countKanbanPending">0</span>
+                      </div>
+                      <div class="kanban-cards-wrap" id="kanbanPendingWrap"></div>
+                    </div>
+
+                    <div class="kanban-col col-inprogress">
+                      <div class="kanban-col-header">
+                        <div class="col-title-wrap">
+                          <span class="status-dot dot-inprogress"></span>
+                          <span>Đang thực hiện</span>
+                        </div>
+                        <span class="kanban-col-count" id="countKanbanInprogress">0</span>
+                      </div>
+                      <div class="kanban-cards-wrap" id="kanbanInprogressWrap"></div>
+                    </div>
+
+                    <div class="kanban-col col-completed">
+                      <div class="kanban-col-header">
+                        <div class="col-title-wrap">
+                          <span class="status-dot dot-completed"></span>
+                          <span>Hoàn thành</span>
+                        </div>
+                        <span class="kanban-col-count" id="countKanbanCompleted">0</span>
+                      </div>
+                      <div class="kanban-cards-wrap" id="kanbanCompletedWrap"></div>
+                    </div>
+
+                    <div class="kanban-col col-rescheduled">
+                      <div class="kanban-col-header">
+                        <div class="col-title-wrap">
+                          <span class="status-dot dot-rescheduled"></span>
+                          <span>Chuyển tiếp</span>
+                        </div>
+                        <span class="kanban-col-count" id="countKanbanRescheduled">0</span>
+                      </div>
+                      <div class="kanban-cards-wrap" id="kanbanRescheduledWrap"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             <!-- ==================== SUBTAB 5: KHO VĂN BẢN RAG ==================== -->
             <div class="admin-subcontent" id="subtab-rag">
-              <!-- 4 THẺ THỐNG KÊ KHO RAG -->
-              <div class="admin-stats-row" style="margin-bottom: 20px;">
-                <div class="stat-card-chs">
-                  <div class="stat-icon-wrap" style="background: rgba(220, 38, 38, 0.1); color: var(--primary-red);">📚</div>
-                  <div>
-                    <div class="stat-value" id="statRagDocs">0</div>
-                    <div class="stat-label">Văn bản trong kho RAG</div>
+              <!-- 4 CHỈ SỐ NHANH KHO RAG (MINIMAL METRICS STRIP) -->
+              <div class="metrics-strip" style="margin-bottom: 16px;">
+                <div class="metric-chip">
+                  <span class="metric-chip-icon">📚</span>
+                  <div class="metric-chip-data">
+                    <span class="metric-chip-num" id="statRagDocs">0</span>
+                    <span class="metric-chip-label">Văn bản RAG</span>
                   </div>
                 </div>
-                <div class="stat-card-chs">
-                  <div class="stat-icon-wrap" style="background: rgba(2, 132, 199, 0.1); color: #0284c7;">📑</div>
-                  <div>
-                    <div class="stat-value" id="statRagChunks">0</div>
-                    <div class="stat-label">Đoạn trích (Chunks)</div>
+                <div class="metric-chip">
+                  <span class="metric-chip-icon">📑</span>
+                  <div class="metric-chip-data">
+                    <span class="metric-chip-num" id="statRagChunks">0</span>
+                    <span class="metric-chip-label">Đoạn trích (Chunks)</span>
                   </div>
                 </div>
-                <div class="stat-card-chs">
-                  <div class="stat-icon-wrap" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🏛️</div>
-                  <div>
-                    <div class="stat-value" id="statRagCore">0</div>
-                    <div class="stat-label">Văn bản Nền tảng</div>
+                <div class="metric-chip">
+                  <span class="metric-chip-icon">🏛️</span>
+                  <div class="metric-chip-data">
+                    <span class="metric-chip-num" id="statRagCore">0</span>
+                    <span class="metric-chip-label">Văn bản Nền tảng</span>
                   </div>
                 </div>
-                <div class="stat-card-chs">
-                  <div class="stat-icon-wrap" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">🎯</div>
-                  <div>
-                    <div class="stat-value" id="statRagThematic">0</div>
-                    <div class="stat-label">Văn bản Chuyên đề</div>
+                <div class="metric-chip">
+                  <span class="metric-chip-icon">🎯</span>
+                  <div class="metric-chip-data">
+                    <span class="metric-chip-num" id="statRagThematic">0</span>
+                    <span class="metric-chip-label">Văn bản Chuyên đề</span>
                   </div>
                 </div>
               </div>
@@ -530,34 +682,34 @@
 
             <!-- ==================== SUBTAB 7: MÁY CHỦ VPS & LOGS ==================== -->
             <div class="admin-subcontent" id="subtab-server">
-              <!-- 4 THẺ THỐNG KÊ NHANH TÀI NGUYÊN HỆ THỐNG -->
-              <div class="admin-stats-row" style="margin-bottom: 20px;">
-                <div class="stat-card-chs">
-                  <div class="stat-icon-wrap">👥</div>
-                  <div>
-                    <div class="stat-value" id="statAdminCadres">1</div>
-                    <div class="stat-label">Cán bộ trong danh bạ</div>
+              <!-- 4 CHỈ SỐ NHANH TÀI NGUYÊN HỆ THỐNG (MINIMAL METRICS STRIP) -->
+              <div class="metrics-strip" style="margin-bottom: 16px;">
+                <div class="metric-chip">
+                  <span class="metric-chip-icon">👥</span>
+                  <div class="metric-chip-data">
+                    <span class="metric-chip-num" id="statAdminCadres">1</span>
+                    <span class="metric-chip-label">Cán bộ danh bạ</span>
                   </div>
                 </div>
-                <div class="stat-card-chs">
-                  <div class="stat-icon-wrap">💬</div>
-                  <div>
-                    <div class="stat-value" id="statAdminMessages">0</div>
-                    <div class="stat-label">Hội thoại đã lưu</div>
+                <div class="metric-chip">
+                  <span class="metric-chip-icon">💬</span>
+                  <div class="metric-chip-data">
+                    <span class="metric-chip-num" id="statAdminMessages">0</span>
+                    <span class="metric-chip-label">Hội thoại lưu</span>
                   </div>
                 </div>
-                <div class="stat-card-chs">
-                  <div class="stat-icon-wrap">⚡</div>
-                  <div>
-                    <div class="stat-value" id="statAdminAiModel" style="font-size: 16px;">Gemini 3.5 Flash Lite</div>
-                    <div class="stat-label">Động cơ AI chính</div>
+                <div class="metric-chip">
+                  <span class="metric-chip-icon">⚡</span>
+                  <div class="metric-chip-data">
+                    <span class="metric-chip-num" id="statAdminAiModel" style="font-size: 13.5px;">Gemini 3.5</span>
+                    <span class="metric-chip-label">Động cơ chính</span>
                   </div>
                 </div>
-                <div class="stat-card-chs">
-                  <div class="stat-icon-wrap">🖥️</div>
-                  <div>
-                    <div class="stat-value" id="statAdminDisk">-</div>
-                    <div class="stat-label">Dung lượng ổ đĩa VPS</div>
+                <div class="metric-chip">
+                  <span class="metric-chip-icon">🖥️</span>
+                  <div class="metric-chip-data">
+                    <span class="metric-chip-num" id="statAdminDisk">-</span>
+                    <span class="metric-chip-label">Dung lượng ổ đĩa</span>
                   </div>
                 </div>
               </div>
@@ -1000,7 +1152,34 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL XEM CÁC DỰ THẢO WORD GẦN ĐÂY ==================== -->
+  <div class="modal-backdrop" id="modalRecentDocs" style="display: none;">
+    <div class="modal-chs-card wide" style="max-width: 760px;">
+      <div class="modal-chs-header" style="background: linear-gradient(135deg, var(--primary-red), #991b1b); color: white; padding: 16px 20px; border-radius: 12px 12px 0 0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">📁</span>
+          <div>
+            <h3 class="modal-chs-title" style="color: white; margin: 0; font-size: 17px; font-weight: 700;">Kho Văn Bản Dự Thảo Word Đã Xuất Bản (.docx)</h3>
+            <p style="margin: 0; font-size: 12px; opacity: 0.9;">Các văn bản Đảng dự thảo được tạo bởi Chuyên viên ảo năm 2026</p>
+          </div>
+        </div>
+        <button id="btnCloseRecentDocsModal" style="font-size: 20px; color: white; cursor: pointer; background: none; border: none;">✕</button>
+      </div>
+      <div class="modal-chs-body" style="padding: 20px; max-height: calc(85vh - 120px); overflow-y: auto;">
+        <div id="recentDocsList" style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="text-align: center; color: var(--text-muted); padding: 30px;">Đang quét danh sách dự thảo gần đây...</div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn-chs-outline" id="btnCancelRecentDocsModal">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTAINER HỆ THỐNG TOAST THÔNG BÁO HIỆN ĐẠI -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <!-- NẠP JAVASCRIPT HẠT NHÂN -->
-  <script src="/static/app.js?v=2.2.7"></script>
+  <script src="/static/app.js?v=2.2.8"></script>
 </body>
 </html>

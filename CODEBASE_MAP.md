@@ -236,8 +236,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 22/11/2026 17:35:18*
-> *Quy mô: **55** tệp Python | **13,952** dòng mã | **52** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 22/11/2026 20:35:09*
+> *Quy mô: **55** tệp Python | **13,953** dòng mã | **52** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -308,7 +308,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/logger.py`](server/logger.py) | 88 | 2 Funcs | server/logger.py |
 | [`server/plan_registry.py`](server/plan_registry.py) | 310 | 8 Funcs | server/plan_registry.py |
 | [`server/prompts/__init__.py`](server/prompts/__init__.py) | 2 | 0 Funcs | Package chứa các bộ Prompt chuyên sâu tối ưu riêng cho DeepSeek API. |
-| [`server/prompts/chat_mode.py`](server/prompts/chat_mode.py) | 39 | 0 Funcs | server/prompts/chat_mode.py |
+| [`server/prompts/chat_mode.py`](server/prompts/chat_mode.py) | 40 | 0 Funcs | server/prompts/chat_mode.py |
 | [`server/prompts/intent_router.py`](server/prompts/intent_router.py) | 129 | 2 Funcs | server/prompts/intent_router.py |
 | [`server/prompts/system_base.py`](server/prompts/system_base.py) | 58 | 0 Funcs | server/prompts/system_base.py |
 | [`server/prompts/wf1_tong_hop_bao_cao.py`](server/prompts/wf1_tong_hop_bao_cao.py) | 130 | 1 Funcs | server/prompts/wf1_tong_hop_bao_cao.py |

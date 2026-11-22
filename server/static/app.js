@@ -23,6 +23,66 @@ document.addEventListener('DOMContentLoaded', () => {
   let sessionId = getStoredSessionId();
   let pendingAttachments = []; // [{ id, name, category_label, char_count }]
   let isSending = false;
+  let lastUserPrompt = '';
+
+  // ============================================================================
+  // HỆ THỐNG TOAST THÔNG BÁO HIỆN ĐẠI (THAY THẾ TOÀN BỘ ALERT TRÌNH DUYỆT)
+  // ============================================================================
+  function showToast(message, type = 'info', duration = 3500) {
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toastContainer';
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast-item toast-${type}`;
+    const icon = type === 'success' ? '✓' : (type === 'error' ? '✕' : (type === 'warning' ? '⚠' : 'ℹ'));
+    toast.innerHTML = `
+      <span class="toast-icon">${icon}</span>
+      <span class="toast-msg">${escapeHtml(message)}</span>
+      <button class="toast-close" type="button">✕</button>
+    `;
+    container.appendChild(toast);
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 250);
+    });
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 250);
+      }
+    }, duration);
+  }
+
+  // ============================================================================
+  // CHẾ ĐỘ BAN ĐÊM (DARK THEME / EYE-CARE MODE)
+  // ============================================================================
+  function initTheme() {
+    const savedTheme = localStorage.getItem('chs_theme') || 'light';
+    const icon = document.getElementById('themeToggleIcon');
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark-theme');
+      if (icon) icon.textContent = '☀️';
+    } else {
+      document.body.classList.remove('dark-theme');
+      if (icon) icon.textContent = '🌙';
+    }
+  }
+  initTheme();
+
+  const btnThemeToggle = document.getElementById('btnThemeToggle');
+  if (btnThemeToggle) {
+    btnThemeToggle.addEventListener('click', () => {
+      const isDark = document.body.classList.toggle('dark-theme');
+      localStorage.setItem('chs_theme', isDark ? 'dark' : 'light');
+      const icon = document.getElementById('themeToggleIcon');
+      if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+      showToast(isDark ? '🌙 Đã bật chế độ Ban đêm dịu mắt' : '☀️ Đã bật chế độ Sáng tiêu chuẩn', 'info', 2000);
+    });
+  }
 
   // DOM Elements
   const aiStatus = document.getElementById('aiStatus');
@@ -38,6 +98,206 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSend = document.getElementById('btnSend');
   const fileInput = document.getElementById('fileInput');
   const dropOverlay = document.getElementById('dropOverlay');
+  const topbarModelName = document.getElementById('topbarModelName');
+
+  // DOM Sidebar
+  const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+  const chatSidebar = document.getElementById('chatSidebar');
+  const btnCloseSidebarMobile = document.getElementById('btnCloseSidebarMobile');
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+  const btnNewChatSidebar = document.getElementById('btnNewChatSidebar');
+  const sidebarSessionsList = document.getElementById('sidebarSessionsList');
+  const inputSearchSessionsSidebar = document.getElementById('inputSearchSessionsSidebar');
+
+  function closeMobileSidebar() {
+    if (chatSidebar) chatSidebar.classList.remove('mobile-open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+  }
+
+  if (btnToggleSidebar && chatSidebar) {
+    btnToggleSidebar.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        const isOpen = chatSidebar.classList.toggle('mobile-open');
+        if (sidebarBackdrop) sidebarBackdrop.classList.toggle('active', isOpen);
+      } else {
+        chatSidebar.classList.toggle('collapsed');
+      }
+    });
+  }
+
+  if (btnCloseSidebarMobile) btnCloseSidebarMobile.addEventListener('click', closeMobileSidebar);
+  if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+
+  if (btnNewChatSidebar) {
+    btnNewChatSidebar.addEventListener('click', () => {
+      if (btnNewChat) btnNewChat.click();
+      closeMobileSidebar();
+    });
+  }
+
+  // Modal xem nhanh các Dự thảo Word gần đây
+  const btnQuickRecentDocs = document.getElementById('btnQuickRecentDocs');
+  const modalRecentDocs = document.getElementById('modalRecentDocs');
+  const btnCloseRecentDocsModal = document.getElementById('btnCloseRecentDocsModal');
+  const btnCancelRecentDocsModal = document.getElementById('btnCancelRecentDocsModal');
+  const recentDocsList = document.getElementById('recentDocsList');
+
+  async function openRecentDocsModal() {
+    if (!modalRecentDocs || !recentDocsList) return;
+    modalRecentDocs.style.display = 'flex';
+    recentDocsList.innerHTML = '<div style="text-align:center; padding:25px; color:var(--text-muted);">⏳ Đang quét danh sách văn bản dự thảo gần đây...</div>';
+
+    try {
+      const res = await fetch('/api/chat/recent');
+      if (!res.ok) throw new Error('Không thể tải danh sách tệp');
+      const data = await res.json();
+      const files = data.files || [];
+
+      if (files.length === 0) {
+        recentDocsList.innerHTML = '<div style="text-align:center; padding:25px; color:var(--text-muted);">Chưa có văn bản dự thảo nào được tạo trong năm 2026.</div>';
+        return;
+      }
+
+      recentDocsList.innerHTML = files.map((f) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:22px;">📄</span>
+            <div>
+              <div style="font-weight:700; font-size:13.5px; color:var(--text-main);">${escapeHtml(f.name)}</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">${escapeHtml(f.category || 'Văn bản')} • ${f.size_kb ? f.size_kb + ' KB' : ''} • ${escapeHtml(f.modified || '')}</div>
+            </div>
+          </div>
+          <a href="${escapeHtml(f.download_url)}" target="_blank" download class="btn-chs-outline" style="padding:6px 14px; font-size:12px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+            <span>⬇ Tải Word</span>
+          </a>
+        </div>
+      `).join('');
+    } catch (err) {
+      recentDocsList.innerHTML = `<div style="color:#ef4444; padding:20px; text-align:center;">Lỗi: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  if (btnQuickRecentDocs) btnQuickRecentDocs.addEventListener('click', openRecentDocsModal);
+  if (btnCloseRecentDocsModal) btnCloseRecentDocsModal.addEventListener('click', () => modalRecentDocs.style.display = 'none');
+  if (btnCancelRecentDocsModal) btnCancelRecentDocsModal.addEventListener('click', () => modalRecentDocs.style.display = 'none');
+
+  // ============================================================================
+  // TẢI & QUẢN LÝ LỊCH SỬ PHIÊN HỘI THOẠI TRÊN SIDEBAR
+  // ============================================================================
+  let allSidebarSessions = [];
+
+  async function loadSidebarSessions() {
+    if (!sidebarSessionsList) return;
+    try {
+      const res = await fetch('/api/admin/sessions?page=1&page_size=25');
+      if (!res.ok) throw new Error('Không thể tải phiên');
+      const data = await res.json();
+      allSidebarSessions = data.sessions || [];
+      renderSidebarSessions(allSidebarSessions);
+    } catch {
+      sidebarSessionsList.innerHTML = `
+        <div style="font-size:12px; color:var(--text-muted); padding:16px; text-align:center;">
+          Chưa có phiên làm việc trước đây.<br>
+          <small style="opacity:0.8;">Bắt đầu trò chuyện để lưu nhật ký</small>
+        </div>
+      `;
+    }
+  }
+
+  function renderSidebarSessions(sessions) {
+    if (!sidebarSessionsList) return;
+    if (!sessions || sessions.length === 0) {
+      sidebarSessionsList.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:16px; text-align:center;">Không tìm thấy phiên làm việc phù hợp.</div>';
+      return;
+    }
+
+    sidebarSessionsList.innerHTML = sessions.map((s) => {
+      const isCurrent = s.session_id === sessionId;
+      const isZalo = s.channel === 'zalo' || String(s.session_id).startsWith('zalo_');
+      const channelIcon = isZalo ? '💬' : '🌐';
+      const title = s.last_user_message || s.first_user_message || 'Phiên làm việc';
+      const time = (s.last_activity || '').substring(0, 10);
+
+      return `
+        <div class="sidebar-session-item ${isCurrent ? 'active' : ''}" data-sid="${escapeHtml(s.session_id)}">
+          <div class="session-item-row">
+            <span class="session-item-title" title="${escapeHtml(title)}">${channelIcon} ${escapeHtml(title)}</span>
+          </div>
+          <div class="session-item-meta">
+            <span>${escapeHtml(time)}</span>
+            <span>•</span>
+            <span>${s.total_messages || 1} tin nhắn</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    sidebarSessionsList.querySelectorAll('.sidebar-session-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const sid = item.getAttribute('data-sid');
+        if (sid) switchChatSession(sid);
+      });
+    });
+  }
+
+  async function switchChatSession(sid) {
+    if (isSending) return;
+    saveSessionId(sid);
+
+    document.querySelectorAll('.sidebar-session-item').forEach((el) => {
+      el.classList.toggle('active', el.getAttribute('data-sid') === sid);
+    });
+
+    closeMobileSidebar();
+
+    messagesContainer.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">⏳ Đang tải nội dung phiên làm việc...</div>';
+    if (welcome) welcome.style.display = 'none';
+
+    try {
+      const res = await fetch(`/api/admin/sessions/${encodeURIComponent(sid)}/messages`);
+      if (!res.ok) throw new Error('Không thể tải tin nhắn phiên');
+      const data = await res.json();
+      const msgs = data.messages || [];
+
+      messagesContainer.innerHTML = '';
+      if (msgs.length === 0) {
+        if (welcome) welcome.style.display = 'block';
+        return;
+      }
+
+      msgs.forEach((m) => {
+        if (m.message_text) {
+          appendUserMessage(m.message_text, []);
+        }
+        if (m.bot_reply) {
+          appendAssistantMessage({
+            reply: m.bot_reply,
+            model_used: m.model_used,
+          });
+        }
+      });
+      scrollToBottom();
+    } catch (err) {
+      showToast('Lỗi khi mở phiên: ' + err.message, 'error');
+    }
+  }
+
+  // Tìm kiếm phiên trong Sidebar
+  if (inputSearchSessionsSidebar) {
+    inputSearchSessionsSidebar.addEventListener('input', () => {
+      const kw = inputSearchSessionsSidebar.value.trim().toLowerCase();
+      if (!kw) {
+        renderSidebarSessions(allSidebarSessions);
+        return;
+      }
+      const filtered = allSidebarSessions.filter((s) => {
+        const t = (s.last_user_message || s.first_user_message || '').toLowerCase();
+        const tp = (s.topic_badge || '').toLowerCase();
+        return t.includes(kw) || tp.includes(kw);
+      });
+      renderSidebarSessions(filtered);
+    });
+  }
 
   // DOM Model Picker
   const btnModelPicker = document.getElementById('btnModelPicker');
@@ -323,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateSendButton();
     } catch (err) {
       removeChipElement(tempId);
-      alert(`Không thể đọc tệp ${file.name}: ${err.message}`);
+      showToast(`Không thể đọc tệp ${file.name}: ${err.message}`, 'error');
     }
   }
 
@@ -378,6 +638,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!text && !action && currentAtts.length === 0) return;
 
+    if (text) {
+      lastUserPrompt = text;
+    }
+
     isSending = true;
     updateSendButton();
 
@@ -427,6 +691,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       thinkingEl.remove();
       appendAssistantMessage(data);
+
+      // Cập nhật lại danh sách phiên ở Sidebar
+      loadSidebarSessions();
     } catch (err) {
       thinkingEl.remove();
       appendAssistantMessage({
@@ -462,6 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
       input.value = '';
       resizeInput();
       if (welcome) welcome.style.display = 'block';
+      loadSidebarSessions();
     }
   });
 
@@ -553,7 +821,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.className = 'act-btn' + (act.style === 'primary' ? ' primary' : '');
         btn.textContent = act.label;
         btn.addEventListener('click', () => {
-          // Vô hiệu hoá tất cả nút trong nhóm sau khi đã bấm
           actionsDiv.querySelectorAll('.act-btn').forEach((b) => (b.disabled = true));
           sendMessage('', act.id);
         });
@@ -561,6 +828,49 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       content.appendChild(actionsDiv);
     }
+
+    // 5. Thanh công cụ thao tác nhanh (Copy, Tái tạo, Model badge)
+    const toolbarDiv = document.createElement('div');
+    toolbarDiv.className = 'msg-actions-toolbar';
+
+    const actionsLeft = document.createElement('div');
+    actionsLeft.className = 'msg-actions-left';
+
+    const btnCopy = document.createElement('button');
+    btnCopy.type = 'button';
+    btnCopy.className = 'btn-msg-action';
+    btnCopy.innerHTML = '<span>📋</span> <span>Sao chép</span>';
+    btnCopy.title = 'Sao chép toàn văn nội dung vào khay nhớ tạm';
+    btnCopy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(data.reply || '');
+        showToast('✓ Đã sao chép nội dung văn bản vào khay nhớ tạm!', 'success');
+      } catch {
+        showToast('Không thể tự động sao chép.', 'warning');
+      }
+    });
+    actionsLeft.appendChild(btnCopy);
+
+    if (lastUserPrompt) {
+      const promptToRegen = lastUserPrompt;
+      const btnRegen = document.createElement('button');
+      btnRegen.type = 'button';
+      btnRegen.className = 'btn-msg-action';
+      btnRegen.innerHTML = '<span>🔄</span> <span>Tạo lại</span>';
+      btnRegen.title = 'Yêu cầu Trợ lý AI tạo lại câu trả lời';
+      btnRegen.addEventListener('click', () => {
+        sendMessage(promptToRegen);
+      });
+      actionsLeft.appendChild(btnRegen);
+    }
+    toolbarDiv.appendChild(actionsLeft);
+
+    const modelBadge = document.createElement('span');
+    modelBadge.className = 'msg-meta-badge';
+    modelBadge.textContent = data.model_used ? `🤖 ${data.model_used}` : '🤖 Chuyên viên ảo Công Hải Số';
+    toolbarDiv.appendChild(modelBadge);
+
+    content.appendChild(toolbarDiv);
 
     wrap.appendChild(avatar);
     wrap.appendChild(content);
@@ -713,6 +1023,13 @@ document.addEventListener('DOMContentLoaded', () => {
         flushTable();
       }
 
+      // Blockquote trích dẫn >
+      if (trimmed.startsWith('> ')) {
+        flushList();
+        out.push(`<blockquote>${formatInline(trimmed.slice(2))}</blockquote>`);
+        return;
+      }
+
       // Tiêu đề ###
       if (trimmed.startsWith('### ')) {
         flushList();
@@ -796,13 +1113,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function showView(viewName) {
     if (viewName === 'admin') {
       if (!currentCadre || currentCadre.vai_tro !== 'admin') {
-        alert('⚠️ Chỉ Quản trị viên (Admin) mới có quyền truy cập vào Bảng điều hành!');
+        showToast('⚠️ Chỉ Quản trị viên (Admin) mới có quyền truy cập vào Bảng điều hành!', 'warning');
         return;
       }
       if (viewChat) { viewChat.style.display = 'none'; viewChat.classList.remove('active'); }
       if (viewAdmin) { viewAdmin.style.display = 'flex'; viewAdmin.classList.add('active'); }
       if (btnSwitchAdmin) btnSwitchAdmin.classList.add('active');
       if (btnSwitchChat) btnSwitchChat.classList.remove('active');
+      if (chatSidebar) chatSidebar.classList.add('collapsed');
+      closeMobileSidebar();
 
       // Đảm bảo hiển thị đúng phân hệ đang được chọn
       const currentActiveTab = document.querySelector('.admin-subtab.active') || adminSubtabs[0];
@@ -863,77 +1182,239 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- SỔ NHIỆM VỤ ---
+  // --- SỔ NHIỆM VỤ (TABLE & KANBAN) ---
   const tasksTableBody = document.getElementById('tasksTableBody');
   const filterTaskUnit = document.getElementById('filterTaskUnit');
   const filterTaskStatus = document.getElementById('filterTaskStatus');
   const btnRefreshTasks = document.getElementById('btnRefreshTasks');
+  const btnTaskViewTable = document.getElementById('btnTaskViewTable');
+  const btnTaskViewKanban = document.getElementById('btnTaskViewKanban');
+  const tasksTableView = document.getElementById('tasksTableView');
+  const tasksKanbanView = document.getElementById('tasksKanbanView');
 
-  if (filterTaskUnit) filterTaskUnit.addEventListener('change', loadTasks);
-  if (filterTaskStatus) filterTaskStatus.addEventListener('change', loadTasks);
+  // Stats elements
+  const statTasksTotal = document.getElementById('statTasksTotal');
+  const statTasksPending = document.getElementById('statTasksPending');
+  const statTasksInprogress = document.getElementById('statTasksInprogress');
+  const statTasksCompleted = document.getElementById('statTasksCompleted');
+  const statTasksRescheduled = document.getElementById('statTasksRescheduled');
+  const inputSearchTasks = document.getElementById('inputSearchTasks');
+  const btnClearTaskSearch = document.getElementById('btnClearTaskSearch');
+  const taskStatusTabs = document.getElementById('taskStatusTabs');
+
+  // Kanban column wraps
+  const kanbanPendingWrap = document.getElementById('kanbanPendingWrap');
+  const kanbanInprogressWrap = document.getElementById('kanbanInprogressWrap');
+  const kanbanCompletedWrap = document.getElementById('kanbanCompletedWrap');
+  const kanbanRescheduledWrap = document.getElementById('kanbanRescheduledWrap');
+  const countKanbanPending = document.getElementById('countKanbanPending');
+  const countKanbanInprogress = document.getElementById('countKanbanInprogress');
+  const countKanbanCompleted = document.getElementById('countKanbanCompleted');
+  const countKanbanRescheduled = document.getElementById('countKanbanRescheduled');
+
+  let currentTasksData = [];
+  let activeTaskStatusFilter = '';
+  let activeTaskSearchKeyword = '';
+
+  if (btnTaskViewTable && btnTaskViewKanban) {
+    btnTaskViewTable.addEventListener('click', () => {
+      btnTaskViewTable.classList.add('active');
+      btnTaskViewKanban.classList.remove('active');
+      if (tasksTableView) tasksTableView.style.display = 'block';
+      if (tasksKanbanView) tasksKanbanView.style.display = 'none';
+    });
+    btnTaskViewKanban.addEventListener('click', () => {
+      btnTaskViewKanban.classList.add('active');
+      btnTaskViewTable.classList.remove('active');
+      if (tasksTableView) tasksTableView.style.display = 'none';
+      if (tasksKanbanView) tasksKanbanView.style.display = 'block';
+    });
+  }
+
+  // Filter Tabs Event Listeners (Linear Style)
+  if (taskStatusTabs) {
+    taskStatusTabs.addEventListener('click', (e) => {
+      const btn = e.target.closest('.task-tab-btn');
+      if (!btn) return;
+      taskStatusTabs.querySelectorAll('.task-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeTaskStatusFilter = btn.getAttribute('data-status') || '';
+      renderFilteredTasks();
+    });
+  }
+
+  // Live Instant Search Event Listeners
+  if (inputSearchTasks) {
+    inputSearchTasks.addEventListener('input', () => {
+      activeTaskSearchKeyword = inputSearchTasks.value.toLowerCase().trim();
+      if (btnClearTaskSearch) {
+        btnClearTaskSearch.style.display = activeTaskSearchKeyword ? 'inline-flex' : 'none';
+      }
+      renderFilteredTasks();
+    });
+  }
+
+  if (btnClearTaskSearch) {
+    btnClearTaskSearch.addEventListener('click', () => {
+      if (inputSearchTasks) inputSearchTasks.value = '';
+      activeTaskSearchKeyword = '';
+      btnClearTaskSearch.style.display = 'none';
+      renderFilteredTasks();
+    });
+  }
+
+  if (filterTaskUnit) filterTaskUnit.addEventListener('change', renderFilteredTasks);
+  if (filterTaskStatus) filterTaskStatus.addEventListener('change', () => {
+    activeTaskStatusFilter = filterTaskStatus.value;
+    if (taskStatusTabs) {
+      taskStatusTabs.querySelectorAll('.task-tab-btn').forEach(b => {
+        b.classList.toggle('active', (b.getAttribute('data-status') || '') === activeTaskStatusFilter);
+      });
+    }
+    renderFilteredTasks();
+  });
   if (btnRefreshTasks) btnRefreshTasks.addEventListener('click', loadTasks);
 
   async function loadTasks() {
     if (!tasksTableBody) return;
-    tasksTableBody.innerHTML = '<tr><td colspan="7" class="loading-td">Đang tải Sổ nhiệm vụ...</td></tr>';
+    tasksTableBody.innerHTML = '<tr><td colspan="5" class="loading-td">Đang tải Sổ nhiệm vụ...</td></tr>';
     try {
-      const unit = filterTaskUnit ? filterTaskUnit.value : '';
-      const status = filterTaskStatus ? filterTaskStatus.value : '';
-      const res = await fetch(`/api/tasks?co_quan=${encodeURIComponent(unit)}&trang_thai=${encodeURIComponent(status)}`);
+      const res = await fetch('/api/tasks');
       const data = await res.json();
-      const tasks = data.tasks || [];
+      currentTasksData = data.tasks || [];
 
-      if (tasks.length === 0) {
-        tasksTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color:#94a3b8;">Không có nhiệm vụ nào phù hợp với bộ lọc.</td></tr>';
-        return;
-      }
+      // Cập nhật số đếm thống kê tổng và theo cột
+      const pendingAll = currentTasksData.filter(t => t.trang_thai === 'Chưa thực hiện');
+      const inprogressAll = currentTasksData.filter(t => t.trang_thai === 'Đang thực hiện');
+      const completedAll = currentTasksData.filter(t => t.trang_thai === 'Hoàn thành');
+      const rescheduledAll = currentTasksData.filter(t => t.trang_thai === 'Chuyển tiếp tháng sau');
 
-      tasksTableBody.innerHTML = tasks.map(t => {
-        let badgeClass = 'status-pending';
-        if (t.trang_thai === 'Đang thực hiện') badgeClass = 'status-inprogress';
-        if (t.trang_thai === 'Hoàn thành') badgeClass = 'status-completed';
-        if (t.trang_thai === 'Chuyển tiếp tháng sau') badgeClass = 'status-rescheduled';
+      if (statTasksTotal) statTasksTotal.textContent = currentTasksData.length;
+      if (statTasksPending) statTasksPending.textContent = pendingAll.length;
+      if (statTasksInprogress) statTasksInprogress.textContent = inprogressAll.length;
+      if (statTasksCompleted) statTasksCompleted.textContent = completedAll.length;
+      if (statTasksRescheduled) statTasksRescheduled.textContent = rescheduledAll.length;
 
-        const isDone = t.trang_thai === 'Hoàn thành';
-        const actionBtn = isDone
-          ? '<span style="color:#64748b; font-size:12px;">Đã chốt</span>'
-          : `<button class="btn-status-done" onclick="window.markTaskDone('${t.task_id}')">✓ Xong</button>`;
+      if (countKanbanPending) countKanbanPending.textContent = pendingAll.length;
+      if (countKanbanInprogress) countKanbanInprogress.textContent = inprogressAll.length;
+      if (countKanbanCompleted) countKanbanCompleted.textContent = completedAll.length;
+      if (countKanbanRescheduled) countKanbanRescheduled.textContent = rescheduledAll.length;
 
-        return `
-          <tr>
-            <td>
-              <div style="font-weight:700; color:#38bdf8;">${escapeHtml(t.task_id)}</div>
-              <div style="font-size:11.5px; color:#94a3b8;">${escapeHtml(t.so_hieu_vb || '-')}</div>
-            </td>
-            <td><b>${escapeHtml(t.co_quan_chu_tri)}</b></td>
-            <td>
-              <div>${escapeHtml(t.noi_dung_nhiem_vu)}</div>
-              ${t.cap_trinh ? `<div style="font-size:11.5px; color:#cbd5e1; margin-top:2px;">Cấp trình: <i>${escapeHtml(t.cap_trinh)}</i></div>` : ''}
-            </td>
-            <td><code>${escapeHtml(t.deadline_date || '')}</code></td>
-            <td><span style="font-size:12px;">${escapeHtml(t.muc_do_uu_tien || 'Bình thường')}</span></td>
-            <td><span class="status-badge ${badgeClass}">${escapeHtml(t.trang_thai)}</span></td>
-            <td>${actionBtn}</td>
-          </tr>
-        `;
-      }).join('');
+      renderFilteredTasks();
     } catch (err) {
-      tasksTableBody.innerHTML = `<tr><td colspan="7" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
+      tasksTableBody.innerHTML = `<tr><td colspan="5" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
-  window.markTaskDone = async function(taskId) {
+  function renderFilteredTasks() {
+    if (!tasksTableBody) return;
+    const selectedUnit = filterTaskUnit ? filterTaskUnit.value : '';
+
+    const filtered = currentTasksData.filter(t => {
+      if (activeTaskStatusFilter && t.trang_thai !== activeTaskStatusFilter) return false;
+      if (selectedUnit && t.co_quan_chu_tri !== selectedUnit) return false;
+      if (activeTaskSearchKeyword) {
+        const text = `${t.task_id} ${t.noi_dung_nhiem_vu || ''} ${t.so_hieu_vb || ''} ${t.co_quan_chu_tri || ''} ${t.cap_trinh || ''}`.toLowerCase();
+        if (!text.includes(activeTaskSearchKeyword)) return false;
+      }
+      return true;
+    });
+
+    // 1. Render Table View (Linear / Notion Style 4-5 Cột Cốt Lõi)
+    if (filtered.length === 0) {
+      tasksTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 32px; color:var(--text-muted); font-size:13px;">Không có nhiệm vụ nào phù hợp với bộ lọc.</td></tr>';
+    } else {
+      tasksTableBody.innerHTML = filtered.map(t => {
+        let slug = 'pending';
+        if (t.trang_thai === 'Đang thực hiện') slug = 'inprogress';
+        if (t.trang_thai === 'Hoàn thành') slug = 'completed';
+        if (t.trang_thai === 'Chuyển tiếp tháng sau') slug = 'rescheduled';
+
+        const isDone = t.trang_thai === 'Hoàn thành';
+        const isUrgent = t.muc_do_uu_tien === 'Khẩn';
+
+        return `
+          <tr class="${isDone ? 'task-row-done' : ''}">
+            <td style="text-align: center; vertical-align: middle;">
+              <button type="button" class="btn-task-circle ${isDone ? 'checked' : ''}" onclick="window.markTaskDone('${t.task_id}', ${isDone ? "'Chưa thực hiện'" : "'Hoàn thành'"})" title="${isDone ? 'Bấm để chuyển về Chưa hoàn thành' : 'Bấm để đánh dấu Hoàn thành'}">
+                ${isDone ? '✓' : ''}
+              </button>
+            </td>
+            <td>
+              <div class="task-cell-main">
+                <div class="task-title ${isDone ? 'task-done-title' : ''}">${escapeHtml(t.noi_dung_nhiem_vu)}</div>
+                <div class="task-meta-line">
+                  <span class="meta-vb">📄 ${escapeHtml(t.so_hieu_vb || 'Văn bản Đảng')}</span>
+                  ${t.cap_trinh ? `<span class="meta-sep">•</span><span class="meta-cap">Cấp trình: ${escapeHtml(t.cap_trinh)}</span>` : ''}
+                  <span class="meta-sep">•</span><span class="meta-id">${escapeHtml(t.task_id)}</span>
+                </div>
+              </div>
+            </td>
+            <td style="vertical-align: middle;">
+              <span class="task-unit-tag">${escapeHtml(t.co_quan_chu_tri || 'UBND xã')}</span>
+            </td>
+            <td style="vertical-align: middle;">
+              <div class="task-deadline-cell">
+                <span>📅 ${escapeHtml(t.deadline_date || '-')}</span>
+                ${isUrgent ? '<span class="priority-urgent-pill">Khẩn</span>' : ''}
+              </div>
+            </td>
+            <td style="text-align: right; vertical-align: middle;">
+              <span class="status-pill status-${slug}"><span class="status-dot"></span>${escapeHtml(t.trang_thai)}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 2. Render Kanban Columns (Minimal Clean Board)
+    function renderKanbanCard(t) {
+      const isDone = t.trang_thai === 'Hoàn thành';
+      const isUrgent = t.muc_do_uu_tien === 'Khẩn';
+      return `
+        <div class="kanban-card ${isDone ? 'kanban-card-done' : ''}">
+          <div class="kanban-card-top">
+            <span class="kanban-card-id">${escapeHtml(t.task_id)}</span>
+            <span class="task-unit-tag">${escapeHtml(t.co_quan_chu_tri || 'UBND xã')}</span>
+          </div>
+          <div class="kanban-card-title ${isDone ? 'task-done-title' : ''}">${escapeHtml(t.noi_dung_nhiem_vu)}</div>
+          ${t.so_hieu_vb ? `<div class="kanban-card-vb">📄 ${escapeHtml(t.so_hieu_vb)}</div>` : ''}
+          <div class="kanban-card-footer">
+            <span class="kanban-deadline">📅 ${escapeHtml(t.deadline_date || 'Không hạn')}</span>
+            ${isUrgent ? '<span class="priority-urgent-pill">Khẩn</span>' : ''}
+            <button type="button" class="btn-kanban-toggle ${isDone ? 'done' : ''}" onclick="window.markTaskDone('${t.task_id}', ${isDone ? "'Chưa thực hiện'" : "'Hoàn thành'"})" title="${isDone ? 'Đánh dấu chưa xong' : 'Đánh dấu hoàn thành'}">
+              ${isDone ? '✓ Đã xong' : '○ Hoàn thành'}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    const emptyColHtml = '<div class="kanban-empty-col">Không có nhiệm vụ</div>';
+    const pendingFiltered = filtered.filter(t => t.trang_thai === 'Chưa thực hiện');
+    const inprogressFiltered = filtered.filter(t => t.trang_thai === 'Đang thực hiện');
+    const completedFiltered = filtered.filter(t => t.trang_thai === 'Hoàn thành');
+    const rescheduledFiltered = filtered.filter(t => t.trang_thai === 'Chuyển tiếp tháng sau');
+
+    if (kanbanPendingWrap) kanbanPendingWrap.innerHTML = pendingFiltered.length ? pendingFiltered.map(renderKanbanCard).join('') : emptyColHtml;
+    if (kanbanInprogressWrap) kanbanInprogressWrap.innerHTML = inprogressFiltered.length ? inprogressFiltered.map(renderKanbanCard).join('') : emptyColHtml;
+    if (kanbanCompletedWrap) kanbanCompletedWrap.innerHTML = completedFiltered.length ? completedFiltered.map(renderKanbanCard).join('') : emptyColHtml;
+    if (kanbanRescheduledWrap) kanbanRescheduledWrap.innerHTML = rescheduledFiltered.length ? rescheduledFiltered.map(renderKanbanCard).join('') : emptyColHtml;
+  }
+
+  window.markTaskDone = async function(taskId, nextStatus = 'Hoàn thành') {
     try {
       const res = await fetch(`/api/tasks/${taskId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trang_thai: 'Hoàn thành', ket_qua_bao_cao: 'Đã hoàn thành báo cáo' })
+        body: JSON.stringify({ trang_thai: nextStatus, ket_qua_bao_cao: nextStatus === 'Hoàn thành' ? 'Đã hoàn thành báo cáo' : '' })
       });
       if (res.ok) {
-        loadTasks();
+        showToast(nextStatus === 'Hoàn thành' ? '✓ Đã hoàn thành nhiệm vụ!' : '↺ Đã chuyển lại Chưa thực hiện!', 'success');
+        await loadTasks();
       }
     } catch (err) {
-      alert('Lỗi cập nhật nhiệm vụ: ' + err.message);
+      showToast('Lỗi cập nhật nhiệm vụ: ' + err.message, 'error');
     }
   };
 
@@ -1030,7 +1511,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSaveNewChuyenDe.addEventListener('click', async () => {
       const name = inputNewChuyenDe.value.trim();
       if (!name) {
-        alert('Vui lòng nhập tên chuyên đề mới!');
+        showToast('Vui lòng nhập tên chuyên đề mới!', 'warning');
         inputNewChuyenDe.focus();
         return;
       }
@@ -1044,15 +1525,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const data = await res.json();
         if (res.ok) {
-          alert(`✓ Đã thêm chuyên đề mới "${name}" thành công! Chuyên đề này đã được lưu vào hệ thống.`);
+          showToast(`✓ Đã thêm chuyên đề mới "${name}" thành công!`, 'success');
           inputNewChuyenDe.value = '';
           if (wrapNewChuyenDe) wrapNewChuyenDe.style.display = 'none';
           await loadThematics(data.thematic.ma_chuyen_de);
         } else {
-          alert('Lỗi: ' + (data.detail || 'Không thể tạo chuyên đề'));
+          showToast('Lỗi: ' + (data.detail || 'Không thể tạo chuyên đề'), 'error');
         }
       } catch (err) {
-        alert('Lỗi kết nối: ' + err.message);
+        showToast('Lỗi kết nối: ' + err.message, 'error');
       } finally {
         btnSaveNewChuyenDe.disabled = false;
         btnSaveNewChuyenDe.textContent = '+ Thêm ngay';
@@ -1906,7 +2387,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Mở modal
       if (modalRagDetail) modalRagDetail.style.display = 'flex';
     } catch (err) {
-      alert('Lỗi tải chi tiết văn bản: ' + err.message);
+      showToast('Lỗi tải chi tiết văn bản: ' + err.message, 'error');
     }
   };
 
@@ -1926,11 +2407,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const soHieu = editSoHieu ? editSoHieu.value.trim() : '';
       const trichYeu = editTrichYeu ? editTrichYeu.value.trim() : '';
       if (!soHieu) {
-        alert('Số hiệu văn bản không được để trống!');
+        showToast('Số hiệu văn bản không được để trống!', 'warning');
         return;
       }
       if (!trichYeu) {
-        alert('Trích yếu không được để trống!');
+        showToast('Trích yếu không được để trống!', 'warning');
         return;
       }
 
@@ -1958,15 +2439,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = await res.json();
         if (res.ok) {
-          alert(`✓ Đã cập nhật thành công thông tin văn bản "${updates.so_hieu_vb}"!`);
+          showToast(`✓ Đã cập nhật thành công thông tin văn bản "${updates.so_hieu_vb}"!`, 'success');
           closeEditModal();
           loadRagDocuments();
           loadRagStats();
         } else {
-          alert('Lỗi cập nhật: ' + (data.detail || 'Lỗi server'));
+          showToast('Lỗi cập nhật: ' + (data.detail || 'Lỗi server'), 'error');
         }
       } catch (err) {
-        alert('Lỗi kết nối: ' + err.message);
+        showToast('Lỗi kết nối: ' + err.message, 'error');
       } finally {
         btnSaveDocEdit.disabled = false;
         btnSaveDocEdit.textContent = '💾 Lưu chỉnh sửa văn bản';
@@ -1985,14 +2466,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'Đã xoá văn bản thành công!');
+        showToast(data.message || '✓ Đã xoá văn bản thành công!', 'success');
         loadRagStats();
         loadRagDocuments();
       } else {
-        alert('Lỗi: ' + (data.detail || 'Không thể xoá văn bản'));
+        showToast('Lỗi: ' + (data.detail || 'Không thể xoá văn bản'), 'error');
       }
     } catch (err) {
-      alert('Lỗi mạng khi xoá văn bản: ' + err.message);
+      showToast('Lỗi mạng khi xoá văn bản: ' + err.message, 'error');
     }
   };
 
@@ -2011,15 +2492,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch('/api/rag/clear', { method: 'POST' });
         const data = await res.json();
         if (res.ok) {
-          alert('✓ Đã xoá sạch toàn bộ dữ liệu Kho RAG thành công!');
+          showToast('✓ Đã xoá sạch toàn bộ dữ liệu Kho RAG thành công!', 'success');
           loadRagStats();
           loadRagDocuments();
           if (ragResultsWrap) ragResultsWrap.innerHTML = '';
         } else {
-          alert('Lỗi xoá dữ liệu: ' + (data.detail || 'Lỗi server'));
+          showToast('Lỗi xoá dữ liệu: ' + (data.detail || 'Lỗi server'), 'error');
         }
       } catch (err) {
-        alert('Lỗi kết nối: ' + err.message);
+        showToast('Lỗi kết nối: ' + err.message, 'error');
       } finally {
         btnClearRag.disabled = false;
         btnClearRag.innerHTML = '🗑️ Xoá sạch kho RAG';
@@ -2041,7 +2522,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const validExts = ['.docx', '.doc', '.pdf', '.txt', '.md'];
     const isValid = validExts.some(ext => fileName.endsWith(ext));
     if (!isValid) {
-      alert(`Định dạng tệp "${file.name}" không được hỗ trợ.\nHệ thống chỉ tiếp nhận văn bản: Word (.docx, .doc), PDF (.pdf), Text (.txt, .md).`);
+      showToast(`Định dạng tệp "${file.name}" không được hỗ trợ (chỉ nhận Word, PDF, Text).`, 'warning');
       return;
     }
 
@@ -2063,7 +2544,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await res.json();
       if (!res.ok) {
-        alert('⚠️ Không thể tiếp nhận văn bản:\n\n' + (data.detail || 'Lỗi không xác định'));
+        showToast('⚠️ Không thể tiếp nhận văn bản: ' + (data.detail || 'Lỗi không xác định'), 'error');
         return;
       }
 
@@ -2108,7 +2589,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Mở Modal kiểm duyệt (Human-in-the-Loop)
       if (modalRagReview) modalRagReview.style.display = 'flex';
     } catch (err) {
-      alert('Lỗi khi đọc và bóc tách tệp: ' + err.message);
+      showToast('Lỗi khi đọc và bóc tách tệp: ' + err.message, 'error');
     } finally {
       if (btnUploadForRag) {
         btnUploadForRag.disabled = false;
@@ -2192,7 +2673,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCommitRag) {
     btnCommitRag.addEventListener('click', async () => {
       if (!currentRagPreviewData) {
-        alert('Không có dữ liệu văn bản để nạp!');
+        showToast('Không có dữ liệu văn bản để nạp!', 'warning');
         return;
       }
 
@@ -2202,22 +2683,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const trichYeu = reviewTrichYeu ? reviewTrichYeu.value.trim() : '';
 
       if (!soHieu) {
-        alert('Vui lòng nhập Số hiệu văn bản!');
+        showToast('Vui lòng nhập Số hiệu văn bản!', 'warning');
         if (reviewSoHieu) reviewSoHieu.focus();
         return;
       }
       if (!ngay) {
-        alert('Vui lòng chọn Ngày ban hành văn bản!');
+        showToast('Vui lòng chọn Ngày ban hành văn bản!', 'warning');
         if (reviewNgay) reviewNgay.focus();
         return;
       }
       if (!coQuan) {
-        alert('Vui lòng nhập Cơ quan ban hành!');
+        showToast('Vui lòng nhập Cơ quan ban hành!', 'warning');
         if (reviewCoQuan) reviewCoQuan.focus();
         return;
       }
       if (!trichYeu) {
-        alert('Vui lòng nhập Trích yếu nội dung văn bản!');
+        showToast('Vui lòng nhập Trích yếu nội dung văn bản!', 'warning');
         if (reviewTrichYeu) reviewTrichYeu.focus();
         return;
       }
@@ -2274,15 +2755,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (res.ok) {
           const chunkCount = (data.data && data.data.chunks) || 'nhiều';
-          alert(`✓ Phê duyệt và nạp văn bản "${payload.so_hieu_vb}" vào Kho RAG thành công! (${chunkCount} đoạn trích)`);
+          showToast(`✓ Phê duyệt và nạp văn bản "${payload.so_hieu_vb}" vào Kho RAG thành công! (${chunkCount} đoạn trích)`, 'success');
           closeRagModal();
           loadRagStats();
           loadRagDocuments();
         } else {
-          alert('⚠️ Lỗi khi lưu văn bản: ' + (data.detail || 'Lỗi hệ thống'));
+          showToast('⚠️ Lỗi khi lưu văn bản: ' + (data.detail || 'Lỗi hệ thống'), 'error');
         }
       } catch (err) {
-        alert('Lỗi kết nối khi lưu: ' + err.message);
+        showToast('Lỗi kết nối khi lưu: ' + err.message, 'error');
       } finally {
         btnCommitRag.disabled = false;
         btnCommitRag.innerHTML = '✓ Phê duyệt & Nạp vào Kho RAG';
@@ -2683,7 +3164,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         applyCadreLogin(data.can_bo, data.token);
         if (modalAuth) modalAuth.style.display = 'none';
-        alert(`✓ Đăng nhập thành công! Xin chào đồng chí ${data.can_bo.ho_ten} (${data.can_bo.chuc_vu}). Hệ thống đã kích hoạt lưu trữ nhật ký công tác.`);
+        showToast(`✓ Đăng nhập thành công! Xin chào đồng chí ${data.can_bo.ho_ten} (${data.can_bo.chuc_vu}).`, 'success');
+        loadSidebarSessions();
       } catch (err) {
         authNoticeOtp.textContent = '❌ ' + err.message;
       } finally {
@@ -2897,9 +3379,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const d = await res.json();
             if (!res.ok) throw new Error(d.detail || 'Lỗi khi xoá cán bộ');
             selectedCadreIds.delete(cid);
+            showToast(`✓ Đã xoá cán bộ "${name}" khỏi danh bạ thành công!`, 'success');
             await loadAdminCadres();
           } catch (err) {
-            alert('❌ ' + err.message);
+            showToast('Lỗi xoá cán bộ: ' + err.message, 'error');
           }
         }
       });
@@ -3194,13 +3677,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnSubmitSendZalo) {
     btnSubmitSendZalo.addEventListener('click', async () => {
       if (selectedCadreIds.size === 0) {
-        alert('⚠️ Vui lòng chọn ít nhất một cán bộ để gửi tin nhắn.');
+        showToast('⚠️ Vui lòng chọn ít nhất một cán bộ để gửi tin nhắn.', 'warning');
         return;
       }
 
       const content = zaloMsgContent ? zaloMsgContent.value.trim() : '';
       if (!content) {
-        alert('⚠️ Vui lòng nhập nội dung tin nhắn cần gửi.');
+        showToast('⚠️ Vui lòng nhập nội dung tin nhắn cần gửi.', 'warning');
         if (zaloMsgContent) zaloMsgContent.focus();
         return;
       }
@@ -3299,7 +3782,8 @@ document.addEventListener('DOMContentLoaded', () => {
     cardModelGemini.addEventListener('click', async () => {
       await switchActiveModel('gemini-3.5-flash-lite', 'gemini');
       updateModelCardsUI('gemini-3.5-flash-lite', 'gemini');
-      alert('✓ Đã kích hoạt Google Gemini 3.5 Flash Lite làm Động cơ chính!');
+      if (topbarModelName) topbarModelName.textContent = 'Gemini 3.5 Flash Lite';
+      showToast('✓ Đã kích hoạt Google Gemini 3.5 Flash Lite làm Động cơ chính!', 'success');
     });
   }
 
@@ -3307,7 +3791,8 @@ document.addEventListener('DOMContentLoaded', () => {
     cardModelDeepseek.addEventListener('click', async () => {
       await switchActiveModel('deepseek-chat', 'cloud');
       updateModelCardsUI('deepseek-chat', 'cloud');
-      alert('✓ Đã kích hoạt DeepSeek Cloud (671B) làm Động cơ chính!');
+      if (topbarModelName) topbarModelName.textContent = 'DeepSeek Cloud (671B)';
+      showToast('✓ Đã kích hoạt DeepSeek Cloud (671B) làm Động cơ chính!', 'success');
     });
   }
 
@@ -3315,7 +3800,8 @@ document.addEventListener('DOMContentLoaded', () => {
     cardModelOllama.addEventListener('click', async () => {
       await switchActiveModel('qwen2.5:3b', 'local');
       updateModelCardsUI('qwen2.5:3b', 'local');
-      alert('✓ Đã kích hoạt Ollama Local làm Động cơ chính!');
+      if (topbarModelName) topbarModelName.textContent = 'Ollama Local (3B)';
+      showToast('✓ Đã kích hoạt Ollama Local làm Động cơ chính!', 'success');
     });
   }
 
@@ -3551,6 +4037,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuthSession();
   checkStatus();
   loadModels();
+  loadSidebarSessions();
   updateSendButton();
 });
 

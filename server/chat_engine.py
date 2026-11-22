@@ -367,7 +367,7 @@ def _summarize(wf: str, data: Dict[str, Any]) -> str:
             lines.append("")
         lines.append("**Hồ sơ tham mưu sẽ xuất:**")
         lines.append("- Báo cáo kết quả thẩm định của Văn phòng Đảng uỷ (-BC/VPĐU)")
-        lines.append("- Tệp dự thảo đã chuẩn hoá kỹ thuật thể thức theo Hướng dẫn số 05-HD/VPTW")
+        lines.append("- Tệp dự thảo văn bản đã được rà soát và chuẩn hoá thể thức (.docx)")
         if data.get("cv_lay_y_kien_btv_payload"):
             lines.append("- Công văn xin ý kiến các đồng chí Uỷ viên Ban Thường vụ Đảng uỷ (-CV/ĐU)")
 
@@ -691,8 +691,8 @@ def _confirm(s: Dict[str, Any]) -> Dict[str, Any]:
     task_notice = f"\n\n📋 *Đã tự động cập nhật **{synced_tasks}** đầu việc vào Sổ Nhiệm vụ của Đảng uỷ.*" if synced_tasks > 0 else ""
     return _reply(
         s,
-        f"📄 Đã xuất **{len(files)}** tệp Word chuẩn thể thức Hướng dẫn 05-HD/VPTW. "
-        "Đồng chí tải về, kiểm tra lại lần cuối trước khi trình ký."
+        f"📄 Đã xuất **{len(files)}** tệp văn bản dự thảo (.docx). "
+        "Đồng chí tải về, rà soát lại trước khi trình ký."
         f"{task_notice}\n\n"
         "*Lưu ý: Đây là dự thảo tham mưu — việc ban hành, ký số do cán bộ trực tiếp thực hiện.*",
         files=files,
