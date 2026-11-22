@@ -292,8 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const filtered = allSidebarSessions.filter((s) => {
         const t = (s.last_user_message || s.first_user_message || '').toLowerCase();
-        const tp = (s.topic_badge || '').toLowerCase();
-        return t.includes(kw) || tp.includes(kw);
+        return t.includes(kw);
       });
       renderSidebarSessions(filtered);
     });
@@ -1540,22 +1539,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 2. State & Điều khiển Kho RAG Đa Chiều (Phân Trang, Bộ Lọc & Gom Nhóm)
+  // 2. State & Điều khiển Kho RAG Đa Chiều (Phân Trang & Bộ Lọc Linear)
   let allRagDocs = [];
   let filteredRagDocs = [];
   let currentRagPage = 1;
-  let ragPageSize = 15;
-  let currentRagView = 'table'; // 'table' | 'category' | 'year'
+  let ragPageSize = 20;
+  let currentRagLifecycleFilter = '';
   let ragSortField = 'ngay_ban_hanh';
   let ragSortOrder = 'desc';
   let ragSearchDebounceTimer = null;
 
   // DOM Elements Kho RAG
-  const ragViewSwitcher = document.getElementById('ragViewSwitcher');
-  const ragTableView = document.getElementById('ragTableView');
-  const ragCategoryView = document.getElementById('ragCategoryView');
-  const ragYearView = document.getElementById('ragYearView');
-
+  const ragLifecycleTabs = document.getElementById('ragLifecycleTabs');
   const ragQuickSearch = document.getElementById('ragQuickSearch');
   const btnClearQuickSearch = document.getElementById('btnClearQuickSearch');
   const ragFilterType = document.getElementById('ragFilterType');
@@ -1568,23 +1563,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const ragFtsPanel = document.getElementById('ragFtsPanel');
   const btnCloseFtsPanel = document.getElementById('btnCloseFtsPanel');
 
-  const ragCountVisible = document.getElementById('ragCountVisible');
-  const ragCountTotal = document.getElementById('ragCountTotal');
-  const ragFilterNotice = document.getElementById('ragFilterNotice');
-  const ragPageSizeSelect = document.getElementById('ragPageSizeSelect');
-  const ragSortSelect = document.getElementById('ragSortSelect');
-
   const ragPaginationBar = document.getElementById('ragPaginationBar');
   const ragPaginationInfo = document.getElementById('ragPaginationInfo');
   const ragPaginationControls = document.getElementById('ragPaginationControls');
 
-  const ragCategoryGroupsWrap = document.getElementById('ragCategoryGroupsWrap');
-  const btnExpandAllCats = document.getElementById('btnExpandAllCats');
-  const btnCollapseAllCats = document.getElementById('btnCollapseAllCats');
-
-  const ragYearGroupsWrap = document.getElementById('ragYearGroupsWrap');
-  const btnExpandAllYears = document.getElementById('btnExpandAllYears');
-  const btnCollapseAllYears = document.getElementById('btnCollapseAllYears');
+  // Gắn sự kiện chuyển Linear Filter Tabs cho Kho RAG
+  if (ragLifecycleTabs) {
+    const tabBtns = ragLifecycleTabs.querySelectorAll('.task-tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentRagLifecycleFilter = btn.getAttribute('data-lifecycle') || '';
+        currentRagPage = 1;
+        applyRagFiltersAndRender();
+      });
+    });
+  }
 
   // Helper ánh xạ tên thể loại văn bản Đảng chuẩn
   const THE_LOAI_MAP = {
@@ -1611,28 +1606,47 @@ document.addEventListener('DOMContentLoaded', () => {
     return THE_LOAI_MAP[c] || `Văn bản thể loại ${c}`;
   }
 
-  // Helper sinh dòng HTML cho 1 văn bản
+  // Helper sinh dòng HTML cho 1 văn bản (5 cột tinh gọn, rõ ràng)
   function buildDocTableRowHtml(doc) {
-    let badgeVongDoi = '<span class="status-badge status-inprogress">Chuyên đề</span>';
+    let badgeVongDoi = '<span class="task-badge badge-review">🎯 Chuyên đề</span>';
     if (doc.nhom_vong_doi === 'CORE_DIRECTIVE') {
-      badgeVongDoi = '<span class="status-badge status-completed">Nền tảng</span>';
+      badgeVongDoi = '<span class="task-badge badge-assigned">🏛️ Nền tảng</span>';
     } else if (doc.nhom_vong_doi === 'EPHEMERAL_EVENT') {
-      badgeVongDoi = '<span class="status-badge status-rescheduled">Sự vụ</span>';
+      badgeVongDoi = '<span class="task-badge badge-draft">⚡ Sự vụ</span>';
     }
 
+    const soHieu = escapeHtml(doc.so_hieu_vb || 'Chưa có số');
+    const theLoai = escapeHtml(doc.the_loai_vb || doc.the_loai || 'VB');
+    const ngayBH = escapeHtml(doc.ngay_ban_hanh || '');
+    const coQuan = escapeHtml(doc.co_quan_ban_hanh || 'Cấp uỷ');
+    const signer = doc.nguoi_ky ? `<div class="rag-doc-signer">✍️ ${escapeHtml(doc.nguoi_ky)}</div>` : '';
+    const chuyenDe = doc.ten_chuyen_de ? `<div class="rag-doc-sub-thematic">📂 ${escapeHtml(doc.ten_chuyen_de)}</div>` : '';
+    const chunkCount = doc.chunk_count || 1;
+
     return `
-      <tr>
-        <td><b style="color:#38bdf8;">${escapeHtml(doc.so_hieu_vb || '-')}</b></td>
-        <td><span class="badge-theloai">${escapeHtml(doc.the_loai_vb || doc.the_loai || '-')}</span></td>
-        <td style="font-size:13px;">${escapeHtml(doc.co_quan_ban_hanh || '-')}</td>
-        <td><code>${escapeHtml(doc.ngay_ban_hanh || '-')}</code></td>
-        <td>${badgeVongDoi}</td>
-        <td><span class="badge-theloai" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-weight:600;">${escapeHtml(doc.ten_chuyen_de || doc.ma_chuyen_de || 'Chung')}</span></td>
-        <td style="max-width: 320px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${escapeHtml(doc.trich_yeu || '')}">${escapeHtml(doc.trich_yeu || '-')}</td>
-        <td style="text-align: center;"><span class="badge-theloai" style="background: rgba(255,255,255,0.08); color: #cbd5e1; font-weight: 600;">${doc.chunk_count || 0}</span></td>
+      <tr class="rag-table-row">
+        <td>
+          <div class="rag-doc-sohieu">${soHieu}</div>
+          <div class="rag-doc-meta-sub">
+            <span class="badge-theloai">${theLoai}</span>
+            ${ngayBH ? `<span class="rag-doc-date">📅 ${ngayBH}</span>` : ''}
+          </div>
+        </td>
+        <td>
+          <div class="rag-doc-issuer">${coQuan}</div>
+          ${signer}
+          ${chuyenDe}
+        </td>
+        <td>
+          <div class="rag-doc-summary" title="${escapeHtml(doc.trich_yeu || '')}">${escapeHtml(doc.trich_yeu || 'Không có trích yếu')}</div>
+        </td>
+        <td style="text-align: center;">
+          <div style="margin-bottom: 4px;">${badgeVongDoi}</div>
+          <span class="task-unit-tag">${chunkCount} chunk${chunkCount > 1 ? 's' : ''}</span>
+        </td>
         <td style="text-align: center; white-space: nowrap;">
-          <button class="btn-edit-doc" onclick="window.openRagDocDetail('${escapeHtml(doc.doc_id)}')" title="Xem chi tiết các đoạn trích và chỉnh sửa văn bản">👁️ Sửa</button>
-          <button class="btn-delete-doc" onclick="window.deleteRagDocument('${escapeHtml(doc.doc_id)}', '${escapeHtml(doc.so_hieu_vb || '')}')" title="Xoá văn bản này khỏi kho">🗑️</button>
+          <button class="btn-chs-outline" style="padding: 4px 10px; font-size: 12px;" onclick="window.openRagDocDetail('${escapeHtml(doc.doc_id)}')" title="Xem chi tiết các đoạn trích và chỉnh sửa">👁️ Chi tiết</button>
+          <button class="btn-chs-outline" style="padding: 4px 8px; font-size: 12px; color: #ef4444; border-color: rgba(239,68,68,0.25);" onclick="window.deleteRagDocument('${escapeHtml(doc.doc_id)}', '${escapeHtml(doc.so_hieu_vb || '')}')" title="Xoá văn bản">🗑️</button>
         </td>
       </tr>
     `;
@@ -1702,20 +1716,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tải danh mục văn bản đã duyệt trong kho
   async function loadRagDocuments() {
     if (!ragDocsTableBody) return;
-    ragDocsTableBody.innerHTML = '<tr><td colspan="9" class="loading-td">Đang tải danh mục văn bản trong kho...</td></tr>';
+    ragDocsTableBody.innerHTML = '<tr><td colspan="5" class="loading-td">Đang tải danh mục văn bản trong kho...</td></tr>';
     try {
       const res = await fetch('/api/rag/documents?limit=1000');
       if (!res.ok) throw new Error('Không thể lấy danh sách văn bản');
       const d = await res.json();
       allRagDocs = d.documents || [];
 
+      // Cập nhật số đếm trên các Linear Filter Tabs
+      const totalDocs = allRagDocs.length;
+      const coreDocs = allRagDocs.filter(doc => doc.nhom_vong_doi === 'CORE_DIRECTIVE').length;
+      const thematicDocs = allRagDocs.filter(doc => doc.nhom_vong_doi === 'THEMATIC_CASE').length;
+      const ephemeralDocs = allRagDocs.filter(doc => doc.nhom_vong_doi === 'EPHEMERAL_EVENT').length;
+
+      const elTotal = document.getElementById('statRagTotal');
+      const elCore = document.getElementById('statRagCore');
+      const elThematic = document.getElementById('statRagThematic');
+      const elEphemeral = document.getElementById('statRagEphemeral');
+      if (elTotal) elTotal.textContent = totalDocs;
+      if (elCore) elCore.textContent = coreDocs;
+      if (elThematic) elThematic.textContent = thematicDocs;
+      if (elEphemeral) elEphemeral.textContent = ephemeralDocs;
+
       // Cập nhật các dropdown bộ lọc
       populateFilterDropdowns(allRagDocs);
 
-      // Áp dụng bộ lọc & render view hiện tại
+      // Áp dụng bộ lọc & render bảng
       applyRagFiltersAndRender();
     } catch (err) {
-      ragDocsTableBody.innerHTML = `<tr><td colspan="9" style="color:#ef4444; padding:20px;">Lỗi: ${escapeHtml(err.message)}</td></tr>`;
+      ragDocsTableBody.innerHTML = `<tr><td colspan="5" style="color:#ef4444; padding:20px;">Lỗi: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
@@ -1724,7 +1753,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const kw = ragQuickSearch ? ragQuickSearch.value.trim().toLowerCase() : '';
     const selType = ragFilterType ? ragFilterType.value.trim().toUpperCase() : '';
     const selYear = ragFilterYear ? ragFilterYear.value.trim() : '';
-    const selLifecycle = ragFilterLifecycle ? ragFilterLifecycle.value.trim() : '';
+    const selLifecycle = currentRagLifecycleFilter || (ragFilterLifecycle ? ragFilterLifecycle.value.trim() : '');
     const selIssuer = ragFilterIssuer ? ragFilterIssuer.value.trim() : '';
 
     filteredRagDocs = allRagDocs.filter(d => {
@@ -1762,7 +1791,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (y !== selYear) return false;
       }
 
-      // 4. Lọc theo Vòng đời
+      // 4. Lọc theo Vòng đời (Nền tảng / Chuyên đề / Sự vụ)
       if (selLifecycle) {
         if (d.nhom_vong_doi !== selLifecycle) return false;
       }
@@ -1827,15 +1856,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentRagPage > totalPages) currentRagPage = totalPages;
     if (currentRagPage < 1) currentRagPage = 1;
 
-    // Render View tương ứng
-    if (currentRagView === 'category') {
-      renderRagCategoryGroups();
-    } else if (currentRagView === 'year') {
-      renderRagYearGroups();
-    } else {
-      renderRagTable();
-      renderRagPagination();
-    }
+    renderRagTable();
+    renderRagPagination();
   }
 
   // Render Dạng Bảng Phân Trang (Table View)
@@ -1845,7 +1867,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filteredRagDocs.length === 0) {
       ragDocsTableBody.innerHTML = `
         <tr>
-          <td colspan="9" style="text-align: center; padding: 40px 20px;">
+          <td colspan="5" style="text-align: center; padding: 40px 20px;">
             <div class="rag-empty-filter-state">
               <div class="rag-empty-filter-icon">🔍</div>
               <div class="rag-empty-filter-text">Không tìm thấy văn bản nào phù hợp với bộ lọc hiện tại.</div>
@@ -3810,7 +3832,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const sessions = data.sessions || [];
 
       if (sessions.length === 0) {
-        chatLogsTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:35px;">Chưa có phiên làm việc nào phù hợp.</td></tr>';
+        chatLogsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:35px;">Chưa có phiên làm việc nào phù hợp.</td></tr>';
         return;
       }
 
@@ -3825,8 +3847,6 @@ document.addEventListener('DOMContentLoaded', () => {
           ${s.so_dien_thoai ? `<div style="font-size:11.5px; color:#64748b;">📞 ${escapeHtml(s.so_dien_thoai)}</div>` : ''}
           ${s.co_quan ? `<div style="font-size:11px; color:#94a3b8;">🏢 ${escapeHtml(s.co_quan)}</div>` : ''}
         `;
-
-        const topicBadge = `<span style="font-size:12px; font-weight:600; color:var(--primary-red); background:rgba(220,38,38,0.08); padding:3px 8px; border-radius:6px; display:inline-block;">${escapeHtml(s.topic_badge || '💬 Tham mưu tổng hợp')}</span>`;
 
         const summaryPreview = `
           <div style="font-size:12.5px; color:#334155; line-height:1.4;">
@@ -3860,7 +3880,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <tr style="cursor:pointer;" onclick="window.viewSessionDetail('${escapeHtml(s.session_id)}')">
             <td>${channelBadge}</td>
             <td>${cadreInfo}</td>
-            <td>${topicBadge}</td>
             <td>${summaryPreview}</td>
             <td>${msgCountBadge}</td>
             <td>${timeDisplay}</td>
@@ -3869,7 +3888,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }).join('');
     } catch (err) {
-      chatLogsTableBody.innerHTML = `<tr><td colspan="7" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
+      chatLogsTableBody.innerHTML = `<tr><td colspan="6" style="color:#ef4444; padding:20px;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 

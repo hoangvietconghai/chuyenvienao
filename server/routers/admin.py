@@ -92,12 +92,6 @@ class TaskStatusUpdateRequest(BaseModel):
     ket_qua_bao_cao: Optional[str] = ""
 
 
-class KpiUpdateRequest(BaseModel):
-    gia_tri_hien_tai: float
-    bieu_thuc_chi_tiet: Optional[str] = ""
-    trang_thai_anh_sang: Optional[str] = "XANH"
-
-
 # --- SYSTEM & MODEL STATUS ENDPOINTS ---
 
 @router.get("/api/status")
@@ -323,28 +317,6 @@ async def delete_task_endpoint(task_id: str):
     if not ok:
         raise HTTPException(status_code=404, detail="Không tìm thấy nhiệm vụ.")
     return {"success": True, "message": f"Đã xoá nhiệm vụ {task_id}"}
-
-
-@router.get("/api/kpis")
-async def list_kpis(source: Optional[str] = None):
-    """Lấy danh sách các chỉ tiêu KPI (Đại hội Đảng bộ khoá I và NQ57 CĐS)."""
-    kpis = await run_in_threadpool(db_service.get_all_kpis, nguon_nghi_quyet=source)
-    return {"kpis": kpis, "total": len(kpis)}
-
-
-@router.put("/api/kpis/{kpi_id}")
-async def update_kpi_endpoint(kpi_id: str, req: KpiUpdateRequest):
-    """Cập nhật tiến độ số liệu của một chỉ tiêu KPI."""
-    ok = await run_in_threadpool(
-        db_service.update_kpi_progress,
-        kpi_id,
-        gia_tri=req.gia_tri_hien_tai,
-        bieu_thuc=req.bieu_thuc_chi_tiet or "",
-        trang_thai=req.trang_thai_anh_sang or "XANH",
-    )
-    if not ok:
-        raise HTTPException(status_code=404, detail="Không tìm thấy chỉ tiêu KPI.")
-    return {"success": True, "kpi_id": kpi_id}
 
 
 @router.get("/api/directory")

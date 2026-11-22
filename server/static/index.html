@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css?v=2.2.8">
+  <link rel="stylesheet" href="/static/style.css?v=2.3.0">
 </head>
 <body>
   <div class="app-container">
@@ -313,7 +313,6 @@
                     <tr>
                       <th width="140">Kênh & Trạng Thái</th>
                       <th width="180">Cán Bộ / Đơn Vị</th>
-                      <th width="160">Nghiệp Vụ Nhận Diện</th>
                       <th>Tóm Tắt Mạch Trao Đổi</th>
                       <th width="110" style="text-align: center;">Số Lượt Tin</th>
                       <th width="140">Thời Gian Gần Nhất</th>
@@ -321,7 +320,7 @@
                     </tr>
                   </thead>
                   <tbody id="chatLogsTableBody">
-                    <tr><td colspan="7" style="text-align: center; padding: 25px;">Đang tải danh sách phiên làm việc...</td></tr>
+                    <tr><td colspan="6" style="text-align: center; padding: 25px;">Đang tải danh sách phiên làm việc...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -461,137 +460,80 @@
               </div>
             </div>
 
-            <!-- ==================== SUBTAB 5: KHO VĂN BẢN RAG ==================== -->
+            <!-- ==================== SUBTAB 5: KHO VĂN BẢN RAG (LINEAR MINIMALIST) ==================== -->
             <div class="admin-subcontent" id="subtab-rag">
-              <!-- 4 CHỈ SỐ NHANH KHO RAG (MINIMAL METRICS STRIP) -->
-              <div class="metrics-strip" style="margin-bottom: 16px;">
-                <div class="metric-chip">
-                  <span class="metric-chip-icon">📚</span>
-                  <div class="metric-chip-data">
-                    <span class="metric-chip-num" id="statRagDocs">0</span>
-                    <span class="metric-chip-label">Văn bản RAG</span>
+              <div class="admin-card-table">
+                <!-- TOOLBAR TIÊU ĐỀ & ĐIỀU KHIỂN RAG -->
+                <div class="table-header-bar tasks-header-bar">
+                  <div class="tasks-title-group">
+                    <h3 class="tasks-heading">📚 Kho Tri Thức & Văn Bản Pháp Quy</h3>
+                    <p class="tasks-subheading">Tra cứu, quản lý và nạp văn bản phục vụ Hybrid RAG (Vector BLOB + FTS5 BM25).</p>
                   </div>
-                </div>
-                <div class="metric-chip">
-                  <span class="metric-chip-icon">📑</span>
-                  <div class="metric-chip-data">
-                    <span class="metric-chip-num" id="statRagChunks">0</span>
-                    <span class="metric-chip-label">Đoạn trích (Chunks)</span>
-                  </div>
-                </div>
-                <div class="metric-chip">
-                  <span class="metric-chip-icon">🏛️</span>
-                  <div class="metric-chip-data">
-                    <span class="metric-chip-num" id="statRagCore">0</span>
-                    <span class="metric-chip-label">Văn bản Nền tảng</span>
-                  </div>
-                </div>
-                <div class="metric-chip">
-                  <span class="metric-chip-icon">🎯</span>
-                  <div class="metric-chip-data">
-                    <span class="metric-chip-num" id="statRagThematic">0</span>
-                    <span class="metric-chip-label">Văn bản Chuyên đề</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- KHU VỰC KÉO THẢ TỆP VĂN BẢN (DRAG & DROP ZONE) -->
-              <div class="rag-dropzone" id="ragDropZone" title="Bấm hoặc kéo thả tệp văn bản từ máy tính vào đây">
-                <div class="rag-dropzone-content">
-                  <div class="rag-dropzone-icon">📥</div>
-                  <div class="rag-dropzone-text">
-                    <span class="rag-dropzone-title">Kéo & Thả văn bản vào đây để nạp vào Kho Tri Thức RAG</span>
-                    <span class="rag-dropzone-subtitle">Hỗ trợ tệp <b>Word (.docx, .doc)</b>, <b>PDF (.pdf)</b>, <b>Text (.txt, .md)</b> — Tự động bóc tách & phân loại có kiểm duyệt</span>
-                  </div>
-                  <button type="button" class="btn-chs-primary btn-dropzone-browse" id="btnBrowseDropzone" style="cursor: pointer;">
-                    📂 Chọn tệp từ máy tính
-                  </button>
-                </div>
-                <div class="rag-dropzone-loading" id="ragDropLoading" style="display: none;">
-                  <div class="spinner-small"></div>
-                  <span>⏳ Đang tải lên và bóc tách siêu dữ liệu văn bản...</span>
-                </div>
-              </div>
-
-              <!-- BẢNG DANH MỤC VĂN BẢN RAG -->
-              <div class="admin-card-table" style="margin-top: 20px;">
-                <div class="table-header-bar">
-                  <div>
-                    <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Kho Văn Bản Tri Thức & Pháp Quy Cấp Uỷ</h3>
-                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">Cán bộ chủ động nạp tệp, đối soát siêu dữ liệu và phê duyệt trước khi lưu vào CSDL RAG.</p>
-                  </div>
-                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <!-- CHẾ ĐỘ XEM (VIEW SWITCHER) -->
-                    <div class="rag-view-switcher" id="ragViewSwitcher">
-                      <button type="button" class="rag-view-btn active" data-view="table" title="Hiển thị dạng bảng có phân trang">📋 Dạng Bảng</button>
-                      <button type="button" class="rag-view-btn" data-view="category" title="Gom nhóm văn bản theo Thể loại văn bản Đảng">📁 Theo Thể Loại</button>
-                      <button type="button" class="rag-view-btn" data-view="year" title="Gom nhóm văn bản theo Năm ban hành">📅 Theo Năm</button>
-                    </div>
-
-                    <button class="btn-chs-outline" id="btnRefreshRagDocs" title="Tải lại danh sách văn bản">🔄 Làm mới</button>
-                    <button class="btn-chs-primary" id="btnUploadForRag" style="display: inline-flex; align-items: center; gap: 6px;">
-                      <span>📤 Nạp văn bản mới</span>
-                    </button>
-                    <button class="btn-chs-outline" id="btnClearRag" style="color: #ef4444; border-color: #ef4444;" title="Xoá sạch toàn bộ dữ liệu RAG để nạp lại">
-                      🗑️ Xoá sạch RAG
-                    </button>
-                    <input type="file" id="ragFileInput" accept=".pdf,.docx,.doc,.txt,.md" style="display: none;">
-                  </div>
-                </div>
-
-                <!-- BỘ LỌC ĐA TIÊU CHÍ ĐỘNG -->
-                <div class="rag-filter-toolbar">
-                  <div class="rag-filter-row-primary">
-                    <div class="rag-search-box-wrap">
+                  <div class="tasks-actions-group">
+                    <!-- Live Search -->
+                    <div class="tasks-search-wrap">
                       <span class="search-icon">🔍</span>
-                      <input type="text" id="ragQuickSearch" placeholder="Tìm theo số hiệu, trích yếu, người ký..." autocomplete="off">
-                      <button type="button" class="btn-clear-search" id="btnClearQuickSearch" title="Xoá ô tìm kiếm">✕</button>
+                      <input type="text" id="ragQuickSearch" class="tasks-search-input" placeholder="Tìm theo số hiệu, trích yếu, người ký..." autocomplete="off">
+                      <button type="button" class="btn-clear-search" id="btnClearQuickSearch" style="display: none;">✕</button>
                     </div>
-                    <select id="ragFilterType" class="rag-filter-select" title="Lọc theo Thể loại văn bản">
+
+                    <!-- Lọc Thể Loại -->
+                    <select id="ragFilterType" class="tasks-select-filter" title="Lọc theo thể loại">
                       <option value="">Tất cả Thể loại</option>
                     </select>
-                    <select id="ragFilterYear" class="rag-filter-select" title="Lọc theo Năm ban hành">
+
+                    <!-- Lọc Năm -->
+                    <select id="ragFilterYear" class="tasks-select-filter" style="width: 120px;" title="Lọc theo năm">
                       <option value="">Tất cả Năm</option>
                     </select>
-                    <select id="ragFilterLifecycle" class="rag-filter-select" title="Lọc theo Vòng đời văn bản">
-                      <option value="">Tất cả Vòng đời</option>
-                      <option value="CORE_DIRECTIVE">🏛️ Nền tảng</option>
-                      <option value="THEMATIC_CASE">🎯 Chuyên đề</option>
-                      <option value="EPHEMERAL_EVENT">⏱️ Sự vụ</option>
-                    </select>
-                    <select id="ragFilterIssuer" class="rag-filter-select" title="Lọc theo Cơ quan ban hành" style="max-width: 220px;">
-                      <option value="">Tất cả Cơ quan</option>
-                    </select>
-                    <button type="button" class="btn-chs-outline" id="btnResetRagFilters" title="Khôi phục toàn bộ bộ lọc về mặc định">↺ Đặt lại</button>
-                    <button type="button" class="btn-chs-outline" id="btnToggleFtsWrap" title="Mở khung tra cứu toàn văn FTS5 BM25">🔎 Tra cứu toàn văn</button>
+
+                    <!-- Nút FTS5 tra cứu sâu toàn văn -->
+                    <button type="button" class="btn-chs-outline" id="btnToggleFtsWrap" title="Mở khung tra cứu toàn văn FTS5 BM25">
+                      <span>🔎 FTS5</span>
+                    </button>
+
+                    <!-- Nút Nạp văn bản mới -->
+                    <button type="button" class="btn-chs-primary" id="btnUploadForRag" style="display: inline-flex; align-items: center; gap: 6px;">
+                      <span>➕ Nạp Văn Bản</span>
+                    </button>
+                    <input type="file" id="ragFileInput" accept=".pdf,.docx,.doc,.txt,.md" style="display: none;">
+
+                    <!-- Nút Làm mới -->
+                    <button class="btn-chs-outline btn-refresh-compact" id="btnRefreshRagDocs" title="Tải lại danh sách văn bản">🔄</button>
+
+                    <!-- Nút Xoá sạch RAG -->
+                    <button class="btn-chs-outline btn-refresh-compact" id="btnClearRag" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" title="Xoá sạch toàn bộ dữ liệu RAG để nạp lại">🗑️</button>
                   </div>
                 </div>
 
-                <!-- DÒNG TRẠNG THÁI & ĐIỀU KHIỂN PHÂN TRANG -->
-                <div class="rag-status-bar">
-                  <div id="ragStatusBarInfo">
-                    Đang hiển thị <span class="rag-count-badge" id="ragCountVisible">0</span> / <span class="rag-count-badge" id="ragCountTotal">0</span> văn bản
-                    <span id="ragFilterNotice" style="color: #64748b; font-style: italic; margin-left: 6px;"></span>
-                  </div>
-                  <div class="rag-control-group">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px;">
-                      Hiển thị:
-                      <select id="ragPageSizeSelect" class="rag-filter-select" style="padding: 4px 8px; font-size: 12.5px;">
-                        <option value="15">15 / trang</option>
-                        <option value="30">30 / trang</option>
-                        <option value="50">50 / trang</option>
-                        <option value="100">100 / trang</option>
-                      </select>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px;">
-                      Sắp xếp:
-                      <select id="ragSortSelect" class="rag-filter-select" style="padding: 4px 8px; font-size: 12.5px;">
-                        <option value="ngay_ban_hanh_desc">Ngày BH (Mới nhất)</option>
-                        <option value="ngay_ban_hanh_asc">Ngày BH (Cũ nhất)</option>
-                        <option value="so_hieu_asc">Số hiệu (A-Z)</option>
-                        <option value="chunks_desc">Số Chunks (Nhiều nhất)</option>
-                      </select>
-                    </label>
+                <!-- THANH FILTER TABS PHẲNG TÍCH HỢP CON SỐ ĐẾM (LINEAR STYLE) -->
+                <div class="task-tabs-row" id="ragLifecycleTabs">
+                  <button type="button" class="task-tab-btn active" data-lifecycle="">
+                    <span>Tất cả văn bản</span>
+                    <span class="task-tab-count" id="statRagTotal">0</span>
+                  </button>
+                  <button type="button" class="task-tab-btn" data-lifecycle="CORE_DIRECTIVE">
+                    <span>🏛️ Nền tảng cốt lõi</span>
+                    <span class="task-tab-count" id="statRagCore">0</span>
+                  </button>
+                  <button type="button" class="task-tab-btn" data-lifecycle="THEMATIC_CASE">
+                    <span>🎯 Chuyên đề công tác</span>
+                    <span class="task-tab-count" id="statRagThematic">0</span>
+                  </button>
+                  <button type="button" class="task-tab-btn" data-lifecycle="EPHEMERAL_EVENT">
+                    <span>⚡ Sự vụ ngắn hạn</span>
+                    <span class="task-tab-count" id="statRagEphemeral">0</span>
+                  </button>
+                </div>
+
+                <!-- KHU VỰC KÉO THẢ TINH GỌN (COMPACT DROP STRIP) -->
+                <div class="rag-drop-bar" id="ragDropZone" title="Kéo thả tệp Word / PDF / MD từ máy tính vào đây">
+                  <span class="rag-drop-bar-icon">📥</span>
+                  <span class="rag-drop-bar-text">Kéo thả tệp <b>Word (.docx, .doc)</b>, <b>PDF</b> hoặc <b>Text</b> vào đây để tự động bóc tách & nạp vào RAG, hoặc</span>
+                  <button type="button" class="btn-chs-outline btn-drop-browse" id="btnBrowseDropzone">📂 Chọn tệp từ máy tính</button>
+                  <div class="rag-dropzone-loading" id="ragDropLoading" style="display: none;">
+                    <div class="spinner-small"></div>
+                    <span>⏳ Đang tải lên và bóc tách siêu dữ liệu văn bản...</span>
                   </div>
                 </div>
 
@@ -605,56 +547,28 @@
                   <div id="ragResultsWrap" style="margin-top: 10px;"></div>
                 </div>
 
-                <!-- VIEW 1: DẠNG BẢNG PHÂN TRANG (DEFAULT) -->
-                <div id="ragTableView">
-                  <div style="overflow-x: auto;">
-                    <table class="chs-table" id="ragDocsTable">
-                      <thead>
-                        <tr>
-                          <th width="140" class="sortable-th" data-sort="so_hieu" title="Bấm để sắp xếp theo Số hiệu">Số Hiệu <span class="sort-icon">↕</span></th>
-                          <th width="90" class="sortable-th" data-sort="the_loai" title="Bấm để sắp xếp theo Thể loại">Thể Loại <span class="sort-icon">↕</span></th>
-                          <th width="150" class="sortable-th" data-sort="co_quan" title="Bấm để sắp xếp theo Cơ quan">Cơ Quan Ban Hành <span class="sort-icon">↕</span></th>
-                          <th width="100" class="sortable-th active-sort" data-sort="ngay_ban_hanh" title="Bấm để sắp xếp theo Ngày ban hành">Ngày BH <span class="sort-icon">▼</span></th>
-                          <th width="90">Vòng Đời</th>
-                          <th width="110">Chuyên Đề</th>
-                          <th>Trích Yếu Nội Dung</th>
-                          <th width="70" style="text-align: center;" class="sortable-th" data-sort="chunks" title="Bấm để sắp xếp theo số đoạn trích">Chunks <span class="sort-icon">↕</span></th>
-                          <th width="100" style="text-align: center;">Thao Tác</th>
-                        </tr>
-                      </thead>
-                      <tbody id="ragDocsTableBody">
-                        <tr><td colspan="9" style="text-align: center; padding: 24px;">Đang nạp danh mục văn bản RAG...</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <!-- THANH PHÂN TRANG -->
-                  <div class="rag-pagination-wrap" id="ragPaginationBar">
-                    <div class="rag-pagination-info" id="ragPaginationInfo">Hiển thị 0 - 0 trong 0 văn bản</div>
-                    <div class="rag-pagination-controls" id="ragPaginationControls"></div>
-                  </div>
+                <!-- BẢNG DANH MỤC VĂN BẢN (5 CỘT TINH GỌN) -->
+                <div style="overflow-x: auto;">
+                  <table class="chs-table" id="ragDocsTable">
+                    <thead>
+                      <tr>
+                        <th width="220" class="sortable-th" data-sort="so_hieu" title="Bấm để sắp xếp theo Số hiệu">Văn Bản & Thể Loại <span class="sort-icon">↕</span></th>
+                        <th width="190" class="sortable-th" data-sort="co_quan" title="Bấm để sắp xếp theo Cơ quan">Cơ Quan Ban Hành <span class="sort-icon">↕</span></th>
+                        <th>Trích Yếu Nội Dung</th>
+                        <th width="140" style="text-align: center;">Vòng Đời & Chunks</th>
+                        <th width="110" style="text-align: center;">Thao Tác</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ragDocsTableBody">
+                      <tr><td colspan="5" style="text-align: center; padding: 28px;">Đang nạp danh mục văn bản RAG...</td></tr>
+                    </tbody>
+                  </table>
                 </div>
 
-                <!-- VIEW 2: GOM NHÓM THEO THỂ LOẠI (CATEGORY VIEW) -->
-                <div id="ragCategoryView" style="display: none;">
-                  <div style="padding: 10px 20px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px;">
-                    <button type="button" class="btn-chs-outline" id="btnExpandAllCats" style="font-size: 12px; padding: 4px 10px;">📂 Mở tất cả</button>
-                    <button type="button" class="btn-chs-outline" id="btnCollapseAllCats" style="font-size: 12px; padding: 4px 10px;">📁 Thu gọn tất cả</button>
-                  </div>
-                  <div class="rag-groups-container" id="ragCategoryGroupsWrap">
-                    <!-- Dynamic Category Accordions -->
-                  </div>
-                </div>
-
-                <!-- VIEW 3: GOM NHÓM THEO NĂM (YEAR VIEW) -->
-                <div id="ragYearView" style="display: none;">
-                  <div style="padding: 10px 20px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px;">
-                    <button type="button" class="btn-chs-outline" id="btnExpandAllYears" style="font-size: 12px; padding: 4px 10px;">📂 Mở tất cả</button>
-                    <button type="button" class="btn-chs-outline" id="btnCollapseAllYears" style="font-size: 12px; padding: 4px 10px;">📁 Thu gọn tất cả</button>
-                  </div>
-                  <div class="rag-groups-container" id="ragYearGroupsWrap">
-                    <!-- Dynamic Year Accordions -->
-                  </div>
+                <!-- THANH PHÂN TRANG -->
+                <div class="rag-pagination-wrap" id="ragPaginationBar">
+                  <div class="rag-pagination-info" id="ragPaginationInfo">Hiển thị 0 – 0 trong 0 văn bản</div>
+                  <div class="rag-pagination-controls" id="ragPaginationControls"></div>
                 </div>
               </div>
             </div>
@@ -1159,6 +1073,6 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- NẠP JAVASCRIPT HẠT NHÂN -->
-  <script src="/static/app.js?v=2.2.8"></script>
+  <script src="/static/app.js?v=2.3.0"></script>
 </body>
 </html>

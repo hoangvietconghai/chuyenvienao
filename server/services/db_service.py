@@ -3,14 +3,13 @@
 server/services/db_service.py
 =============================
 Hệ quản trị CSDL SQLite hợp nhất (WAL Mode) cho Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải.
-Quản lý 07 bảng nghiệp vụ:
+Quản lý 06 bảng nghiệp vụ:
   1. danh_ba_can_bo     : Danh bạ cán bộ, lãnh đạo, 08 thôn, 21 chi bộ
   2. so_nhiem_vu        : Quản lý công việc 5 Rõ, deadline, chống trùng khi trượt tháng
   3. lich_su_nhac_nho   : Nhật ký nhắc việc, chống spam Zalo
-  4. so_tieu_chi        : 20 chỉ tiêu Đại hội Đảng bộ xã khoá I & 19 chỉ tiêu NQ57
-  5. so_van_ban         : Kho văn bản hành chính phân tầng vòng đời & hiệu lực
-  6. van_ban_lien_ket   : Đồ thị quan hệ căn cứ, thay thế, sửa đổi
-  7. van_ban_chunks     : Vector BLOB + FTS5 BM25 phục vụ Hybrid RAG
+  4. so_van_ban         : Kho văn bản hành chính phân tầng vòng đời & hiệu lực
+  5. van_ban_lien_ket   : Đồ thị quan hệ căn cứ, thay thế, sửa đổi
+  6. van_ban_chunks     : Vector BLOB + FTS5 BM25 phục vụ Hybrid RAG
 """
 
 import json
@@ -125,25 +124,8 @@ def init_database() -> None:
         );
         """)
 
-        # 4. Bảng Sổ Tiêu chí Nghị quyết Đại hội & NQ57
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS so_tieu_chi (
-            kpi_id TEXT PRIMARY KEY,
-            nguon_nghi_quyet TEXT NOT NULL,
-            nhom_chi_tieu TEXT NOT NULL,
-            ten_chi_tieu TEXT NOT NULL,
-            don_vi_tinh TEXT NOT NULL,
-            chi_tieu_nam_2026 REAL,
-            chi_tieu_nhiem_ky_2030 REAL,
-            gia_tri_hien_tai REAL DEFAULT 0,
-            bieu_thuc_chi_tiet TEXT,
-            ky_danh_gia TEXT DEFAULT 'Quy',
-            co_quan_phu_trach TEXT,
-            trang_thai_anh_sang TEXT DEFAULT 'XANH',
-            ghi_chu_vuong_mac TEXT,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
+        # 4. Loại bỏ bảng Sổ Tiêu chí cũ (nếu có)
+        cursor.execute("DROP TABLE IF EXISTS so_tieu_chi;")
 
         # 5. Bảng Kho Văn bản Hành chính
         cursor.execute("""
@@ -431,99 +413,6 @@ def get_leadership_cadres() -> List[Dict[str, Any]]:
         ORDER BY can_bo_id ASC;
         """)
         return [dict(row) for row in cursor.fetchall()]
-
-
-# ==============================================================================
-# 2. CÁC HÀM CRUD CHO SỔ TIÊU CHÍ (`so_tieu_chi`)
-# ==============================================================================
-
-def add_or_update_kpi(kpi: Dict[str, Any]) -> bool:
-    """Thêm mới hoặc cập nhật một chỉ tiêu KPI."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        def _to_float(v: Any) -> Optional[float]:
-            if v is None:
-                return None
-            if isinstance(v, (int, float)):
-                return float(v)
-            if isinstance(v, (list, tuple)) and v:
-                try:
-                    return float(v[0])
-                except (ValueError, TypeError):
-                    return None
-            try:
-                return float(str(v).strip().replace("%", ""))
-            except (ValueError, TypeError):
-                return None
-
-        cursor.execute("""
-        INSERT INTO so_tieu_chi (
-            kpi_id, nguon_nghi_quyet, nhom_chi_tieu, ten_chi_tieu, don_vi_tinh,
-            chi_tieu_nam_2026, chi_tieu_nhiem_ky_2030, gia_tri_hien_tai,
-            bieu_thuc_chi_tiet, ky_danh_gia, co_quan_phu_trach,
-            trang_thai_anh_sang, ghi_chu_vuong_mac, updated_at
-        ) VALUES (
-            :kpi_id, :nguon_nghi_quyet, :nhom_chi_tieu, :ten_chi_tieu, :don_vi_tinh,
-            :chi_tieu_nam_2026, :chi_tieu_nhiem_ky_2030, :gia_tri_hien_tai,
-            :bieu_thuc_chi_tiet, :ky_danh_gia, :co_quan_phu_trach,
-            :trang_thai_anh_sang, :ghi_chu_vuong_mac, CURRENT_TIMESTAMP
-        )
-        ON CONFLICT(kpi_id) DO UPDATE SET
-            nguon_nghi_quyet = excluded.nguon_nghi_quyet,
-            nhom_chi_tieu = excluded.nhom_chi_tieu,
-            ten_chi_tieu = excluded.ten_chi_tieu,
-            don_vi_tinh = excluded.don_vi_tinh,
-            chi_tieu_nam_2026 = excluded.chi_tieu_nam_2026,
-            chi_tieu_nhiem_ky_2030 = excluded.chi_tieu_nhiem_ky_2030,
-            gia_tri_hien_tai = excluded.gia_tri_hien_tai,
-            bieu_thuc_chi_tiet = excluded.bieu_thuc_chi_tiet,
-            ky_danh_gia = excluded.ky_danh_gia,
-            co_quan_phu_trach = excluded.co_quan_phu_trach,
-            trang_thai_anh_sang = excluded.trang_thai_anh_sang,
-            ghi_chu_vuong_mac = excluded.ghi_chu_vuong_mac,
-            updated_at = CURRENT_TIMESTAMP;
-        """, {
-            "kpi_id": kpi["kpi_id"],
-            "nguon_nghi_quyet": kpi.get("nguon_nghi_quyet", "NQ_DAI_HOI_I"),
-            "nhom_chi_tieu": kpi.get("nhom_chi_tieu", "Kinh tế - Xã hội"),
-            "ten_chi_tieu": kpi["ten_chi_tieu"],
-            "don_vi_tinh": kpi.get("don_vi_tinh", "%"),
-            "chi_tieu_nam_2026": _to_float(kpi.get("chi_tieu_nam_2026")),
-            "chi_tieu_nhiem_ky_2030": _to_float(kpi.get("chi_tieu_nhiem_ky_2030")),
-            "gia_tri_hien_tai": _to_float(kpi.get("gia_tri_hien_tai")) or 0.0,
-            "bieu_thuc_chi_tiet": kpi.get("bieu_thuc_chi_tiet", ""),
-            "ky_danh_gia": kpi.get("ky_danh_gia", "Quy"),
-            "co_quan_phu_trach": kpi.get("co_quan_phu_trach", "UBND xã"),
-            "trang_thai_anh_sang": kpi.get("trang_thai_anh_sang", "XANH"),
-            "ghi_chu_vuong_mac": kpi.get("ghi_chu_vuong_mac", ""),
-        })
-        return True
-
-
-def get_all_kpis(nguon_nghi_quyet: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Lấy danh sách tất cả chỉ tiêu KPI."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        if nguon_nghi_quyet:
-            cursor.execute("SELECT * FROM so_tieu_chi WHERE nguon_nghi_quyet = ? ORDER BY kpi_id", (nguon_nghi_quyet,))
-        else:
-            cursor.execute("SELECT * FROM so_tieu_chi ORDER BY nguon_nghi_quyet, kpi_id")
-        return [dict(row) for row in cursor.fetchall()]
-
-
-def update_kpi_progress(kpi_id: str, gia_tri: float, bieu_thuc: str = "", trang_thai: str = "XANH") -> bool:
-    """Cập nhật tiến độ số liệu thực hiện cho một chỉ tiêu KPI."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-        UPDATE so_tieu_chi
-        SET gia_tri_hien_tai = ?,
-            bieu_thuc_chi_tiet = CASE WHEN ? != '' THEN ? ELSE bieu_thuc_chi_tiet END,
-            trang_thai_anh_sang = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE kpi_id = ?;
-        """, (gia_tri, bieu_thuc, bieu_thuc, trang_thai, kpi_id))
-        return cursor.rowcount > 0
 
 
 # ==============================================================================
@@ -1455,30 +1344,6 @@ def get_chat_sessions_summary(
         params.extend([limit, offset])
         cursor.execute(query, params)
         rows = [dict(r) for r in cursor.fetchall()]
-
-        # Xác định nhãn nghiệp vụ (Intent / Topic) cho từng phiên
-        for row in rows:
-            first_msg = (row.get("first_user_message") or "").lower()
-            last_msg = (row.get("last_user_message") or "").lower()
-            text_scan = f"{first_msg} {last_msg}"
-
-            if any(k in text_scan for k in ["báo cáo", "bc tuần", "tháng"]):
-                row["topic_badge"] = "📊 Báo cáo định kỳ"
-            elif any(k in text_scan for k in ["kế hoạch", "kh triển khai"]):
-                row["topic_badge"] = "📋 Kế hoạch công tác"
-            elif any(k in text_scan for k in ["công văn", "cv chỉ đạo"]):
-                row["topic_badge"] = "✉️ Công văn cấp uỷ"
-            elif any(k in text_scan for k in ["kiểm tra", "giám sát", "đoàn", "quyết định", "2345"]):
-                row["topic_badge"] = "🔍 Kiểm tra & Pháp quy"
-            elif any(k in text_scan for k in ["đề án", "đề án 06", "cđs"]):
-                row["topic_badge"] = "🚀 Đề án & Chuyển đổi số"
-            elif any(k in text_scan for k in ["soạn thảo", "dự thảo"]):
-                row["topic_badge"] = "📝 Soạn thảo văn bản"
-            elif any(k in text_scan for k in ["kết nối", "alo", "hi bot", "chào"]):
-                row["topic_badge"] = "👋 Chào hỏi / Kích hoạt"
-            else:
-                row["topic_badge"] = "💬 Tham mưu tổng hợp"
-
         return rows
 
 
