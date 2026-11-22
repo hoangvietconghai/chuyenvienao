@@ -422,23 +422,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/status');
       if (res.ok) {
         const data = await res.json();
-        if (data.ai_configured) {
-          aiStatus.className = 'ai-status ok';
-          if (data.is_local) {
-            aiStatusText.textContent = `Local AI (${data.model_in_use})`;
-          } else if (data.is_gemini || data.provider === 'gemini') {
-            aiStatusText.textContent = `Google Gemini (${data.model_in_use}) [Chính]`;
-          } else {
-            aiStatusText.textContent = `DeepSeek Cloud (${data.model_in_use || 'chat'}) [Dự phòng]`;
-          }
+        let modelLabel = data.model_in_use || 'Gemini';
+        if (data.is_local) {
+          modelLabel = `Local AI (${data.model_in_use})`;
+        } else if (data.is_gemini || data.provider === 'gemini') {
+          modelLabel = `Google Gemini (${data.model_in_use}) [Chính]`;
         } else {
-          aiStatus.className = 'ai-status warn';
-          aiStatusText.textContent = 'Chưa cấu hình API Key / Ollama';
+          modelLabel = `DeepSeek Cloud (${data.model_in_use || 'chat'}) [Dự phòng]`;
+        }
+        if (topbarModelName) {
+          topbarModelName.textContent = data.is_gemini || data.provider === 'gemini' ? 'Gemini 3.5 Flash Lite' : modelLabel;
+        }
+        if (aiStatus) {
+          aiStatus.className = data.ai_configured ? 'ai-status ok' : 'ai-status warn';
+        }
+        if (aiStatusText) {
+          aiStatusText.textContent = data.ai_configured ? modelLabel : 'Chưa cấu hình API Key / Ollama';
         }
       }
     } catch {
-      aiStatus.className = 'ai-status';
-      aiStatusText.textContent = 'Mất kết nối server';
+      if (aiStatus) aiStatus.className = 'ai-status';
+      if (aiStatusText) aiStatusText.textContent = 'Mất kết nối server';
     }
   }
 
@@ -1558,6 +1562,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const ragFilterLifecycle = document.getElementById('ragFilterLifecycle');
   const ragFilterIssuer = document.getElementById('ragFilterIssuer');
   const btnResetRagFilters = document.getElementById('btnResetRagFilters');
+  const ragViewSwitcher = document.getElementById('ragViewSwitcher');
+  const ragPageSizeSelect = document.getElementById('ragPageSizeSelect');
+  const ragSortSelect = document.getElementById('ragSortSelect');
+  const btnExpandAllCats = document.getElementById('btnExpandAllCats');
+  const btnCollapseAllCats = document.getElementById('btnCollapseAllCats');
+  const btnExpandAllYears = document.getElementById('btnExpandAllYears');
+  const btnCollapseAllYears = document.getElementById('btnCollapseAllYears');
+  const ragTableView = document.getElementById('ragTableView');
+  const ragCategoryView = document.getElementById('ragCategoryView');
+  const ragYearView = document.getElementById('ragYearView');
 
   const btnToggleFtsWrap = document.getElementById('btnToggleFtsWrap');
   const ragFtsPanel = document.getElementById('ragFtsPanel');
