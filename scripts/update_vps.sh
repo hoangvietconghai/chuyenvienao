@@ -67,6 +67,7 @@ echo -e "${BLUE}>> [3/4] Kiểm tra và đối soát cơ sở dữ liệu SQLite
 
 # 4. Khởi động lại dịch vụ hệ thống
 echo -e "${BLUE}>> [4/4] Khởi động lại dịch vụ hệ thống chuyenvienao.service...${NC}"
+sed -i 's/--workers [0-9]\+/--workers 1/' /etc/systemd/system/chuyenvienao.service 2>/dev/null || true
 systemctl daemon-reload
 systemctl restart chuyenvienao
 

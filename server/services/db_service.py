@@ -263,6 +263,18 @@ def init_database() -> None:
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_token_expires ON phien_dang_nhap(expires_at);")
 
+        # 9.6 Bảng Trạng Thái Phiên Hội Thoại (Session State & Attachments bền vững đa worker)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS phien_hoi_thoai_state (
+            session_id TEXT PRIMARY KEY,
+            attachments_json TEXT DEFAULT '[]',
+            pending_json TEXT,
+            awaiting TEXT,
+            last_active REAL NOT NULL,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
         # 10. Bảng Nhật ký Hội thoại Đa kênh (Web Chat & Zalo Bot)
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS nhat_ky_hoi_thoai (
@@ -1144,6 +1156,74 @@ def delete_auth_session(token: str) -> bool:
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM phien_dang_nhap WHERE token = ?;", (token,))
+    return True
+
+
+def save_chat_session_state(session_id: str, attachments: List[Dict[str, Any]], pending: Any = None, awaiting: Any = None) -> bool:
+    """Lưu trữ bền vững danh sách tệp đính kèm và trạng thái phiên hội thoại vào SQLite WAL."""
+    if not session_id:
+        return False
+    import time
+    now = time.time()
+    att_json = json.dumps(attachments or [], ensure_ascii=False)
+    pending_json = json.dumps(pending, ensure_ascii=False) if pending else None
+    awaiting_str = str(awaiting) if awaiting else None
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT OR REPLACE INTO phien_hoi_thoai_state (
+            session_id, attachments_json, pending_json, awaiting, last_active, updated_at
+        ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'));
+        """, (session_id, att_json, pending_json, awaiting_str, now))
+    return True
+
+
+def get_chat_session_state(session_id: str) -> Optional[Dict[str, Any]]:
+    """Đọc trạng thái phiên hội thoại và tệp đính kèm bền vững từ SQLite."""
+    if not session_id:
+        return None
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT session_id, attachments_json, pending_json, awaiting, last_active
+        FROM phien_hoi_thoai_state
+        WHERE session_id = ?;
+        """, (session_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        
+        atts = []
+        try:
+            if row["attachments_json"]:
+                atts = json.loads(row["attachments_json"])
+        except Exception:
+            atts = []
+
+        pending = None
+        try:
+            if row["pending_json"]:
+                pending = json.loads(row["pending_json"])
+        except Exception:
+            pending = None
+
+        return {
+            "session_id": row["session_id"],
+            "attachments": atts,
+            "pending": pending,
+            "awaiting": row["awaiting"],
+            "last_active": row["last_active"],
+        }
+
+
+def delete_chat_session_state(session_id: str) -> bool:
+    """Xoá trạng thái phiên hội thoại khi làm mới phiên."""
+    if not session_id:
+        return False
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM phien_hoi_thoai_state WHERE session_id = ?;", (session_id,))
     return True
 
 

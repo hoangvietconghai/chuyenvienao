@@ -679,6 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
           message: text,
           action: action,
           token: authToken,
+          attachment_ids: currentAtts.map((a) => a.id),
         }),
       });
 

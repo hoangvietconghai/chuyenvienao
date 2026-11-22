@@ -102,20 +102,61 @@ def _cleanup_old_sessions() -> None:
             del SESSIONS[sid]
 
 
+def _sync_session_to_db(session_id: str, s: Dict[str, Any]) -> None:
+    try:
+        from server.services import db_service
+        db_service.save_chat_session_state(
+            session_id=session_id,
+            attachments=s.get("attachments", []),
+            pending=s.get("pending"),
+            awaiting=s.get("awaiting"),
+        )
+    except Exception as ex:
+        logger.warning(f"Lỗi đồng bộ session state vào SQLite: {ex}")
+
+
 def get_session(session_id: Optional[str]) -> Tuple[str, Dict[str, Any]]:
     _cleanup_old_sessions()
     now_ts = datetime.now().timestamp()
     if not session_id or session_id not in SESSIONS:
         session_id = session_id or uuid.uuid4().hex
-        SESSIONS[session_id] = {
-            "history": [],
-            "attachments": [],
-            "pending": None,
-            "awaiting": None,
-            "last_active": now_ts,
-        }
+        persisted = None
+        if session_id:
+            try:
+                from server.services import db_service
+                persisted = db_service.get_chat_session_state(session_id)
+            except Exception:
+                persisted = None
+
+        if persisted:
+            SESSIONS[session_id] = {
+                "history": [],
+                "attachments": persisted.get("attachments", []),
+                "pending": persisted.get("pending"),
+                "awaiting": persisted.get("awaiting"),
+                "last_active": now_ts,
+            }
+        else:
+            SESSIONS[session_id] = {
+                "history": [],
+                "attachments": [],
+                "pending": None,
+                "awaiting": None,
+                "last_active": now_ts,
+            }
     else:
         SESSIONS[session_id]["last_active"] = now_ts
+        # Đồng bộ từ DB nếu DB có attachments mà memory chưa có (do upload ở worker khác)
+        if not SESSIONS[session_id].get("attachments"):
+            try:
+                from server.services import db_service
+                persisted = db_service.get_chat_session_state(session_id)
+                if persisted and persisted.get("attachments"):
+                    SESSIONS[session_id]["attachments"] = persisted["attachments"]
+                    if not SESSIONS[session_id].get("awaiting") and persisted.get("awaiting"):
+                        SESSIONS[session_id]["awaiting"] = persisted["awaiting"]
+            except Exception:
+                pass
     return session_id, SESSIONS[session_id]
 
 
@@ -126,6 +167,11 @@ def reset_session(session_id: Optional[str], token: Optional[str] = None) -> str
         if old_s.get("authenticated") and old_s.get("can_bo"):
             saved_auth = (True, old_s["can_bo"])
         del SESSIONS[session_id]
+        try:
+            from server.services import db_service
+            db_service.delete_chat_session_state(session_id)
+        except Exception:
+            pass
     new_id, new_s = get_session(None)
     if saved_auth:
         new_s["authenticated"], new_s["can_bo"] = saved_auth
@@ -156,6 +202,7 @@ def add_attachment(session_id: Optional[str], routing_result: Dict[str, Any]) ->
     # Tự động loại bỏ tệp cũ trùng tên trong phiên làm việc để chống tích luỹ nhân bản
     s["attachments"] = [a for a in s["attachments"] if a["name"] != att["name"]]
     s["attachments"].append(att)
+    _sync_session_to_db(session_id, s)
     return session_id, att
 
 
@@ -163,6 +210,7 @@ def remove_attachment(session_id: str, attachment_id: str) -> bool:
     _, s = get_session(session_id)
     before = len(s["attachments"])
     s["attachments"] = [a for a in s["attachments"] if a["id"] != attachment_id]
+    _sync_session_to_db(session_id, s)
     return len(s["attachments"]) < before
 
 
@@ -782,10 +830,24 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
 # HÀM CÔNG KHAI
 # ==============================================================================
 
-async def handle_chat(session_id: Optional[str], message: str = "", action: str = "", token: Optional[str] = None) -> Dict[str, Any]:
+async def handle_chat(
+    session_id: Optional[str],
+    message: str = "",
+    action: str = "",
+    token: Optional[str] = None,
+    attachment_ids: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     session_id, s = get_session(session_id)
     message = (message or "").strip()
     action = (action or "").strip()
+
+    # Nếu cán bộ chủ động gửi kèm tệp trong tin nhắn hiện tại, đảm bảo tệp chưa bị đánh dấu used
+    if attachment_ids:
+        att_id_set = set(attachment_ids)
+        for a in s.get("attachments", []):
+            if a.get("id") in att_id_set:
+                a["used"] = False
+
     new_atts = [a for a in s["attachments"] if not a["used"]]
     start_time = time.time()
 
@@ -870,6 +932,8 @@ async def handle_chat(session_id: Optional[str], message: str = "", action: str 
             except Exception as log_ex:
                 logger.warning(f"Lỗi lưu nhật ký chat: {log_ex}")
 
+        # Đồng bộ trạng thái phiên (attachments, pending, awaiting) vào SQLite WAL bền vững
+        _sync_session_to_db(session_id, s)
         return result
 
     # Ghi lịch sử phía người dùng

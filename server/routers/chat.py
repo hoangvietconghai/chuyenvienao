@@ -37,6 +37,7 @@ class ChatRequest(BaseModel):
     message: Optional[str] = ""
     action: Optional[str] = ""
     token: Optional[str] = None
+    attachment_ids: Optional[List[str]] = None
 
 
 class SessionRequest(BaseModel):
@@ -55,7 +56,9 @@ async def chat_endpoint(req: ChatRequest, request: Request):
         auth_header = request.headers.get("authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:].strip()
-    return await chat_engine.handle_chat(req.session_id, req.message or "", req.action or "", token=token)
+    return await chat_engine.handle_chat(
+        req.session_id, req.message or "", req.action or "", token=token, attachment_ids=req.attachment_ids
+    )
 
 
 @router.post("/api/chat/upload")
