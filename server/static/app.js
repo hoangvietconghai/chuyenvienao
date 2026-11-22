@@ -1572,6 +1572,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const ragTableView = document.getElementById('ragTableView');
   const ragCategoryView = document.getElementById('ragCategoryView');
   const ragYearView = document.getElementById('ragYearView');
+  const ragCountVisible = document.getElementById('ragCountVisible');
+  const ragCountTotal = document.getElementById('ragCountTotal');
+  const ragFilterNotice = document.getElementById('ragFilterNotice');
+  const ragCategoryGroupsWrap = document.getElementById('ragCategoryGroupsWrap');
+  const ragYearGroupsWrap = document.getElementById('ragYearGroupsWrap');
 
   const btnToggleFtsWrap = document.getElementById('btnToggleFtsWrap');
   const ragFtsPanel = document.getElementById('ragFtsPanel');
