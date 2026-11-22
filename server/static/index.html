@@ -204,7 +204,7 @@
             <div class="admin-header-box">
               <div>
                 <h2 class="admin-title">👑 Trung Tâm Điều Hành Quản Trị Hệ Thống</h2>
-                <p class="admin-desc">Dành riêng cho Quản trị viên: Quản lý danh bạ cán bộ (CRUD), Động cơ AI, Sổ nhiệm vụ, Chỉ tiêu KPI và Máy chủ.</p>
+                <p class="admin-desc">Dành riêng cho Quản trị viên: Quản lý danh bạ cán bộ (CRUD), Động cơ AI, Sổ nhiệm vụ, Kho văn bản RAG và Máy chủ.</p>
               </div>
               <button class="btn-chs-outline" id="btnBackToChatFromAdmin">
                 <span>← Trở lại Trợ lý Chat</span>
@@ -218,7 +218,6 @@
               <button class="admin-subtab" data-subtab="subtab-logs">💬 Giám Sát Hội Thoại Hệ Thống</button>
               <button class="admin-subtab" data-subtab="subtab-tasks">📋 Sổ Nhiệm Vụ</button>
               <button class="admin-subtab" data-subtab="subtab-rag">📚 Kho Văn Bản RAG</button>
-              <button class="admin-subtab" data-subtab="subtab-kpis">🎯 Chỉ Tiêu KPI</button>
               <button class="admin-subtab" data-subtab="subtab-server">🖥️ Sức Khoẻ VPS & Logs</button>
             </div>
 
@@ -656,26 +655,6 @@
                   <div class="rag-groups-container" id="ragYearGroupsWrap">
                     <!-- Dynamic Year Accordions -->
                   </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- ==================== SUBTAB 6: CHỈ TIÊU KPI ==================== -->
-            <div class="admin-subcontent" id="subtab-kpis">
-              <div class="admin-card-table">
-                <div class="table-header-bar">
-                  <div>
-                    <h3 style="font-size: 16px; font-weight: 700; color: var(--primary-red);">Chỉ Tiêu Kinh Tế - Xã Hội & Chuyển Đổi Số</h3>
-                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">Nghị quyết Đại hội Đảng bộ xã lần thứ I và Nghị quyết 57-NQ/TU Tỉnh uỷ.</p>
-                  </div>
-                  <div style="display: flex; gap: 8px;">
-                    <button class="btn-chs-outline kpi-filter-chip active" data-kpi-source="">Tất cả (20)</button>
-                    <button class="btn-chs-outline kpi-filter-chip" data-kpi-source="NQ_DAI_HOI_I">Đại hội I</button>
-                    <button class="btn-chs-outline kpi-filter-chip" data-kpi-source="NQ57_CDS">NQ57 CĐS</button>
-                  </div>
-                </div>
-                <div id="kpisGrid" style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
-                  Đang tải chỉ tiêu...
                 </div>
               </div>
             </div>

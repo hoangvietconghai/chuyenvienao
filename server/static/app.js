@@ -1177,7 +1177,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadRagStats();
         loadRagDocuments();
       }
-      if (targetId === 'subtab-kpis') loadKpis();
       if (targetId === 'subtab-server') loadAdminServerLogs();
     });
   });
@@ -2814,67 +2813,6 @@ document.addEventListener('DOMContentLoaded', () => {
       `).join('');
     } catch (err) {
       ragResultsWrap.innerHTML = `<div style="color:#ef4444; padding:20px;">Lỗi tìm kiếm: ${escapeHtml(err.message)}</div>`;
-    }
-  }
-
-  // --- GIÁM SÁT CHỈ TIÊU KPI ---
-  const kpisGrid = document.getElementById('kpisGrid');
-  const kpiFilterChips = document.querySelectorAll('[data-kpi-source]');
-
-  kpiFilterChips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      kpiFilterChips.forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      loadKpis(chip.getAttribute('data-kpi-source'));
-    });
-  });
-
-  async function loadKpis(sourceFilter = '') {
-    if (!kpisGrid) return;
-    kpisGrid.innerHTML = '<div class="loading-state">Đang tải chỉ tiêu...</div>';
-
-    try {
-      const url = sourceFilter ? `/api/kpis?source=${encodeURIComponent(sourceFilter)}` : '/api/kpis';
-      const res = await fetch(url);
-      const data = await res.json();
-      const kpis = data.kpis || [];
-
-      if (kpis.length === 0) {
-        kpisGrid.innerHTML = '<div class="empty-state">Không có chỉ tiêu nào.</div>';
-        return;
-      }
-
-      kpisGrid.innerHTML = kpis.map(k => {
-        let badgeClass = 'badge-green';
-        let fillClass = 'fill-green';
-        if (k.trang_thai_anh_sang === 'VANG') { badgeClass = 'badge-yellow'; fillClass = 'fill-yellow'; }
-        if (k.trang_thai_anh_sang === 'DO') { badgeClass = 'badge-red'; fillClass = 'fill-red'; }
-
-        // Tính % tiến độ ước tính
-        let percent = 100;
-        if (k.chi_tieu_nam_2026 && k.chi_tieu_nam_2026 > 0) {
-          percent = Math.min(100, Math.round(((k.gia_tri_hien_tai || 0) / k.chi_tieu_nam_2026) * 100));
-        }
-
-        return `
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <div class="kpi-title">${escapeHtml(k.ten_chi_tieu)}</div>
-              <span class="kpi-badge ${badgeClass}">${escapeHtml(k.trang_thai_anh_sang || 'XANH')}</span>
-            </div>
-            <div class="kpi-value-row">
-              <span>Mục tiêu 2026: <b class="kpi-target">${escapeHtml(k.bieu_thuc_chi_tiet || (k.chi_tieu_nam_2026 + ' ' + k.don_vi_tinh))}</b></span>
-              <span>Hiện tại: <b style="color:#38bdf8;">${k.gia_tri_hien_tai ? k.gia_tri_hien_tai + ' ' + k.don_vi_tinh : 'Đạt'}</b></span>
-            </div>
-            <div class="kpi-progress-bar">
-              <div class="kpi-progress-fill ${fillClass}" style="width: ${percent}%;"></div>
-            </div>
-            <div class="kpi-note">Phụ trách: ${escapeHtml(k.co_quan_phu_trach || 'UBND xã')}</div>
-          </div>
-        `;
-      }).join('');
-    } catch (err) {
-      kpisGrid.innerHTML = `<div style="color:#ef4444; padding:20px;">Lỗi tải chỉ tiêu: ${escapeHtml(err.message)}</div>`;
     }
   }
 

@@ -6,8 +6,7 @@ Router quản trị hệ thống:
 1. Trạng thái kết nối AI & chuyển đổi mô hình (Ollama Local / DeepSeek Cloud).
 2. Xử lý phân tích và xuất tài liệu cho 4 quy trình nghiệp vụ (WF1 - WF4).
 3. Quản lý Sổ Nhiệm vụ (Tasks CRUD).
-4. Giám sát Chỉ tiêu Nghị quyết (KPIs).
-5. Quản lý Danh bạ cán bộ, lãnh đạo, 08 thôn và 21 chi bộ.
+4. Quản lý Danh bạ cán bộ, lãnh đạo, 08 thôn và 21 chi bộ.
 """
 
 import subprocess
