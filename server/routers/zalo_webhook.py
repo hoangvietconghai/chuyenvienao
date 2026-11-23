@@ -262,10 +262,13 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
                 return
 
         # Chuyển vào chat_engine chính của Chuyên viên ảo
+        start_time = time.time()
         chat_res = await chat_engine.handle_chat(session_id=session_id, message=text)
+        latency_ms = int((time.time() - start_time) * 1000)
         reply_text = chat_res.get("reply", "")
         files_created = chat_res.get("files", [])
         actions = chat_res.get("actions", [])
+        rag_sources = chat_res.get("rag_sources", [])
 
         # 5. Nếu hệ thống đã sinh file Word (Duyệt xong văn bản): Chỉ dùng liên kết tải từ VPS dạng Hyperlink [TẢI VỀ]
         full_reply_parts = [reply_text]
@@ -325,13 +328,24 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
                 "attachment_names": "",
                 "bot_reply": full_reply_content,
                 "model_used": "Gemini/DeepSeek",
-                "latency_ms": 0,
+                "latency_ms": latency_ms,
+                "rag_sources": rag_sources,
             })
         except Exception as zlog_ex:
             logger.warning(f"Lỗi lưu nhật ký Zalo: {zlog_ex}")
 
     except Exception as ex:
         logger.exception(f"Lỗi xử lý sự kiện Zalo: {ex}")
+        try:
+            if chat_id:
+                send_message(
+                    chat_id,
+                    f"⚠️ **HỆ THỐNG GẶP LỖI XỬ LÝ:** {str(ex)}\n\n"
+                    "👉 Đồng chí vui lòng thử lại hoặc truy cập giao diện Web Công Hải Số để tải văn bản."
+                )
+        except Exception:
+            pass
+
 
 
 @router.get("/zalo")

@@ -69,7 +69,7 @@ def _split_message(text: str, max_len: int = 1900) -> List[str]:
 
 
 def send_single_message(chat_id: str, text: str) -> Optional[Dict[str, Any]]:
-    """Gửi một tin nhắn đơn qua Zalo Bot API."""
+    """Gửi một tin nhắn đơn qua Zalo Bot API. Tự động fallback sang plain text nếu lỗi cú pháp Markdown."""
     if not ZALO_API_TOKEN:
         logger.error("ZALO_API_TOKEN chưa được cấu hình.")
         return None
@@ -84,7 +84,20 @@ def send_single_message(chat_id: str, text: str) -> Optional[Dict[str, Any]]:
         response = requests.post(url, json=payload, timeout=15)
         res_json = response.json()
         if not res_json.get("ok"):
-            logger.warning(f"Zalo API gửi tin nhắn không thành công: {res_json}")
+            logger.warning(f"Zalo API gửi tin nhắn Markdown không thành công: {res_json}. Đang thử fallback gửi dạng thuần...")
+            # Fallback: Bỏ parse_mode và chuyển markdown link sang dạng thuần
+            plain_text = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r'\1: \2', text)
+            plain_payload = {
+                "chat_id": str(chat_id),
+                "text": plain_text,
+            }
+            fb_res = requests.post(url, json=plain_payload, timeout=15)
+            fb_json = fb_res.json()
+            if not fb_json.get("ok"):
+                logger.error(f"Zalo API fallback gửi thuần thất bại: {fb_json}")
+            else:
+                logger.info("✓ Fallback gửi text thuần thành công tới Zalo!")
+            return fb_json
         return res_json
     except Exception as ex:
         logger.error(f"Lỗi gửi tin nhắn Zalo tới {chat_id}: {ex}")
