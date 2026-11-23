@@ -409,6 +409,14 @@ async def get_admin_session_messages(session_id: str):
     }
 
 
+@router.delete("/api/admin/sessions/{session_id}")
+async def delete_admin_session(session_id: str):
+    """Xoá toàn bộ lịch sử và nhật ký của một phiên làm việc."""
+    from server import chat_engine
+    cleared = chat_engine.clear_session_history(session_id, delete_logs_in_db=True)
+    return {"success": cleared, "session_id": session_id}
+
+
 @router.get("/api/admin/system/metrics")
 async def get_system_metrics_endpoint():
     """Lấy số liệu tài nguyên VPS (RAM, CPU, Ổ đĩa) và tình trạng các dịch vụ."""

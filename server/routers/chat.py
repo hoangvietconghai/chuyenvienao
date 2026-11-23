@@ -116,6 +116,16 @@ async def chat_reset(req: SessionRequest, request: Request):
     return {"session_id": chat_engine.reset_session(req.session_id, token=token)}
 
 
+@router.post("/api/chat/clear")
+async def chat_clear(req: SessionRequest):
+    """Xoá toàn bộ lịch sử trò chuyện và nhật ký của phiên hiện tại."""
+    sid = req.session_id or ""
+    cleared = False
+    if sid:
+        cleared = chat_engine.clear_session_history(sid, delete_logs_in_db=True)
+    return {"success": cleared, "session_id": sid}
+
+
 @router.post("/api/upload")
 async def handle_document_upload(
     file: UploadFile = File(...),

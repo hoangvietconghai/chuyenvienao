@@ -222,6 +222,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="sidebar-session-item ${isCurrent ? 'active' : ''}" data-sid="${escapeHtml(s.session_id)}">
           <div class="session-item-row">
             <span class="session-item-title" title="${escapeHtml(title)}">${channelIcon} ${escapeHtml(title)}</span>
+            <button class="btn-delete-session" title="Xoá lịch sử phiên này" onclick="event.stopPropagation(); window.deleteSidebarSession('${escapeHtml(s.session_id)}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
           </div>
           <div class="session-item-meta">
             <span>${escapeHtml(time)}</span>
@@ -239,6 +242,38 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  window.deleteSidebarSession = async function(sid) {
+    if (!sid) return;
+    if (!confirm('Đồng chí có chắc chắn muốn xoá toàn bộ lịch sử của phiên trò chuyện này không? Thao tác này không thể hoàn tác.')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/sessions/${encodeURIComponent(sid)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('✓ Đã xoá lịch sử phiên làm việc thành công', 'success');
+        if (sid === sessionId) {
+          messagesContainer.innerHTML = '';
+          pendingAttachments = [];
+          attachList.innerHTML = '';
+          input.value = '';
+          resizeInput();
+          if (welcome) welcome.style.display = 'block';
+          saveSessionId(generateUUID());
+        }
+        loadSidebarSessions();
+      } else {
+        showToast('Không thể xoá phiên làm việc', 'error');
+      }
+    } catch (err) {
+      console.error('Lỗi khi xoá phiên:', err);
+      showToast('Lỗi kết nối khi xoá phiên', 'error');
+    }
+  };
+
 
   async function switchChatSession(sid) {
     if (isSending) return;

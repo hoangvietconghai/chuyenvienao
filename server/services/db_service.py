@@ -1227,6 +1227,17 @@ def delete_chat_session_state(session_id: str) -> bool:
     return True
 
 
+def delete_chat_session(session_id: str) -> bool:
+    """Xoá toàn bộ nhật ký hội thoại và trạng thái của một phiên làm việc."""
+    if not session_id:
+        return False
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM nhat_ky_hoi_thoai WHERE session_id = ?;", (session_id,))
+        cursor.execute("DELETE FROM phien_hoi_thoai_state WHERE session_id = ?;", (session_id,))
+    return True
+
+
 # ==============================================================================
 # 10. NHẬT KÝ HỘI THOẠI ĐA KÊNH & QUẢN TRỊ ADMIN (`nhat_ky_hoi_thoai`)
 # ==============================================================================

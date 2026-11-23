@@ -187,6 +187,36 @@ def reset_session(session_id: Optional[str], token: Optional[str] = None) -> str
     return new_id
 
 
+def clear_session_history(session_id: str, delete_logs_in_db: bool = True) -> bool:
+    """Xoá sạch lịch sử tin nhắn, tệp đính kèm và trạng thái đang chờ của phiên."""
+    if not session_id:
+        return False
+    if session_id in SESSIONS:
+        s = SESSIONS[session_id]
+        s["history"] = []
+        s["attachments"] = []
+        s["pending"] = None
+        s["awaiting"] = None
+        _sync_session_to_db(session_id, s)
+    else:
+        _, s = get_session(session_id)
+        s["history"] = []
+        s["attachments"] = []
+        s["pending"] = None
+        s["awaiting"] = None
+        _sync_session_to_db(session_id, s)
+
+    if delete_logs_in_db:
+        try:
+            from server.services import db_service
+            db_service.delete_chat_session(session_id)
+        except Exception as ex:
+            logger.warning(f"Lỗi khi xoá nhật ký phiên {session_id} trong DB: {ex}")
+
+    logger.info(f"Đã xoá sạch lịch sử hội thoại cho phiên: {session_id}")
+    return True
+
+
 def add_attachment(session_id: Optional[str], routing_result: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     session_id, s = get_session(session_id)
     att = {
@@ -1043,6 +1073,23 @@ async def handle_chat(
         # Đồng bộ trạng thái phiên (attachments, pending, awaiting) vào SQLite WAL bền vững
         _sync_session_to_db(session_id, s)
         return result
+
+    # 0. Xử lý lệnh xoá lịch sử / làm mới phiên làm việc (Chat Command hoặc Action)
+    is_clear_action = action in ("clear_history", "reset", "clear")
+    is_clear_cmd = bool(re.search(
+        r'^\s*(?:/clear|/reset|xoá\s*lịch\s*sử|xóa\s*lịch\s*sử|xoá\s*tin\s*nhắn|xóa\s*tin\s*nhắn|xoá\s*cuộc\s*trò\s*chuyện|xóa\s*cuộc\s*trò\s*chuyện|xoá\s*hội\s*thoại|xóa\s*hội\s*thoại|làm\s*mới|bắt\s*đầu\s*lại)\s*$',
+        message,
+        re.IGNORECASE
+    ))
+
+    if is_clear_action or is_clear_cmd:
+        clear_session_history(session_id, delete_logs_in_db=True)
+        reply = (
+            "🧹 **ĐÃ XOÁ TOÀN BỘ LỊCH SỬ HỘI THOẠI & LÀM MỚI PHIÊN**\n\n"
+            "Toàn bộ ngữ cảnh trao đổi và các tệp đính kèm trước đó đã được dọn sạch hoàn toàn.\n\n"
+            "👉 Đồng chí có thể bắt đầu phiên làm việc mới hoặc nhập yêu cầu tham mưu tiếp theo."
+        )
+        return {"session_id": session_id, "reply": reply, "actions": [], "files": [], "preview": []}
 
     # Ghi lịch sử phía người dùng
     if message or new_atts:

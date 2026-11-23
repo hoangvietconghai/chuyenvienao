@@ -570,7 +570,9 @@ input, textarea, select {
 .session-item-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
+  gap: 6px;
 }
 
 .session-item-title {
@@ -580,8 +582,35 @@ input, textarea, select {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   display: block;
+}
+
+.btn-delete-session {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-session-item:hover .btn-delete-session,
+.sidebar-session-item.active .btn-delete-session {
+  display: flex;
+}
+
+.btn-delete-session:hover {
+  background-color: rgba(220, 38, 38, 0.12);
+  color: var(--red-700);
 }
 
 
