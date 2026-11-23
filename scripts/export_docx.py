@@ -166,6 +166,59 @@ class PartyDocumentBuilder:
         self.doc_type = data.get("doc_type", "CV").upper()
         self.doc = docx.Document()
         self._setup_page()
+        self.body_items: List[Any] = []
+        self.appendix_items: List[Any] = []
+        self._separate_body_and_appendix()
+
+    def _separate_body_and_appendix(self):
+        """Phân tách nội dung văn bản chính và các phụ lục độc lập chuẩn HD 05-HD/VPTW."""
+        noi_dung = self.data.get("noi_dung", [])
+        if isinstance(noi_dung, str):
+            noi_dung = [noi_dung]
+
+        flattened = []
+        for item in noi_dung:
+            if isinstance(item, str):
+                if "|" in item and "\n" in item:
+                    for l in item.split("\n"):
+                        if l.strip():
+                            flattened.append(l.strip())
+                else:
+                    flattened.append(item.strip())
+            elif isinstance(item, dict):
+                flattened.append(item)
+
+        # Kiểm tra xem trong flattened có điểm bắt đầu của PHỤ LỤC không
+        appendix_start_idx = -1
+        for idx, it in enumerate(flattened):
+            if isinstance(it, str):
+                t = it.strip().upper()
+                if re.match(r'^(PHỤ\s*LỤC\b|BẢNG\s*PHỤ\s*LỤC\b)', t):
+                    appendix_start_idx = idx
+                    break
+
+        if appendix_start_idx != -1:
+            self.body_items = flattened[:appendix_start_idx]
+            self.appendix_items = flattened[appendix_start_idx:]
+        else:
+            self.body_items = flattened
+            self.appendix_items = []
+
+        # Nếu có trường phu_luc riêng trong data, gộp vào self.appendix_items
+        phu_luc = self.data.get("phu_luc")
+        if phu_luc:
+            if isinstance(phu_luc, str):
+                for l in phu_luc.split("\n"):
+                    if l.strip():
+                        self.appendix_items.append(l.strip())
+            elif isinstance(phu_luc, list):
+                for it in phu_luc:
+                    if isinstance(it, str):
+                        for l in it.split("\n"):
+                            if l.strip():
+                                self.appendix_items.append(l.strip())
+                    elif isinstance(it, dict):
+                        self.appendix_items.append(it)
 
     def _setup_page(self):
         """Khổ giấy A4, Lề trang chuẩn: Trái 30mm, Phải 15mm, Trên 20mm, Dưới 20mm."""
@@ -581,48 +634,13 @@ class PartyDocumentBuilder:
         p_sep.paragraph_format.line_spacing = Pt(6)
 
     def build_body(self):
-        """Dựng phần nội dung văn bản (chuẩn Justified, 1cm, Before 6pt, After 6pt, Exactly 18pt) và tự động dựng bảng biểu."""
+        """Dựng phần nội dung văn bản chính (chuẩn Justified, 1cm, Before 6pt, After 6pt, Exactly 18pt)."""
         # Căn cứ pháp lý (nếu có danh sách căn cứ riêng)
         can_cu_list = self.data.get("can_cu", [])
         for cc in can_cu_list:
             p = self.doc.add_paragraph()
             self._format_body_paragraph(p, first_line_indent_mm=10, before_pt=6, after_pt=6, line_spacing_pt=18)
             parse_markdown_runs(p, cc, base_font_size=14, default_italic=True)
-
-        # Nội dung chính
-        noi_dung = self.data.get("noi_dung", [])
-        
-        # Hỗ trợ dạng văn bản thuần chuỗi (Text string có xuống dòng)
-        if isinstance(noi_dung, str):
-            noi_dung = [noi_dung]
-
-        flattened_items = []
-        for item in noi_dung:
-            if isinstance(item, str):
-                if "|" in item and "\n" in item:
-                    for l in item.split("\n"):
-                        if l.strip():
-                            flattened_items.append(l.strip())
-                else:
-                    flattened_items.append(item.strip())
-            elif isinstance(item, dict):
-                flattened_items.append(item)
-
-        # Nếu có trường phu_luc riêng, nối vào cuối flattened_items
-        phu_luc = self.data.get("phu_luc")
-        if phu_luc:
-            if isinstance(phu_luc, str):
-                for l in phu_luc.split("\n"):
-                    if l.strip():
-                        flattened_items.append(l.strip())
-            elif isinstance(phu_luc, list):
-                for it in phu_luc:
-                    if isinstance(it, str):
-                        for l in it.split("\n"):
-                            if l.strip():
-                                flattened_items.append(l.strip())
-                    elif isinstance(it, dict):
-                        flattened_items.append(it)
 
         table_buffer = []
 
@@ -631,7 +649,7 @@ class PartyDocumentBuilder:
                 self._render_table_block(table_buffer)
                 table_buffer.clear()
 
-        for item in flattened_items:
+        for item in self.body_items:
             if isinstance(item, str):
                 text = item.strip()
                 if not text:
@@ -646,8 +664,8 @@ class PartyDocumentBuilder:
 
                 p = self.doc.add_paragraph()
                 
-                # 1. Nhận diện Tiêu đề mục lớn độc lập (PHẦN THỨ..., I., II., III. hoặc PHỤ LỤC...)
-                is_major_heading = bool(re.match(r'^(PHẦN\s+[A-Z0-9À-Ỹ]+|[IVX]+\.\s+[^\n:]+$|PHỤ\s*LỤC\s*[:\-]?\s*.*)$', text, re.IGNORECASE))
+                # 1. Nhận diện Tiêu đề mục lớn độc lập (PHẦN THỨ..., I., II., III. không có nội dung sau dấu :)
+                is_major_heading = bool(re.match(r'^(PHẦN\s+[A-Z0-9À-Ỹ]+|[IVX]+\.\s+[^\n:]+$)', text, re.IGNORECASE))
                 
                 if is_major_heading:
                     self._format_body_paragraph(p, first_line_indent_mm=10, before_pt=6, after_pt=6, line_spacing_pt=18, align=WD_ALIGN_PARAGRAPH.JUSTIFY)
@@ -679,6 +697,143 @@ class PartyDocumentBuilder:
                 p = self.doc.add_paragraph()
                 self._format_body_paragraph(p, first_line_indent_mm=indent, before_pt=before, after_pt=after, line_spacing_pt=line_spacing, align=align)
                 self._render_paragraph_content(p, text, default_bold=bold, default_italic=italic)
+
+        flush_table()
+
+    def build_appendix(self):
+        """Dựng phần Phụ lục độc lập ở trang mới sau phần chữ ký (chuẩn thể thức HD 05-HD/VPTW)."""
+        if not self.appendix_items:
+            return
+
+        # 1. Thêm dấu ngắt trang để tách biệt hoàn toàn Phụ lục sang trang mới
+        self.doc.add_page_break()
+
+        # 2. Tách phần tiêu đề phụ lục và các dòng bảng biểu
+        table_buffer = []
+
+        def flush_table():
+            if table_buffer:
+                self._render_table_block(table_buffer)
+                table_buffer.clear()
+
+        first_table_idx = -1
+        for idx, it in enumerate(self.appendix_items):
+            if isinstance(it, str) and it.strip().startswith("|") and it.strip().endswith("|"):
+                first_table_idx = idx
+                break
+
+        header_lines = []
+        remaining_items = []
+        if first_table_idx != -1:
+            header_lines = self.appendix_items[:first_table_idx]
+            remaining_items = self.appendix_items[first_table_idx:]
+        else:
+            header_lines = self.appendix_items
+            remaining_items = []
+
+        # Phân tích khối tiêu đề phụ lục
+        appendix_title_main = "PHỤ LỤC"
+        appendix_subtitle = ""
+        appendix_note = ""
+
+        so_hieu = self.data.get("so_hieu", f"Số      -{self.doc_type}/ĐU")
+        ten_loai = self.TYPE_LABELS.get(self.doc_type, "KẾ HOẠCH")
+        if "BAN THƯỜNG VỤ" in self.data.get("tham_quyen", "") or "BAN THƯỜNG VỤ" in str(self.data.get("noi_nhan", "")):
+            cq_ref = "Ban Thường vụ Đảng uỷ xã Công Hải"
+        else:
+            cq_ref = "Đảng uỷ xã Công Hải"
+
+        raw_header_texts = []
+        for hl in header_lines:
+            if isinstance(hl, str):
+                t = hl.strip()
+                if t:
+                    raw_header_texts.append(t)
+
+        if raw_header_texts:
+            first_line = raw_header_texts[0]
+            if ":" in first_line and first_line.upper().startswith("PHỤ LỤC"):
+                parts = first_line.split(":", 1)
+                appendix_title_main = parts[0].strip().upper()
+                appendix_subtitle = parts[1].strip()
+            elif first_line.upper() == "PHỤ LỤC":
+                appendix_title_main = "PHỤ LỤC"
+                if len(raw_header_texts) > 1:
+                    appendix_subtitle = raw_header_texts[1]
+            else:
+                appendix_title_main = "PHỤ LỤC"
+                appendix_subtitle = first_line
+
+            for t in raw_header_texts[1:]:
+                if "kèm theo" in t.lower() or "ban hành kèm" in t.lower():
+                    appendix_note = t
+                    break
+        else:
+            trich_yeu = self.data.get("trich_yeu", "")
+            appendix_subtitle = f"DANH MỤC NHIỆM VỤ TRỌNG TÂM THỰC HIỆN {ten_loai}\n{trich_yeu}".upper()
+
+        if not appendix_note:
+            appendix_note = f"(Kèm theo {ten_loai.title()} {so_hieu} ngày     tháng 11 năm 2026 của {cq_ref})"
+        elif not appendix_note.startswith("(") and not appendix_note.endswith(")"):
+            appendix_note = f"({appendix_note})"
+
+        # 3. Render tiêu đề Phụ lục
+        # Dòng 1: PHỤ LỤC
+        p_phuluc = self.doc.add_paragraph()
+        p_phuluc.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_phuluc.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+        p_phuluc.paragraph_format.line_spacing = 1.15
+        p_phuluc.paragraph_format.space_before = Pt(12)
+        p_phuluc.paragraph_format.space_after = Pt(3)
+        r_pl = p_phuluc.add_run(appendix_title_main)
+        r_pl.font.name = "Times New Roman"
+        r_pl.font.size = Pt(14)
+        r_pl.font.bold = True
+
+        # Dòng 2: Tên phụ lục (in hoa đậm)
+        if appendix_subtitle:
+            p_sub = self.doc.add_paragraph()
+            p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p_sub.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+            p_sub.paragraph_format.line_spacing = 1.15
+            p_sub.paragraph_format.space_before = Pt(0)
+            p_sub.paragraph_format.space_after = Pt(3)
+            r_sub = p_sub.add_run(appendix_subtitle.upper())
+            r_sub.font.name = "Times New Roman"
+            r_sub.font.size = Pt(13)
+            r_sub.font.bold = True
+
+        # Dòng 3: Dòng viện dẫn ban hành kèm theo (in nghiêng)
+        p_note = self.doc.add_paragraph()
+        p_note.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_note.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+        p_note.paragraph_format.line_spacing = 1.15
+        p_note.paragraph_format.space_before = Pt(0)
+        p_note.paragraph_format.space_after = Pt(12)
+        r_note = p_note.add_run(appendix_note)
+        r_note.font.name = "Times New Roman"
+        r_note.font.size = Pt(13)
+        r_note.font.italic = True
+
+        # 4. Render bảng biểu và các nội dung còn lại của Phụ lục
+        for item in remaining_items:
+            if isinstance(item, str):
+                text = item.strip()
+                if not text:
+                    continue
+                if text.startswith("|") and text.endswith("|") and len(text) > 2:
+                    table_buffer.append(text)
+                    continue
+                else:
+                    flush_table()
+                p = self.doc.add_paragraph()
+                self._format_body_paragraph(p, first_line_indent_mm=10, before_pt=4, after_pt=4, line_spacing_pt=18)
+                self._render_paragraph_content(p, text, default_bold=False)
+            elif isinstance(item, dict):
+                flush_table()
+                p = self.doc.add_paragraph()
+                self._format_body_paragraph(p, first_line_indent_mm=10, before_pt=4, after_pt=4, line_spacing_pt=18)
+                self._render_paragraph_content(p, item.get("text", ""), default_bold=item.get("bold", False))
 
         flush_table()
 
@@ -871,6 +1026,7 @@ def export_party_document(data: dict, output_path: str = None) -> str:
     builder.build_title_section()
     builder.build_body()
     builder.build_footer()
+    builder.build_appendix()
     return builder.save(output_path)
 
 

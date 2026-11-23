@@ -248,7 +248,7 @@ NGUYÊN TẮC BẮT BUỘC SỐ 1: BÁM SÁT TOÀN VĂN VĂN BẢN CẤP TRÊN (
    - Khi tham mưu văn bản triển khai văn bản cấp trên (Nghị quyết, Kế hoạch, Chỉ thị của Tỉnh uỷ/UBND tỉnh): Nếu văn bản cấp trên có N nhóm nhiệm vụ trọng tâm (ví dụ: 08 nhóm nhiệm vụ CCHC), bản Kế hoạch của xã BẮT BUỘC PHẢI CHUYỂN HOÁ ĐỦ N NHÓM NHIỆM VỤ TƯƠNG ỨNG. Tuyệt đối không được tóm lược hời hợt hoặc gộp bớt làm mất nhiệm vụ chính trị của cấp trên.
 2. **BẮT BUỘC CÓ PHỤ LỤC DANH MỤC NHIỆM VỤ (BẢNG 6 RÕ - 1 XUYÊN SUỐT):**
    - Nếu văn bản cấp trên có phân công nhiệm vụ hoặc có bảng phụ lục, bản Kế hoạch của Đảng uỷ xã BẮT BUỘC PHẢI CÓ PHỤ LỤC DANH MỤC NHIỆM VỤ TRỌNG TÂM đính kèm theo nguyên tắc "6 rõ - 1 xuyên suốt" (STT, Tên nhiệm vụ, Bộ phận chủ trì, Bộ phận phối hợp, Sản phẩm/Chỉ tiêu chính, Thời hạn, Nguồn lực).
-   - Phụ lục được đưa vào cuối mảng "noi_dung" hoặc trường "phu_luc" dưới dạng bảng Markdown chuẩn (| STT | Nhiệm vụ | ... |).
+   - Phụ lục BẮT BUỘC được đưa vào trường riêng "phu_luc" (hoặc nếu để trong "noi_dung" thì bắt đầu bằng từ khoá "PHỤ LỤC") dưới dạng bảng Markdown chuẩn (| STT | Nhiệm vụ | ... |) để hệ thống tự động chèn dấu ngắt trang (PageBreak) độc lập và đặt sau phần ký của Ban Thường vụ Đảng uỷ.
 3. **TÔN TRỌNG 100% CHỈ TIÊU ĐỊNH LƯỢNG:**
    - Kế thừa chính xác các chỉ tiêu %, mốc thời gian, số lượng từ văn bản gốc (ví dụ: giảm 10% họp, 15% văn bản; 90% nhiệm vụ đúng hạn; 100% thu nộp đảng phí điện tử; 95% tài sản số...). Tuyệt đối KHÔNG tự sáng tác, bịa đặt chỉ tiêu ngoài văn bản.
 4. **QUY TẮC 'HỎI LẠI KHI CHƯA RÕ — NẮM VỮNG RỒI MỚI VIẾT':**
@@ -330,11 +330,7 @@ NGUYÊN TẮC BẮT BUỘC SỐ 3: THỂ THỨC HƯỚNG DẪN 05-HD/VPTW & CHÍ
       "4. Uỷ ban nhân dân xã: ...",
       "5. Uỷ ban MTTQ và các tổ chức chính trị - xã hội xã: ...",
       "6. Các chi bộ trực thuộc: ...",
-      "7. Chế độ thông tin, báo cáo: ...",
-      "PHỤ LỤC: DANH MỤC NHIỆM VỤ TRỌNG TÂM THỰC HIỆN KẾ HOẠCH...",
-      "| STT | Nhiệm vụ | Bộ phận chủ trì | Bộ phận phối hợp | Sản phẩm / Chỉ tiêu chính | Thời gian | Nguồn lực |",
-      "|---|---|---|---|---|---|---|",
-      "| 1 | ... | ... | ... | ... | ... | ... |"
+      "7. Chế độ thông tin, báo cáo: ..."
     ],
     "noi_nhan": [
       "- Ban Thường vụ Tỉnh uỷ (báo cáo);",
@@ -347,7 +343,15 @@ NGUYÊN TẮC BẮT BUỘC SỐ 3: THỂ THỨC HƯỚNG DẪN 05-HD/VPTW & CHÍ
     ],
     "tham_quyen": "T/M BAN THƯỜNG VỤ",
     "chuc_vu": "BÍ THƯ",
-    "nguoi_ky": "Vũ Thị Thuỳ Trang"
+    "nguoi_ky": "Vũ Thị Thuỳ Trang",
+    "phu_luc": [
+      "PHỤ LỤC",
+      "DANH MỤC NHIỆM VỤ TRỌNG TÂM THỰC HIỆN KẾ HOẠCH...",
+      "(Kèm theo Kế hoạch số       -KH/ĐU ngày     tháng 11 năm 2026 của Ban Thường vụ Đảng uỷ xã Công Hải)",
+      "| STT | Nhiệm vụ | Bộ phận chủ trì | Bộ phận phối hợp | Sản phẩm / Chỉ tiêu chính | Thời gian | Nguồn lực |",
+      "|---|---|---|---|---|---|---|",
+      "| 1 | ... | ... | ... | ... | ... | ... |"
+    ]
   }
 }
 """
