@@ -99,28 +99,58 @@ def auto_close_json(text: str) -> str:
 
 
 def repair_and_parse_json(text: str) -> Union[Dict[str, Any], List[Any]]:
-    """Cố gắng phân tích chuỗi JSON, tự động sửa các lỗi cú pháp thông thường và đóng ngoặc thiếu."""
+    """Cố gắng phân tích chuỗi JSON, tự động sửa các lỗi cú pháp thông thường, unescaped quotes và đóng ngoặc thiếu."""
     clean_text = extract_clean_json(text)
+    # Lần 1: Thử parse trực tiếp với strict=False (cho phép unescaped newlines/tabs trong chuỗi)
     try:
-        return json.loads(clean_text)
-    except json.JSONDecodeError as err:
+        return json.loads(clean_text, strict=False)
+    except Exception as err:
         logger.warning(f"Lần 1 decode JSON thất bại ({err}), tiến hành sửa sâu...")
 
-        # Thử sửa dấu nháy đơn thành dấu nháy kép cho JSON keys
-        fixed = re.sub(r"([{,]\s*)'([a-zA-Z0-9_]+)'\s*:", r'\1"\2":', clean_text)
-        # Sửa các ký tự xuống dòng chưa được escape trong chuỗi
-        fixed = re.sub(r"(?<!\\)\n", r"\\n", fixed)
-        try:
-            return json.loads(fixed)
-        except Exception:
-            pass
+    # Lần 2: Sửa dấu nháy đơn thành dấu nháy kép cho JSON keys
+    fixed = re.sub(r"([{,]\s*)'([a-zA-Z0-9_]+)'\s*:", r'\1"\2":', clean_text)
+    
+    # Sửa lỗi dấu nháy kép unescaped bên trong giá trị chuỗi (ví dụ: "nguyên tắc "6 rõ"...")
+    lines = fixed.split("\n")
+    fixed_lines = []
+    for line in lines:
+        m_kv = re.match(r'^(\s*"[^"]+"\s*:\s*")(.*)("(?:\s*,)?\s*)$', line)
+        if m_kv:
+            prefix, content, suffix = m_kv.groups()
+            fixed_content = re.sub(r'(?<!\\)"', r"'", content)
+            fixed_lines.append(f"{prefix}{fixed_content}{suffix}")
+            continue
 
-        # Thử tự động đóng ngoặc nếu bị cắt cụt
-        try:
-            closed = auto_close_json(fixed)
-            return json.loads(closed)
-        except Exception:
-            raise ValueError(f"Không thể phân tích cú pháp phản hồi từ mô hình AI thành JSON: {text[:300]}...")
+        m_arr = re.match(r'^(\s*")(.*)("(?:\s*,)?\s*)$', line)
+        if m_arr:
+            prefix, content, suffix = m_arr.groups()
+            fixed_content = re.sub(r'(?<!\\)"', r"'", content)
+            fixed_lines.append(f"{prefix}{fixed_content}{suffix}")
+            continue
+
+        fixed_lines.append(line)
+
+    fixed = "\n".join(fixed_lines)
+    fixed = re.sub(r",\s*([\}\]])", r"\1", fixed)
+
+    try:
+        return json.loads(fixed, strict=False)
+    except Exception:
+        pass
+
+    # Lần 3: Thử tự động đóng ngoặc nếu bị cắt cụt do giới hạn token
+    try:
+        closed = auto_close_json(fixed)
+        return json.loads(closed, strict=False)
+    except Exception:
+        pass
+
+    # Lần 4: Thử đóng ngoặc trên clean_text gốc
+    try:
+        closed = auto_close_json(clean_text)
+        return json.loads(closed, strict=False)
+    except Exception:
+        raise ValueError(f"Không thể phân tích cú pháp phản hồi từ mô hình AI thành JSON: {text[:300]}...")
 
 
 class DeepSeekClient:

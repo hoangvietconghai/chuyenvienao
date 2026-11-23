@@ -236,8 +236,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 23/11/2026 11:06:47*
-> *Quy mô: **55** tệp Python | **14,196** dòng mã | **50** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 23/11/2026 11:13:40*
+> *Quy mô: **55** tệp Python | **14,226** dòng mã | **50** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -299,7 +299,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | Tệp tin | Dòng mã | Lớp / Endpoint | Chức năng & Hàm trọng yếu |
 | :--- | :---: | :---: | :--- |
 | [`server/__init__.py`](server/__init__.py) | 2 | 0 Funcs | Package server cho Hệ thống Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải. |
-| [`server/ai_connector.py`](server/ai_connector.py) | 643 | 1 Classes | server/ai_connector.py |
+| [`server/ai_connector.py`](server/ai_connector.py) | 673 | 1 Classes | server/ai_connector.py |
 | [`server/app.py`](server/app.py) | 115 | 3 Endpoints | server/app.py |
 | [`server/chat_engine.py`](server/chat_engine.py) | 1,104 | 22 Funcs | server/chat_engine.py |
 | [`server/config.py`](server/config.py) | 204 | 0 Funcs | server/config.py |
