@@ -267,27 +267,25 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
         files_created = chat_res.get("files", [])
         actions = chat_res.get("actions", [])
 
-        # 5. Nếu hệ thống đã sinh file Word (Duyệt xong văn bản): Upload lên Google Drive
-        gdrive_links = []
-        if files_created:
-            for f in files_created:
-                f_name = f.get("name", "")
-                f_url = f.get("url", "")
-                local_path = _extract_local_file_path(f_url)
-                if local_path and local_path.exists():
-                    up_res = upload_to_gdrive(str(local_path), filename=f_name)
-                    link = up_res.get("file_url") or GDRIVE_FOLDER_URL
-                    gdrive_links.append({"name": f_name, "link": link, "server_link": up_res.get("server_link")})
-
-        # Định dạng câu trả lời hoàn chỉnh
+        # 5. Nếu hệ thống đã sinh file Word (Duyệt xong văn bản): Chỉ dùng liên kết tải từ VPS dạng Hyperlink [TẢI VỀ]
         full_reply_parts = [reply_text]
 
-        if gdrive_links:
-            full_reply_parts.append("\n📁 **TỆP DỰ THẢO TRÊN GOOGLE DRIVE:**")
-            for item in gdrive_links:
-                full_reply_parts.append(f"• **{item['name']}**\n  🔗 Link Google Drive: {item['link']}")
-                if item.get("server_link"):
-                    full_reply_parts.append(f"  ⬇️ Link tải dự phòng: {item['server_link']}")
+        if files_created:
+            full_reply_parts.append("\n📁 **TỆP DỰ THẢO THAM MƯU:**")
+            domain = SERVER_DOMAIN.rstrip('/') if SERVER_DOMAIN else "http://45.119.82.227"
+            for f in files_created:
+                f_name = f.get("name", "van_ban_du_thao.docx")
+                f_url = f.get("url", "")
+                download_url = f"{domain}{f_url}" if f_url.startswith("/") else f"{domain}/{f_url}"
+                full_reply_parts.append(f"• **{f_name}**\n  👉 [TẢI VỀ]({download_url})")
+
+                # Lưu bản sao lưu ngầm lên Google Drive (nếu có cấu hình, không in link ra khung chat)
+                local_path = _extract_local_file_path(f_url)
+                if local_path and local_path.exists():
+                    try:
+                        upload_to_gdrive(str(local_path), filename=f_name)
+                    except Exception as g_err:
+                        logger.warning(f"Lỗi sao lưu ngầm GDrive: {g_err}")
 
         # Nếu có hành động chờ duyệt (Human-in-the-Loop)
         if actions and not files_created:

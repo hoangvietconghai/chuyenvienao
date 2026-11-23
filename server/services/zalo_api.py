@@ -27,8 +27,7 @@ def clean_markdown_for_zalo(text: str) -> str:
 
     text = re.sub(r'https?://[^\s\)\]]+', encode_url_underscores, text)
 
-    # 2. Chuyển đổi Markdown Link [text](url) -> text: url
-    text = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r'\1: \2', text)
+    # 2. Giữ nguyên cú pháp Markdown Link [Tên](url) để Zalo hiển thị Hyperlink chuyên nghiệp (không bung link dài)
 
     # 3. Loại bỏ code inline `code` -> code
     text = re.sub(r'`([^`]+)`', r'\1', text)

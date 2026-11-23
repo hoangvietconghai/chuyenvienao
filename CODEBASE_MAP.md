@@ -236,8 +236,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 23/11/2026 11:13:40*
-> *Quy mô: **55** tệp Python | **14,226** dòng mã | **50** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 23/11/2026 13:53:21*
+> *Quy mô: **55** tệp Python | **14,223** dòng mã | **50** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -319,7 +319,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/routers/auth.py`](server/routers/auth.py) | 249 | 4 Endpoints, 3 Classes | server/routers/auth.py |
 | [`server/routers/chat.py`](server/routers/chat.py) | 201 | 7 Endpoints, 2 Classes | server/routers/chat.py |
 | [`server/routers/knowledge.py`](server/routers/knowledge.py) | 218 | 12 Endpoints, 3 Classes | server/routers/knowledge.py |
-| [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 367 | 2 Endpoints | server/routers/zalo_webhook.py |
+| [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 365 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
 | [`server/services/db_service.py`](server/services/db_service.py) | 1,530 | 44 Funcs | server/services/db_service.py |
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 137 | 5 Funcs | server/services/embedding_service.py |
@@ -328,7 +328,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/services/query_analyzer.py`](server/services/query_analyzer.py) | 344 | 5 Funcs | server/services/query_analyzer.py |
 | [`server/services/rag_service.py`](server/services/rag_service.py) | 1,196 | 15 Funcs | server/services/rag_service.py |
 | [`server/services/scheduler_service.py`](server/services/scheduler_service.py) | 278 | 9 Funcs | server/services/scheduler_service.py |
-| [`server/services/zalo_api.py`](server/services/zalo_api.py) | 143 | 6 Funcs | server/services/zalo_api.py |
+| [`server/services/zalo_api.py`](server/services/zalo_api.py) | 142 | 6 Funcs | server/services/zalo_api.py |
 | [`server/services/zalo_bot_service.py`](server/services/zalo_bot_service.py) | 213 | 7 Funcs | server/services/zalo_bot_service.py |
 | [`server/utils/__init__.py`](server/utils/__init__.py) | 6 | 0 Funcs | server/utils |
 | [`server/utils/text_processing.py`](server/utils/text_processing.py) | 118 | 3 Funcs | server/utils/text_processing.py |
