@@ -7,6 +7,7 @@ Webhook tiếp nhận và xử lý tin nhắn, tệp đính kèm từ Zalo Bot P
 """
 
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -235,7 +236,6 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
         send_typing_action(chat_id)
 
         # 4.1. Tự động liên kết tài khoản Zalo với số điện thoại trong danh bạ (Zalo 2FA Linking)
-        import re
         clean_text_digits = re.sub(r'[\s\.\-\(\)\+]', '', text)
         is_pure_phone = bool(re.match(r'^(?:84|0)[35789]\d{8}$', clean_text_digits))
         is_link_intent = bool(re.search(r'(?:liên\s*kết|lien\s*ket|đăng\s*ký|dang\s*ky|kích\s*hoạt|kich\s*hoat|sđt|sdt|số\s*điện\s*thoại|so\s*dien\s*thoai|link|phone)', text, re.IGNORECASE))
@@ -349,7 +349,7 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
                 "bot_reply": full_reply_content,
                 "model_used": "Gemini/DeepSeek",
                 "latency_ms": latency_ms,
-                "rag_sources": rag_sources,
+                "rag_sources": json.dumps(rag_sources, ensure_ascii=False) if rag_sources else "",
             })
         except Exception as zlog_ex:
             logger.warning(f"Lỗi lưu nhật ký Zalo: {zlog_ex}")

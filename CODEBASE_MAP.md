@@ -236,8 +236,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 23/11/2026 14:58:16*
-> *Quy mô: **55** tệp Python | **14,354** dòng mã | **52** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 23/11/2026 15:07:14*
+> *Quy mô: **55** tệp Python | **14,357** dòng mã | **52** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -323,7 +323,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/routers/knowledge.py`](server/routers/knowledge.py) | 218 | 12 Endpoints, 3 Classes | server/routers/knowledge.py |
 | [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 399 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
-| [`server/services/db_service.py`](server/services/db_service.py) | 1,541 | 45 Funcs | server/services/db_service.py |
+| [`server/services/db_service.py`](server/services/db_service.py) | 1,544 | 45 Funcs | server/services/db_service.py |
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 137 | 5 Funcs | server/services/embedding_service.py |
 | [`server/services/gdrive_service.py`](server/services/gdrive_service.py) | 201 | 4 Funcs | server/services/gdrive_service.py |
 | [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 148 | 4 Funcs | server/services/knowledge_loader.py |

@@ -1285,6 +1285,9 @@ def save_chat_log(log_data: Dict[str, Any]) -> int:
                 # Nếu đã có bản ghi y hệt thì bỏ qua không ghi đúp
                 return last_dup["id"]
 
+        raw_rag = log_data.get("rag_sources", "")
+        rag_str = json.dumps(raw_rag, ensure_ascii=False) if isinstance(raw_rag, (list, dict)) else str(raw_rag or "")
+
         cursor.execute("""
         INSERT INTO nhat_ky_hoi_thoai (
             session_id, channel, can_bo_id, so_dien_thoai, ho_ten, co_quan, vai_tro,
@@ -1306,7 +1309,7 @@ def save_chat_log(log_data: Dict[str, Any]) -> int:
             "bot_reply": log_data.get("bot_reply", "")[:15000],
             "model_used": log_data.get("model_used", ""),
             "latency_ms": log_data.get("latency_ms", 0),
-            "rag_sources": log_data.get("rag_sources", ""),
+            "rag_sources": rag_str,
         })
         return cursor.lastrowid
 
