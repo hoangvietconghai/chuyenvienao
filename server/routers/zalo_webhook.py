@@ -22,6 +22,7 @@ from server.config import (
     ADMIN_ZALO_IDS,
     BASE_DIR,
     GDRIVE_FOLDER_URL,
+    SERVER_DOMAIN,
     ZALO_WEBHOOK_SECRET,
 )
 from server.logger import get_logger

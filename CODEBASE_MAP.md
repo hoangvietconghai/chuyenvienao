@@ -236,8 +236,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 23/11/2026 14:34:47*
-> *Quy mô: **55** tệp Python | **14,326** dòng mã | **52** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 23/11/2026 14:40:03*
+> *Quy mô: **55** tệp Python | **14,327** dòng mã | **52** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -321,7 +321,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/routers/auth.py`](server/routers/auth.py) | 249 | 4 Endpoints, 3 Classes | server/routers/auth.py |
 | [`server/routers/chat.py`](server/routers/chat.py) | 211 | 8 Endpoints, 2 Classes | server/routers/chat.py |
 | [`server/routers/knowledge.py`](server/routers/knowledge.py) | 218 | 12 Endpoints, 3 Classes | server/routers/knowledge.py |
-| [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 379 | 2 Endpoints | server/routers/zalo_webhook.py |
+| [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 380 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
 | [`server/services/db_service.py`](server/services/db_service.py) | 1,541 | 45 Funcs | server/services/db_service.py |
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 137 | 5 Funcs | server/services/embedding_service.py |
