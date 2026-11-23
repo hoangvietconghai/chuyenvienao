@@ -165,10 +165,17 @@ class PartyDocumentBuilder:
         self.data = data
         self.doc_type = data.get("doc_type", "CV").upper()
         self.doc = docx.Document()
+        self._setup_core_properties()
         self._setup_page()
         self.body_items: List[Any] = []
         self.appendix_items: List[Any] = []
         self._separate_body_and_appendix()
+
+    def _setup_core_properties(self):
+        """Khẳng định bản quyền số trong Document Core Properties (Metadata)."""
+        props = self.doc.core_properties
+        props.title = "Văn phòng Đảng uỷ xã Công Hải"
+        props.author = "Ngô Hoàng Việt"
 
     def _separate_body_and_appendix(self):
         """Phân tách nội dung văn bản chính và các phụ lục độc lập chuẩn HD 05-HD/VPTW."""
@@ -991,6 +998,7 @@ class PartyDocumentBuilder:
 
     def save(self, target_path: str = None) -> str:
         """Lưu tệp .docx vào đường dẫn chỉ định hoặc tự điều hướng theo thể loại."""
+        self._setup_core_properties()
         if not target_path:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             folder_name = self.FOLDER_ROUTING.get(self.doc_type, "Khac")
