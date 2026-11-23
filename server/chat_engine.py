@@ -1098,9 +1098,17 @@ async def handle_chat(
 
     try:
         # 1. Nút bấm / lệnh duyệt - huỷ
-        if action == "confirm" or (s["pending"] and len(message) < 40 and CONFIRM_RE.search(message)):
+        clean_msg = re.sub(r'^\s*\[@[^\]]+\]\s*', '', message)
+        clean_msg = re.sub(r'^\s*@Bot(?:\s+VPĐU(?:\s+Công\s+Hải)?)?\s*[:,\-]?\s*', '', clean_msg, flags=re.IGNORECASE)
+        clean_msg = re.sub(r'^\s*@[^\s]+\s*', '', clean_msg).strip()
+        core_msg = clean_msg.rstrip('.!?,;: ')
+
+        is_confirm = action == "confirm" or (s["pending"] and len(core_msg) < 40 and (CONFIRM_RE.search(core_msg) or CONFIRM_RE.search(message)))
+        is_cancel = action == "cancel" or (s["pending"] and len(core_msg) < 40 and (CANCEL_RE.search(core_msg) or CANCEL_RE.search(message)))
+
+        if is_confirm:
             return done(_confirm(s))
-        if action == "cancel" or (s["pending"] and len(message) < 40 and CANCEL_RE.search(message)):
+        if is_cancel:
             s["pending"] = None
             return done(_reply(s, "Đã huỷ dự thảo. Đồng chí cần tôi làm việc gì tiếp theo?"))
 

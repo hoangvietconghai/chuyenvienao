@@ -216,11 +216,22 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
                 return
 
         # 4. Xử lý tin nhắn CHỮ (văn bản hỏi đáp hoặc điều khiển nghiệp vụ)
-        text = message_data.get("text", "").strip()
-        if not text:
+        raw_text = message_data.get("text", "").strip()
+        if not raw_text:
             return
 
-        logger.info(f"[Zalo] Tin nhắn từ {display_name} ({chat_id}): {text[:60]}")
+        chat_type = str(message_data.get("chat", {}).get("chat_type", "") or payload.get("chat_type", "")).upper()
+        is_group = (chat_type == "GROUP") or str(chat_id).startswith("zgr-")
+
+        # Bóc tách thẻ @mention tên Bot ở đầu câu (đặc biệt trong Nhóm chat Zalo)
+        text = raw_text
+        text = re.sub(r'^\s*\[@[^\]]+\]\s*', '', text)
+        text = re.sub(r'^\s*@Bot(?:\s+VPĐU(?:\s+Công\s+Hải)?)?\s*[:,\-]?\s*', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'^\s*@[^\s]+\s*', '', text).strip()
+        if not text:
+            text = raw_text.strip()
+
+        logger.info(f"[Zalo] Tin nhắn từ {display_name} ({chat_id}) [Group={is_group}]: raw='{raw_text[:50]}' -> clean='{text[:50]}'")
         send_typing_action(chat_id)
 
         # 4.1. Tự động liên kết tài khoản Zalo với số điện thoại trong danh bạ (Zalo 2FA Linking)
@@ -293,10 +304,18 @@ async def process_zalo_event(payload: Dict[str, Any]) -> None:
 
         # Nếu có hành động chờ duyệt (Human-in-the-Loop)
         if actions and not files_created:
-            full_reply_parts.extend([
-                "",
-                "👉 *Đồng chí có thể gõ:* **'Duyệt'** *(xuất Word)*, **'Huỷ'** *(bỏ dự thảo)*, hoặc gõ chỉ đạo chỉnh sửa trực tiếp.",
-            ])
+            if is_group:
+                full_reply_parts.extend([
+                    "",
+                    "👉 *Trong nhóm chat, đồng chí có 2 cách xác nhận để tôi xuất file Word:*",
+                    "• **Cách 1 (Nhanh nhất):** Nhấn giữ / chuột phải vào tin nhắn này chọn **'Trả lời' (Reply)** kèm chữ **'Duyệt'** *(hoặc 'Huỷ')*.",
+                    "• **Cách 2:** Gõ có tag tên Bot: **'@Bot VPĐU Công Hải Duyệt'** *(hoặc '@Bot Huỷ')*.",
+                ])
+            else:
+                full_reply_parts.extend([
+                    "",
+                    "👉 *Đồng chí có thể gõ:* **'Duyệt'** *(xuất Word)*, **'Huỷ'** *(bỏ dự thảo)*, hoặc gõ chỉ đạo chỉnh sửa trực tiếp.",
+                ])
 
         full_reply_parts.append("\n🤖 *Trợ lý Chuyên viên ảo — VP Đảng uỷ xã Công Hải*")
 
