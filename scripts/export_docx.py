@@ -26,6 +26,7 @@ import json
 import re
 import argparse
 from datetime import datetime
+from typing import List, Dict, Any, Optional
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -64,6 +65,21 @@ def remove_table_borders(table):
             <w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>
             <w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>
             <w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        </w:tblBorders>
+    ''')
+    table._tbl.tblPr.append(tblBorders)
+
+
+def set_table_borders_grid(table):
+    """Thiết lập đường viền lưới liền mảnh màu đen chuẩn văn bản cho bảng số liệu / phụ lục."""
+    tblBorders = parse_xml(r'''
+        <w:tblBorders xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+            <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+            <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+            <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+            <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+            <w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+            <w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/>
         </w:tblBorders>
     ''')
     table._tbl.tblPr.append(tblBorders)
@@ -481,8 +497,91 @@ class PartyDocumentBuilder:
         # 3. Các đoạn nội dung diễn giải thông thường: không in đậm mặc định
         parse_markdown_runs(p, text, base_font_size=14, default_bold=default_bold, default_italic=default_italic)
 
+    def _render_table_block(self, table_lines: List[str]):
+        """Dựng bảng biểu Word chuẩn từ các dòng Markdown table (| Col 1 | Col 2 |)."""
+        table_rows = []
+        for line in table_lines:
+            raw_cells = [c.strip() for c in line.split('|')]
+            if len(raw_cells) >= 3:
+                cells = raw_cells[1:-1]
+            else:
+                cells = [c.strip() for c in raw_cells if c.strip()]
+            
+            # Bỏ qua dòng phân cách markdown |---|---|
+            if all(re.match(r'^:?-+:?$', c.strip()) for c in cells if c.strip()):
+                continue
+            table_rows.append(cells)
+
+        if not table_rows:
+            return
+
+        num_cols = max(len(r) for r in table_rows)
+        if num_cols == 0:
+            return
+
+        # Chuẩn hoá số cột mỗi dòng
+        for r in table_rows:
+            while len(r) < num_cols:
+                r.append("")
+
+        table = self.doc.add_table(rows=len(table_rows), cols=num_cols)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        set_table_borders_grid(table)
+
+        # Cấu hình độ rộng cột tối ưu cho khổ A4 lề 30-15mm (chiều rộng in: 165mm)
+        if num_cols == 4:
+            col_widths = [Mm(15), Mm(75), Mm(45), Mm(30)]
+        elif num_cols == 5:
+            col_widths = [Mm(12), Mm(65), Mm(30), Mm(28), Mm(30)]
+        elif num_cols == 6:
+            col_widths = [Mm(10), Mm(55), Mm(25), Mm(25), Mm(25), Mm(25)]
+        elif num_cols == 7:
+            col_widths = [Mm(10), Mm(50), Mm(22), Mm(22), Mm(22), Mm(22), Mm(17)]
+        else:
+            w_each = Mm(165 / num_cols)
+            col_widths = [w_each] * num_cols
+
+        for c_idx, w in enumerate(col_widths):
+            for row in table.rows:
+                row.cells[c_idx].width = w
+
+        for r_idx, row_data in enumerate(table_rows):
+            is_header = (r_idx == 0)
+            row = table.rows[r_idx]
+            # Lặp dòng tiêu đề ở đầu mỗi trang
+            if is_header:
+                trPr = row._tr.get_or_add_trPr()
+                trPr.append(OxmlElement('w:tblHeader'))
+
+            for c_idx, cell_value in enumerate(row_data):
+                cell = row.cells[c_idx]
+                set_cell_margins(cell, top=60, bottom=60, left=80, right=80)
+                p = cell.paragraphs[0]
+                p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                p.paragraph_format.line_spacing = 1.05
+                p.paragraph_format.space_before = Pt(2)
+                p.paragraph_format.space_after = Pt(2)
+                p.paragraph_format.first_line_indent = Mm(0)
+
+                # Căn lề
+                align = WD_ALIGN_PARAGRAPH.JUSTIFY
+                if is_header or c_idx == 0:
+                    align = WD_ALIGN_PARAGRAPH.CENTER
+                elif re.match(r'^(quý\s+[ivx]+|hằng\s+năm|\d{4}|\d{1,2}/\d{1,2}/\d{4}|tháng\s+\d+|202[5-9]|2030)', cell_value.strip(), re.IGNORECASE):
+                    align = WD_ALIGN_PARAGRAPH.CENTER
+
+                p.alignment = align
+                # Phông chữ bảng biểu: 12.5pt (chuẩn HD 05 quy định bảng 12-13pt)
+                parse_markdown_runs(p, cell_value, base_font_size=12.5, default_bold=is_header)
+
+        # Thêm paragraph trống nhỏ sau bảng
+        p_sep = self.doc.add_paragraph()
+        p_sep.paragraph_format.space_before = Pt(0)
+        p_sep.paragraph_format.space_after = Pt(4)
+        p_sep.paragraph_format.line_spacing = Pt(6)
+
     def build_body(self):
-        """Dựng phần nội dung văn bản (chuẩn Justified, 1cm, Before 6pt, After 6pt, Exactly 18pt)."""
+        """Dựng phần nội dung văn bản (chuẩn Justified, 1cm, Before 6pt, After 6pt, Exactly 18pt) và tự động dựng bảng biểu."""
         # Căn cứ pháp lý (nếu có danh sách căn cứ riêng)
         can_cu_list = self.data.get("can_cu", [])
         for cc in can_cu_list:
@@ -495,17 +594,60 @@ class PartyDocumentBuilder:
         
         # Hỗ trợ dạng văn bản thuần chuỗi (Text string có xuống dòng)
         if isinstance(noi_dung, str):
-            noi_dung = [line.strip() for line in noi_dung.split("\n") if line.strip()]
+            noi_dung = [noi_dung]
 
+        flattened_items = []
         for item in noi_dung:
+            if isinstance(item, str):
+                if "|" in item and "\n" in item:
+                    for l in item.split("\n"):
+                        if l.strip():
+                            flattened_items.append(l.strip())
+                else:
+                    flattened_items.append(item.strip())
+            elif isinstance(item, dict):
+                flattened_items.append(item)
+
+        # Nếu có trường phu_luc riêng, nối vào cuối flattened_items
+        phu_luc = self.data.get("phu_luc")
+        if phu_luc:
+            if isinstance(phu_luc, str):
+                for l in phu_luc.split("\n"):
+                    if l.strip():
+                        flattened_items.append(l.strip())
+            elif isinstance(phu_luc, list):
+                for it in phu_luc:
+                    if isinstance(it, str):
+                        for l in it.split("\n"):
+                            if l.strip():
+                                flattened_items.append(l.strip())
+                    elif isinstance(it, dict):
+                        flattened_items.append(it)
+
+        table_buffer = []
+
+        def flush_table():
+            if table_buffer:
+                self._render_table_block(table_buffer)
+                table_buffer.clear()
+
+        for item in flattened_items:
             if isinstance(item, str):
                 text = item.strip()
                 if not text:
                     continue
+
+                # Kiểm tra nếu là dòng bảng markdown
+                if text.startswith("|") and text.endswith("|") and len(text) > 2:
+                    table_buffer.append(text)
+                    continue
+                else:
+                    flush_table()
+
                 p = self.doc.add_paragraph()
                 
-                # 1. Nhận diện Tiêu đề mục lớn độc lập (PHẦN THỨ..., I., II., III. không có nội dung sau dấu :)
-                is_major_heading = bool(re.match(r'^(PHẦN\s+[A-Z0-9À-Ỹ]+|[IVX]+\.\s+[^\n:]+$)', text))
+                # 1. Nhận diện Tiêu đề mục lớn độc lập (PHẦN THỨ..., I., II., III. hoặc PHỤ LỤC...)
+                is_major_heading = bool(re.match(r'^(PHẦN\s+[A-Z0-9À-Ỹ]+|[IVX]+\.\s+[^\n:]+$|PHỤ\s*LỤC\s*[:\-]?\s*.*)$', text, re.IGNORECASE))
                 
                 if is_major_heading:
                     self._format_body_paragraph(p, first_line_indent_mm=10, before_pt=6, after_pt=6, line_spacing_pt=18, align=WD_ALIGN_PARAGRAPH.JUSTIFY)
@@ -516,6 +658,7 @@ class PartyDocumentBuilder:
                     self._render_paragraph_content(p, text, default_bold=False)
 
             elif isinstance(item, dict):
+                flush_table()
                 # Object cấu trúc chi tiết
                 text = item.get("text", "")
                 indent = item.get("indent", 10)
@@ -536,6 +679,8 @@ class PartyDocumentBuilder:
                 p = self.doc.add_paragraph()
                 self._format_body_paragraph(p, first_line_indent_mm=indent, before_pt=before, after_pt=after, line_spacing_pt=line_spacing, align=align)
                 self._render_paragraph_content(p, text, default_bold=bold, default_italic=italic)
+
+        flush_table()
 
     def build_footer(self):
         """Dựng Bảng 1 hàng 2 cột ẩn viền phần Nơi nhận và Thẩm quyền ký."""

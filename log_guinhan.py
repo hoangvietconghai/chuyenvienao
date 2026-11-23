@@ -223,7 +223,10 @@ cursor.execute(sql)
 rows = [dict(r) for r in cursor.fetchall()]
 print(json.dumps(rows, ensure_ascii=False))
 """
-    stdin, stdout, stderr = ssh.exec_command(f"python3 -c \"{remote_script}\"")
+    stdin, stdout, stderr = ssh.exec_command("python3 -")
+    stdin.write(remote_script)
+    stdin.flush()
+    stdin.channel.shutdown_write()
     output = stdout.read().decode("utf-8")
     err = stderr.read().decode("utf-8")
     ssh.close()

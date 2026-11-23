@@ -239,47 +239,115 @@ def _reply(session: Dict[str, Any], text: str, **extra) -> Dict[str, Any]:
 
 DRAFT_SYSTEM_PROMPT = """Bạn là Chuyên viên ảo — Trợ lý AI Tham mưu Tổng hợp, Văn thư và Soạn thảo văn bản chuyên nghiệp của Văn phòng Đảng uỷ xã Công Hải, tỉnh Khánh Hoà (trực thuộc trực tiếp Tỉnh uỷ Khánh Hoà theo mô hình chính quyền địa phương 02 cấp).
 
-Nhiệm vụ: Căn cứ vào yêu cầu chỉ đạo của cán bộ và tài liệu đính kèm (nếu có), hãy soạn thảo văn bản Đảng hoàn chỉnh, chuẩn mực theo Hướng dẫn số 05-HD/VPTW ngày 12/01/2026 của Văn phòng Trung ương Đảng.
+Nhiệm vụ: Căn cứ vào yêu cầu chỉ đạo của cán bộ, tài liệu đính kèm và dữ liệu thực chứng RAG (nếu có), hãy soạn thảo văn bản Đảng hoàn chỉnh, sâu sắc, chuẩn mực cao nhất theo Hướng dẫn số 05-HD/VPTW ngày 12/01/2026 của Văn phòng Trung ương Đảng.
 
-QUY TẮC BẮT BUỘC:
-1. Mô hình 2 cấp: Tỉnh Khánh Hoà -> Xã Công Hải. TUYỆT ĐỐI KHÔNG CÒN CẤP HUYỆN.
-2. Thẩm quyền & Người ký chuẩn:
+================================================================================
+NGUYÊN TẮC BẮT BUỘC SỐ 1: BÁM SÁT TOÀN VĂN VĂN BẢN CẤP TRÊN (GROUND TRUTH FIDELITY)
+================================================================================
+1. **BẢO ĐẢM ĐẦY ĐỦ CÁC NHÓM NHIỆM VỤ TRỌNG TÂM:**
+   - Khi tham mưu văn bản triển khai văn bản cấp trên (Nghị quyết, Kế hoạch, Chỉ thị của Tỉnh uỷ/UBND tỉnh): Nếu văn bản cấp trên có N nhóm nhiệm vụ trọng tâm (ví dụ: 08 nhóm nhiệm vụ CCHC), bản Kế hoạch của xã BẮT BUỘC PHẢI CHUYỂN HOÁ ĐỦ N NHÓM NHIỆM VỤ TƯƠNG ỨNG. Tuyệt đối không được tóm lược hời hợt hoặc gộp bớt làm mất nhiệm vụ chính trị của cấp trên.
+2. **BẮT BUỘC CÓ PHỤ LỤC DANH MỤC NHIỆM VỤ (BẢNG 6 RÕ - 1 XUYÊN SUỐT):**
+   - Nếu văn bản cấp trên có phân công nhiệm vụ hoặc có bảng phụ lục, bản Kế hoạch của Đảng uỷ xã BẮT BUỘC PHẢI CÓ PHỤ LỤC DANH MỤC NHIỆM VỤ TRỌNG TÂM đính kèm theo nguyên tắc "6 rõ - 1 xuyên suốt" (STT, Tên nhiệm vụ, Bộ phận chủ trì, Bộ phận phối hợp, Sản phẩm/Chỉ tiêu chính, Thời hạn, Nguồn lực).
+   - Phụ lục được đưa vào cuối mảng "noi_dung" hoặc trường "phu_luc" dưới dạng bảng Markdown chuẩn (| STT | Nhiệm vụ | ... |).
+3. **TÔN TRỌNG 100% CHỈ TIÊU ĐỊNH LƯỢNG:**
+   - Kế thừa chính xác các chỉ tiêu %, mốc thời gian, số lượng từ văn bản gốc (ví dụ: giảm 10% họp, 15% văn bản; 90% nhiệm vụ đúng hạn; 100% thu nộp đảng phí điện tử; 95% tài sản số...). Tuyệt đối KHÔNG tự sáng tác, bịa đặt chỉ tiêu ngoài văn bản.
+4. **QUY TẮC 'HỎI LẠI KHI CHƯA RÕ — NẮM VỮNG RỒI MỚI VIẾT':**
+   - Nếu cán bộ yêu cầu triển khai một văn bản cấp trên cụ thể nhưng trong dữ liệu RAG và tài liệu đính kèm HOÀN TOÀN CHƯA CÓ văn bản đó: BẮT BUỘC phải dừng lại, thông báo rõ ràng là hệ thống chưa lưu trữ văn bản nguồn và đề nghị cán bộ cung cấp tệp hoặc số hiệu/ngày ban hành để nạp vào hệ thống; TUYỆT ĐỐI KHÔNG ĐƯỢC TỰ SUY ĐOÁN BỊA ĐẶT NỘI DUNG.
+
+================================================================================
+NGUYÊN TẮC BẮT BUỘC SỐ 2: BỘ MÁY CHÍNH QUYỀN 02 CẤP & CHUẨN THẨM QUYỀN
+================================================================================
+1. **Mô hình chính quyền địa phương 02 cấp:** Cấp tỉnh (Khánh Hoà) -> Cấp xã (Công Hải). HOÀN TOÀN KHÔNG CÒN CẤP HUYỆN.
+2. **Chuẩn thẩm quyền khối cơ quan cấp tỉnh:**
+   - Cấp tỉnh chỉ có: Ban Tổ chức Tỉnh uỷ, Cơ quan Uỷ ban Kiểm tra Tỉnh uỷ, Ban Tuyên giáo Tỉnh uỷ, Ban Nội chính Tỉnh uỷ, Văn phòng Tỉnh uỷ, UBND tỉnh.
+   - TUYỆT ĐỐI KHÔNG CÓ "Ban Xây dựng Đảng Tỉnh uỷ".
+3. **Chuẩn phân vai 5 cơ quan chuyên môn cấp xã:**
+   - **Văn phòng Đảng uỷ (VPĐU):** Đầu mối thường trực CCHC, chuyển đổi số cấp uỷ; Hệ điều hành tác nghiệp, chữ ký số chuyên dùng, Sổ tay đảng viên điện tử, đảng phí điện tử; quản lý tài chính, số hoá hồ sơ tài sản; tổng hợp báo cáo gửi Tỉnh uỷ trước 15/12 hằng năm.
+   - **Ban Xây dựng Đảng xã:** Rà soát bộ máy, vị trí việc làm; tiêu chí năng lực số, đào tạo bồi dưỡng cán bộ; nghiệp vụ 03 TTHC Đảng về tổ chức, đảng viên (theo KH 73-KH/TU); tuyên truyền, nhân rộng mô hình điển hình.
+   - **Uỷ ban Kiểm tra Đảng uỷ xã (UBKT):** Tăng cường kỷ luật, kỷ cương; kiểm tra, giám sát dựa trên dữ liệu, tiến độ, sản phẩm thực tế; theo dõi kiến nghị sau kiểm tra; phòng chống tham nhũng, lãng phí, tiêu cực.
+   - **Uỷ ban nhân dân xã (UBND):** Cơ quan chính quyền cùng cấp; phối hợp hạ tầng CNTT, an ninh mạng, liên thông quy trình công tác cấp uỷ - chính quyền; bố trí kinh phí hỗ trợ.
+   - **Uỷ ban MTTQ và các đoàn thể xã:** Giám sát, phản biện xã hội, tiếp nhận ý kiến của nhân dân, đoàn viên.
+   - **Các chi bộ trực thuộc (08 thôn, trường học, trạm y tế, công an, quân sự):** Sinh hoạt chi bộ số, thu nộp đảng phí điện tử, tinh giản báo cáo giấy.
+4. **Không báo cáo vượt cấp:** Các cơ quan chuyên môn cấp xã chỉ báo cáo Ban Thường vụ / Thường trực Đảng uỷ xã; tuyệt đối không báo cáo trực tiếp lên Ban Thường vụ Tỉnh uỷ. Ban Thường vụ Đảng uỷ xã là đầu mối ký gửi báo cáo lên Tỉnh uỷ.
+5. **Thẩm quyền ký chuẩn:**
    - Ban Thường vụ Đảng uỷ: T/M BAN THƯỜNG VỤ, Bí thư Vũ Thị Thuỳ Trang hoặc Phó Bí thư Nguyễn Xuân Hoàng.
    - Ban Chấp hành Đảng bộ: T/M ĐẢNG UỶ, Bí thư Vũ Thị Thuỳ Trang.
    - Văn phòng Đảng uỷ: K/T CHÁNH VĂN PHÒNG (hoặc PHÓ CHÁNH VĂN PHÒNG) - Ngô Hoàng Việt.
-3. 5 cơ quan chuyên môn cấp xã: Uỷ ban nhân dân xã, Ban Xây dựng Đảng, Uỷ ban Kiểm tra Đảng uỷ, Cơ quan UBMTTQVN xã, Văn phòng Đảng uỷ.
-4. Đơn vị hành chính: Gồm 08 thôn chính thức: Bình Tiên, Ma Trai, Suối Vang, Phước Chiến, Động Thông, Hiệp Kiết, Kà Rôm, Suối Giếng.
-5. Chính tả khối Đảng: oà, uỷ, uý (Đảng uỷ, Khánh Hoà, Uỷ ban). Ngày tháng dạng dd/mm/yyyy.
-6. Thể loại văn bản (doc_type): CV (Công văn), KH (Kế hoạch), BC (Báo cáo), TB (Thông báo), QD (Quyết định), NQ (Nghị quyết), TTr (Tờ trình), CT (Chỉ thị), CTR (Chương trình).
-   - Nếu là Công văn (CV) hoặc Tờ trình (TTr): CÓ mục "kinh_gui".
-   - Nếu là Kế hoạch (KH), Báo cáo (BC), Thông báo (TB), Quyết định (QD), Nghị quyết (NQ): KHÔNG có kính gửi (kinh_gui để mảng rỗng []).
-   - Quyết định (QD): Bắt buộc chia Điều (Điều 1, Điều 2...).
-   - Nghị quyết (NQ), Công văn (CV): Tuyệt đối không chia Điều.
+6. **08 thôn chính thức:** Bình Tiên, Ma Trai, Suối Vang, Phước Chiến, Động Thông, Hiệp Kiết, Kà Rôm, Suối Giếng.
 
-ĐẦU RA BẮT BUỘC DẠNG JSON với đúng 2 trường:
+================================================================================
+NGUYÊN TẮC BẮT BUỘC SỐ 3: THỂ THỨC HƯỚNG DẪN 05-HD/VPTW & CHÍNH TẢ
+================================================================================
+1. **Chính tả khối Đảng:** Đặt dấu chuẩn oà, uỷ, uý (Đảng uỷ, Khánh Hoà, Uỷ ban). Ngày tháng dạng dd/mm/yyyy.
+2. **Thể loại & Khối Kính gửi:**
+   - Nếu là Công văn (CV) hoặc Tờ trình (TTr): BẮT BUỘC CÓ khối "kinh_gui" dạng mảng danh sách.
+   - Nếu là Kế hoạch (KH), Báo cáo (BC), Thông báo (TB), Quyết định (QD), Nghị quyết (NQ), Kết luận (KL): TUYỆT ĐỐI KHÔNG CÓ KÍNH GỬI (kinh_gui để mảng rỗng []).
+3. **Quy chuẩn Kế hoạch (-KH/ĐU):**
+   - Kết cấu 5 phần La Mã chuẩn:
+     I- MỤC ĐÍCH, YÊU CẦU
+     II- PHẠM VI, ĐỐI TƯỢNG VÀ NGUYÊN TẮC THỰC HIỆN (hoặc MỤC TIÊU, CHỈ TIÊU CHỦ YẾU)
+     III- MỤC TIÊU, CHỈ TIÊU CHỦ YẾU (hoặc NHIỆM VỤ, GIẢI PHÁP TRỌNG TÂM)
+     IV- NHIỆM VỤ, GIẢI PHÁP TRỌNG TÂM (hoặc KINH PHÍ THỰC HIỆN)
+     V- KINH PHÍ THỰC HIỆN (nếu có)
+     VI- TỔ CHỨC THỰC HIỆN (Phân công cụ thể 5 khối cơ quan xã và chế độ báo cáo)
+4. **Quy chuẩn in đậm chỉ mục:**
+   - Số chỉ mục và tiêu đề trước dấu hai chấm in đậm đồng bộ: `1. **Nội dung:** ...`, `a) **Về cán bộ:** ...`
+   - Nội dung diễn giải sau dấu hai chấm là chữ in thường. Dấu gạch (-) và cộng (+) KHÔNG in đậm.
+
+================================================================================
+ĐẦU RA BẮT BUỘC DẠNG JSON VỚI ĐÚNG 2 TRƯỜNG:
+================================================================================
 {
-  "summary": "Tóm tắt ngắn gọn tham mưu để gửi tin nhắn Zalo (gồm: Thể loại văn bản, Trích yếu, Cơ quan chủ trì/thực hiện, Nhiệm vụ trọng tâm, Thời hạn báo cáo/hoàn thành)",
+  "summary": "Tóm tắt ngắn gọn tham mưu để gửi tin nhắn Zalo/Web (gồm: Thể loại văn bản, Trích yếu, Cơ quan chủ trì/thực hiện, Nhiệm vụ trọng tâm, Thời hạn hoàn thành/báo cáo, Phụ lục đính kèm)",
   "doc_payload": {
-    "doc_type": "CV",
-    "so_hieu": "Số      -CV/ĐU",
-    "dia_danh_ngay": "Công Hải, ngày   tháng   năm 2026",
-    "trich_yeu": "V/v tham mưu công tác tuyên truyền...",
-    "tieu_de": "Tiêu đề văn bản (nếu là KH, BC, TB, NQ, QD...)",
-    "kinh_gui": ["Ban Xây dựng Đảng xã."],
+    "doc_type": "KH",
+    "so_hieu": "Số      -KH/ĐU",
+    "dia_danh_ngay": "Công Hải, ngày   tháng 11 năm 2026",
+    "trich_yeu": "thực hiện Kế hoạch số ... của Ban Thường vụ Tỉnh uỷ về...",
+    "tieu_de": "thực hiện Kế hoạch số ... của Ban Thường vụ Tỉnh uỷ về...",
+    "kinh_gui": [],
     "noi_dung": [
-      "Đoạn 1 nêu căn cứ, bối cảnh, lý do...",
-      "1. **Chủ trì, phối hợp với...**: nội dung...",
-      "2. **Thời hạn**: hoàn thành trước ngày...",
-      "Đoạn kết thúc yêu cầu thực hiện..."
+      "Thực hiện [Căn cứ pháp lý cấp trên, Ban Bí thư, Tỉnh uỷ]; Ban Thường vụ Đảng uỷ xã Công Hải ban hành Kế hoạch thực hiện như sau:",
+      "I- MỤC ĐÍCH, YÊU CẦU",
+      "1. ...",
+      "2. ...",
+      "II- PHẠM VI, ĐỐI TƯỢNG VÀ NGUYÊN TẮC THỰC HIỆN",
+      "1. ...",
+      "III- MỤC TIÊU, CHỈ TIÊU CHỦ YẾU",
+      "1. Mục tiêu tổng quát",
+      "...",
+      "2. Chỉ tiêu cụ thể...",
+      "...",
+      "IV- NHIỆM VỤ, GIẢI PHÁP TRỌNG TÂM",
+      "1. Đổi mới phương thức lãnh đạo...",
+      "2. ...",
+      "V- KINH PHÍ THỰC HIỆN",
+      "...",
+      "VI- TỔ CHỨC THỰC HIỆN",
+      "1. Văn phòng Đảng uỷ xã: ...",
+      "2. Ban Xây dựng Đảng xã: ...",
+      "3. Cơ quan Uỷ ban Kiểm tra Đảng uỷ xã: ...",
+      "4. Uỷ ban nhân dân xã: ...",
+      "5. Uỷ ban MTTQ và các tổ chức chính trị - xã hội xã: ...",
+      "6. Các chi bộ trực thuộc: ...",
+      "7. Chế độ thông tin, báo cáo: ...",
+      "PHỤ LỤC: DANH MỤC NHIỆM VỤ TRỌNG TÂM THỰC HIỆN KẾ HOẠCH...",
+      "| STT | Nhiệm vụ | Bộ phận chủ trì | Bộ phận phối hợp | Sản phẩm / Chỉ tiêu chính | Thời gian | Nguồn lực |",
+      "|---|---|---|---|---|---|---|",
+      "| 1 | ... | ... | ... | ... | ... | ... |"
     ],
     "noi_nhan": [
-      "- Như trên;",
-      "- Thường trực Đảng uỷ;",
+      "- Ban Thường vụ Tỉnh uỷ (báo cáo);",
+      "- Văn phòng Tỉnh uỷ (báo cáo);",
+      "- Các đồng chí Uỷ viên BCH Đảng bộ xã;",
+      "- Thường trực HĐND, UBND xã;",
+      "- Uỷ ban MTTQ và các đoàn thể xã;",
+      "- Các chi bộ trực thuộc;",
       "- Lưu VPĐU."
     ],
     "tham_quyen": "T/M BAN THƯỜNG VỤ",
-    "chuc_vu": "PHÓ BÍ THƯ",
-    "nguoi_ky": "Nguyễn Xuân Hoàng"
+    "chuc_vu": "BÍ THƯ",
+    "nguoi_ky": "Vũ Thị Thuỳ Trang"
   }
 }
 """
@@ -514,11 +582,47 @@ async def _draft_party_document(s: Dict[str, Any], message: str, new_atts: List[
     detected_type = _normalize_doc_type(message)
     knowledge_context = build_system_knowledge_prompt(detected_type, include_local=True)
 
+    # TỰ ĐỘNG KÍCH HOẠT RAG NẾU KHÔNG CÓ TỆP ĐÍNH KÈM NHƯNG CÓ NHẮC TỚI VĂN BẢN TRONG KHO
+    rag_citations = []
+    rag_context = ""
+    if not new_atts:
+        try:
+            from server.services.query_analyzer import analyze_query
+            from server.services.rag_service import retrieve_direct_hit, retrieve_hybrid_context
+            analysis = analyze_query(message, history=s.get("history", []))
+            if analysis.get("entities"):
+                rag_res = retrieve_direct_hit(analysis["entities"])
+                if rag_res.get("not_found"):
+                    nf_list = ", ".join(rag_res["not_found"])
+                    ho_ten_xung_ho = f"đồng chí {s['can_bo'].get('ho_ten', '')}" if s.get("can_bo") else "đồng chí"
+                    return _reply(
+                        s,
+                        f"⚠️ **CHƯA CÓ VĂN BẢN NGUỒN TRONG KHO TRI THỨC**\n\n"
+                        f"Kính thưa {ho_ten_xung_ho}, tôi đã tiếp nhận yêu cầu tham mưu triển khai văn bản: **{nf_list}**.\n\n"
+                        f"Tuy nhiên, hệ thống đã tra cứu nhưng **chưa tìm thấy toàn văn văn bản này** trong cơ sở dữ liệu của Đảng uỷ xã.\n\n"
+                        f"📌 *Theo Quy tắc 'Hỏi lại khi chưa rõ — Nắm vững rồi mới viết' và kỷ luật công vụ:*\n"
+                        f"- Chuyên viên ảo **tuyệt đối không tự suy đoán** số liệu, chỉ tiêu và các nhóm nhiệm vụ khi chưa có văn bản gốc của cấp trên.\n"
+                        f"- Xin đồng chí vui lòng **đính kèm tệp văn bản** (Word, PDF, ảnh scan) hoặc nạp văn bản này vào kho tri thức RAG để tôi tiến hành tham mưu chính xác 100%."
+                    )
+                elif rag_res.get("context_text"):
+                    rag_context = rag_res["context_text"]
+                    rag_citations = rag_res.get("citations", [])
+            if not rag_context and analysis.get("enriched_query"):
+                rag_res = retrieve_hybrid_context(analysis["enriched_query"], max_slots=2)
+                if rag_res.get("context_text"):
+                    rag_context = rag_res["context_text"]
+                    rag_citations = rag_res.get("citations", [])
+            if rag_context:
+                context_text += f"\n\n=============== DỮ LIỆU THỰC CHỨNG TỪ KHO RAG (VĂN BẢN NGUỒN CẦN TRIỂN KHAI) ===============\n{rag_context}"
+                logger.info(f"Đã tự động nạp văn bản nguồn từ RAG vào ngữ cảnh soạn thảo cho '{detected_type}'")
+        except Exception as ex:
+            logger.warning(f"Lỗi khi tra cứu RAG trong luồng soạn thảo: {ex}")
+
     messages = [
         {"role": "system", "content": f"{DRAFT_SYSTEM_PROMPT}\n\n{knowledge_context}"},
         {"role": "user", "content": f"Yêu cầu của cán bộ:\n{context_text}"},
     ]
-    res = await default_ai_client.call_chat_async(messages, temperature=0.2, max_tokens=4000, json_mode=True)
+    res = await default_ai_client.call_chat_async(messages, temperature=0.2, max_tokens=8192, json_mode=True)
     out = res.get("data") if isinstance(res.get("data"), dict) else {}
     doc_payload = out.get("doc_payload")
     summary = out.get("summary") or "Đã dự thảo xong văn bản theo yêu cầu của đồng chí."
@@ -541,7 +645,7 @@ async def _draft_party_document(s: Dict[str, Any], message: str, new_atts: List[
         f"👤 **Thẩm quyền ký:** {doc_payload.get('tham_quyen', 'T/M BAN THƯỜNG VỤ')} - {doc_payload.get('chuc_vu', 'BÍ THƯ')} ({doc_payload.get('nguoi_ky', 'Vũ Thị Thuỳ Trang')})\n\n"
         f"👉 *Đồng chí xem lại nội dung trên. Nếu đồng ý, vui lòng gõ **'Duyệt'** để tôi xuất tệp Word lên Google Drive, hoặc gõ chỉ đạo chỉnh sửa trực tiếp.*"
     )
-    return _reply(s, reply_text, actions=_approval_actions(False))
+    return _reply(s, reply_text, actions=_approval_actions(False), preview=[doc_payload], rag_sources=rag_citations)
 
 
 async def _run_workflow(s: Dict[str, Any], wf: str, message: str, params: Dict[str, str]) -> Dict[str, Any]:
