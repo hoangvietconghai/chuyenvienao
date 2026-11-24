@@ -1,6 +1,6 @@
 # TÀI LIỆU BỐI CẢNH DỰ ÁN TOÀN DIỆN (PROJECT MASTER CONTEXT DOSSIER)
 ## HỆ THỐNG CHUYÊN VIÊN ẢO VĂN PHÒNG ĐẢNG UỶ XÃ CÔNG HẢI, TỈNH KHÁNH HOÀ
-*(Cập nhật tự động: 24/11/2026 17:59:06 — Mô hình chính quyền địa phương 02 cấp & Thể thức HD 05-HD/VPTW)*
+*(Cập nhật tự động: 24/11/2026 23:37:12 — Mô hình chính quyền địa phương 02 cấp & Thể thức HD 05-HD/VPTW)*
 
 ---
 
@@ -120,6 +120,7 @@ Hệ thống sử dụng cơ sở dữ liệu SQLite tối ưu chế độ WAL (
 | **`tham-muu-chuyen-doi-so`** | Kỹ năng tham mưu toàn diện công tác Chuyển đổi số, Đề án 06 và Ban Chỉ đạo 57 của Đảng uỷ xã Công Hải. Bao gồm soạn thảo Báo cáo CĐS của Đảng uỷ (-BC/ĐU, -BC/BCĐ), Kế hoạch (-KH/ĐU), Công văn (-CV/ĐU), thẩm định văn bản CĐS của UBND xã; tích hợp quy tắc 'Hỏi lại khi chưa rõ — Nắm vững rồi mới viết' và tra cứu thực chứng Báo cáo BCĐ 57 để chống ảo giác số liệu. | [`.agents/skills/tham-muu-chuyen-doi-so/SKILL.md`](.agents/skills/tham-muu-chuyen-doi-so/SKILL.md) |
 | **`thong-bao`** | Kỹ năng soạn thảo Thông báo kết luận cuộc họp (-TB/ĐU). Kích hoạt khi người dùng yêu cầu soạn: Thông báo Kết luận cuộc họp Ban Thường vụ Đảng uỷ hoặc Thông báo Kết luận cuộc họp giao ban tuần/chuyên đề của Thường trực Đảng uỷ xã. Quy định: Bám sát số hiệu Tờ trình của cơ quan tham mưu, công thức giao việc & thời hạn (Deadline Formula), tuyệt đối không có khối Kính gửi, thẩm quyền ký T/M BAN THƯỜNG VỤ. | [`.agents/skills/thong-bao/SKILL.md`](.agents/skills/thong-bao/SKILL.md) |
 | **`to-trinh`** | Kỹ năng soạn thảo Tờ trình (-TTr/ĐU, -TTr/BXĐĐ, -TTr/UBND, -TTr/MTTQ, -TTr/UBKT). Kích hoạt khi người dùng yêu cầu soạn: Tờ trình của Ban Thường vụ Đảng uỷ xã xin chủ trương trình Ban Thường vụ Tỉnh uỷ Khánh Hoà, hoặc Tờ trình của các cơ quan chuyên môn cấp xã trình Ban Thường vụ Đảng uỷ xã. Bao gồm khối Kính gửi 1 hàng 2 cột ẩn viền, kết cấu 3 phần chặt chẽ và thể thức chuẩn theo HD 05-HD/VPTW. | [`.agents/skills/to-trinh/SKILL.md`](.agents/skills/to-trinh/SKILL.md) |
+| **`xu-ly-van-ban-den`** | Kỹ năng toàn diện hướng dẫn Chuyên viên ảo thao tác trực tiếp trên Hệ thống Thông tin Điều hành tác nghiệp của các cơ quan Đảng (dhtn.dcs.vn) để xử lý văn bản đến tại Đảng uỷ xã Công Hải. Hướng dẫn chi tiết: nhận diện URL, cấu trúc DOM bảng danh mục; quét 13 cột dữ liệu văn bản chờ xử lý; bóc tách tệp PDF toàn văn; giải mã Biểu đồ xử lý (phân định luồng ĐỎ xử lý chính vs luồng XANH LÁ phối hợp); kiểm tra mục "Danh sách nhiệm vụ đơn vị" trong chi tiết văn bản để xác định văn bản đã giao việc chưa; thao tác tự động hoá form pop-up "Chuyển văn bản" giao việc cho chuyên viên (Katơr Vế, Mai Thị Thuỷ, Lê Thị Bích Thuỷ, Hồ Thị Thuý Nhi); tự động kích hoạt soạn thảo Công văn giao việc (-CV/ĐU) gửi khối UBND/MTTQ xã; định dạng bản tin Zalo cảnh báo hạn xử lý hằng ngày gửi Phó Chánh Văn phòng; tuân thủ nghiêm ngặt nguyên tắc Human-in-the-Loop và bảo vệ an toàn dữ liệu Đảng. | [`.agents/skills/xu-ly-van-ban-den/SKILL.md`](.agents/skills/xu-ly-van-ban-den/SKILL.md) |
 
 ---
 
