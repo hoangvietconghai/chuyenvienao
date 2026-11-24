@@ -15,6 +15,10 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from server.logger import get_logger
+
+logger = get_logger("plan_registry")
+
 WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
 INDICATOR_FILE = WORKSPACE_ROOT / "references" / "chi_tieu_nhiem_ky.json"
 PLAN_REGISTRY_FILE = WORKSPACE_ROOT / "references" / "so_ke_hoach_chi_dao.json"

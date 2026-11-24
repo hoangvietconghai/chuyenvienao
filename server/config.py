@@ -137,12 +137,16 @@ SUPPORTED_MODELS = [
     },
 ]
 
-# --- CẤU HÌNH SERVER LOCAL ---
+# --- CẤU HÌNH SERVER LOCAL & VPS ---
 SERVER_HOST = os.getenv("SERVER_HOST", "127.0.0.1")
 SERVER_PORT = int(os.getenv("SERVER_PORT", "8000"))
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
-_default_cors = f"http://localhost:{SERVER_PORT},http://127.0.0.1:{SERVER_PORT},http://localhost:3000,http://127.0.0.1:3000"
+_default_cors = f"http://localhost:{SERVER_PORT},http://127.0.0.1:{SERVER_PORT},http://localhost:3000,http://127.0.0.1:3000,http://45.119.82.227,http://45.119.82.227:8000"
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", _default_cors).split(",") if o.strip()]
+
+# --- KHÓA BẢO MẬT HỆ THỐNG & DEPLOY WEBHOOK ---
+AUTH_SECRET = os.getenv("AUTH_SECRET", "cong_hai_party_office_auth_secret_2026")
+DEPLOY_WEBHOOK_SECRET = os.getenv("DEPLOY_WEBHOOK_SECRET", "")
 
 # --- THÔNG TIN ĐƠN VỊ ĐẢNG BỘ XÃ CÔNG HẢI ---
 CO_QUAN_CAP_TREN = os.getenv("CO_QUAN_CAP_TREN", "ĐẢNG BỘ TỈNH KHÁNH HOÀ")

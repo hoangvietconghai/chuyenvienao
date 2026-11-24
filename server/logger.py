@@ -72,6 +72,10 @@ def setup_logging(
     except Exception as exc:
         print(f"[CẢNH BÁO] Không thể khởi tạo tệp log xoay vòng tại {log_file}: {exc}", file=sys.stderr)
 
+    # 3. Tắt log chi tiết của các thư viện bên thứ ba (chống lộ API key trong URL và tránh tràn ngập console)
+    for noisy_logger in ("httpx", "httpcore", "urllib3", "asyncio", "multipart"):
+        logging.getLogger(noisy_logger).setLevel(logging.WARNING)
+
     _INITIALIZED = True
 
 

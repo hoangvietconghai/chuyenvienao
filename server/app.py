@@ -40,7 +40,7 @@ logger = get_logger("app")
 app = FastAPI(
     title="Chuyên viên Ảo Văn phòng Đảng uỷ xã Công Hải",
     description="Hệ thống Tham mưu Tổng hợp, Văn thư và Tự động hoá cấp uỷ (mô hình chính quyền địa phương 02 cấp)",
-    version="2.1.0",
+    version="2.2.0",
 )
 
 # Cấu hình CORS an toàn cho môi trường nội bộ / local
@@ -96,7 +96,7 @@ async def health_check():
         "system": "Chuyên viên Ảo Văn phòng Đảng uỷ xã Công Hải",
         "active_provider": ACTIVE_PROVIDER,
         "primary_model": DEFAULT_GEMINI_MODEL if ACTIVE_PROVIDER == "gemini" else CLOUD_DEEPSEEK_MODEL,
-        "version": "2.1.0",
+        "version": "2.2.0",
     }
 
 

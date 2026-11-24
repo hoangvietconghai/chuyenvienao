@@ -25,6 +25,7 @@ import sys
 import json
 import re
 import argparse
+from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
@@ -1036,6 +1037,261 @@ def export_party_document(data: dict, output_path: str = None) -> str:
     builder.build_footer()
     builder.build_appendix()
     return builder.save(output_path)
+
+
+def generate_phieu_xin_y_kien(out_file: Optional[str] = None) -> str:
+    """
+    Tạo tệp Phiếu xin ý kiến Ủy viên Ban Thường vụ Đảng uỷ chuẩn thể thức HD 05-HD/VPTW.
+    """
+    doc = docx.Document()
+
+    # 1. Page setup A4
+    for section in doc.sections:
+        section.page_width = Mm(210)
+        section.page_height = Mm(297)
+        section.left_margin = Mm(30)
+        section.right_margin = Mm(15)
+        section.top_margin = Mm(20)
+        section.bottom_margin = Mm(20)
+
+    # 2. Style
+    style = doc.styles['Normal']
+    style.font.name = 'Times New Roman'
+    style.font.size = Pt(14)
+    style.font.color.rgb = RGBColor(0, 0, 0)
+    style.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+    style.paragraph_format.line_spacing = Pt(18)
+
+    # 3. Bảng Header 2 cột ẩn viền
+    table = doc.add_table(rows=1, cols=2)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.autofit = False
+    remove_table_borders(table)
+
+    col_widths = (Mm(75), Mm(90))
+    for i, col in enumerate(table.columns):
+        col.width = col_widths[i]
+
+    row_cells = table.rows[0].cells
+    set_cell_margins(row_cells[0], top=0, bottom=0, left=0, right=5)
+    set_cell_margins(row_cells[1], top=0, bottom=0, left=5, right=0)
+    row_cells[0].width = Mm(75)
+    row_cells[1].width = Mm(90)
+
+    # Cột 1: Cơ quan ban hành
+    p_c1_1 = row_cells[0].paragraphs[0]
+    p_c1_1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_c1_1.paragraph_format.space_before = Pt(0)
+    p_c1_1.paragraph_format.space_after = Pt(2)
+    p_c1_1.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+    p_c1_1.paragraph_format.line_spacing = 1.05
+    r = p_c1_1.add_run("ĐẢNG BỘ TỈNH KHÁNH HOÀ\n")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(13)
+    r = p_c1_1.add_run("ĐẢNG UỶ XÃ CÔNG HẢI")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(13)
+    r.font.bold = True
+
+    add_horizontal_line(p_c1_1, width_pt=100, weight_pt=0.75)
+
+    # Cột 2: Tiêu ngữ
+    p_c2_1 = row_cells[1].paragraphs[0]
+    p_c2_1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_c2_1.paragraph_format.space_before = Pt(0)
+    p_c2_1.paragraph_format.space_after = Pt(2)
+    p_c2_1.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+    p_c2_1.paragraph_format.line_spacing = 1.05
+    r = p_c2_1.add_run("ĐẢNG CỘNG SẢN VIỆT NAM\n")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(14)
+    r.font.bold = True
+
+    add_horizontal_line(p_c2_1, width_pt=192, weight_pt=0.75)
+
+    p_date = row_cells[1].add_paragraph()
+    p_date.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_date.paragraph_format.space_before = Pt(4)
+    p_date.paragraph_format.space_after = Pt(0)
+    p_date.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+    p_date.paragraph_format.line_spacing = 1.05
+    r = p_date.add_run("Công Hải, ngày   tháng   năm 2026")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(13)
+    r.font.italic = True
+
+    # 4. Tiêu đề Phiếu
+    p_t1 = doc.add_paragraph()
+    p_t1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_t1.paragraph_format.space_before = Pt(16)
+    p_t1.paragraph_format.space_after = Pt(2)
+    p_t1.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+    p_t1.paragraph_format.line_spacing = 1.1
+    r = p_t1.add_run("PHIẾU XIN Ý KIẾN\n")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(15)
+    r.font.bold = True
+
+    r2 = p_t1.add_run("ỦY VIÊN BAN THƯỜNG VỤ ĐẢNG UỶ")
+    r2.font.name = "Times New Roman"
+    r2.font.size = Pt(14)
+    r2.font.bold = True
+
+    p_sub = doc.add_paragraph()
+    p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_sub.paragraph_format.space_before = Pt(2)
+    p_sub.paragraph_format.space_after = Pt(12)
+    p_sub.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+    p_sub.paragraph_format.line_spacing = 1.15
+    r = p_sub.add_run("Về dự thảo Thông báo Kết luận kiểm tra việc lãnh đạo, chỉ đạo triển khai thực hiện\ncông tác phòng, chống tham nhũng, lãng phí, tiêu cực đối với Chi bộ thôn Suối Giếng")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(13)
+    r.font.bold = True
+    r.font.italic = True
+
+    add_horizontal_line(p_sub, width_pt=140, weight_pt=0.75)
+
+    # 5. Kính gửi
+    p_kg = doc.add_paragraph()
+    p_kg.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_kg.paragraph_format.first_line_indent = Mm(10)
+    p_kg.paragraph_format.space_before = Pt(8)
+    p_kg.paragraph_format.space_after = Pt(6)
+    p_kg.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+    p_kg.paragraph_format.line_spacing = Pt(18)
+    r = p_kg.add_run("Kính gửi: ")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(14)
+    r.font.bold = True
+    r.font.italic = True
+    r2 = p_kg.add_run("Đồng chí ........................................................................................................,\n")
+    r2.font.name = "Times New Roman"
+    r2.font.size = Pt(14)
+    r3 = p_kg.add_run("                 Ủy viên Ban Thường vụ Đảng uỷ xã Công Hải.")
+    r3.font.name = "Times New Roman"
+    r3.font.size = Pt(14)
+
+    # 6. Nội dung lấy ý kiến
+    p_m1 = doc.add_paragraph()
+    p_m1.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_m1.paragraph_format.first_line_indent = Mm(10)
+    p_m1.paragraph_format.space_before = Pt(6)
+    p_m1.paragraph_format.space_after = Pt(4)
+    p_m1.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+    p_m1.paragraph_format.line_spacing = Pt(18)
+    parse_markdown_runs(p_m1, "**1. Về cơ bản nội dung dự thảo Thông báo Kết luận:**", base_font_size=14, default_bold=True)
+
+    options = [
+        "[   ] Thống nhất hoàn toàn với nội dung dự thảo.",
+        "[   ] Cơ bản thống nhất nhưng có tham gia ý kiến sửa đổi, bổ sung (nêu tại mục 2).",
+        "[   ] Không thống nhất (nêu rõ lý do tại mục 2)."
+    ]
+    for opt in options:
+        p_opt = doc.add_paragraph()
+        p_opt.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p_opt.paragraph_format.left_indent = Mm(18)
+        p_opt.paragraph_format.space_before = Pt(3)
+        p_opt.paragraph_format.space_after = Pt(3)
+        p_opt.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+        p_opt.paragraph_format.line_spacing = Pt(18)
+        r = p_opt.add_run(opt)
+        r.font.name = "Times New Roman"
+        r.font.size = Pt(14)
+
+    p_m2 = doc.add_paragraph()
+    p_m2.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_m2.paragraph_format.first_line_indent = Mm(10)
+    p_m2.paragraph_format.space_before = Pt(6)
+    p_m2.paragraph_format.space_after = Pt(4)
+    p_m2.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+    p_m2.paragraph_format.line_spacing = Pt(18)
+    parse_markdown_runs(p_m2, "**2. Ý kiến tham gia góp ý cụ thể:**", base_font_size=14, default_bold=True)
+
+    dots = [
+        "- Về đánh giá ưu điểm, hạn chế của Chi bộ: ..........................................................................................",
+        ".........................................................................................................................................................................",
+        "- Về nội dung yêu cầu khắc phục và phân công trách nhiệm tổ chức thực hiện: .............................",
+        ".........................................................................................................................................................................",
+        "- Về phân kỳ lộ trình, thời hạn thực hiện (trước 31/10/2026 và trước 30/11/2026): ...............................",
+        ".........................................................................................................................................................................",
+        "- Ý kiến khác (nếu có): ......................................................................................................................................",
+        "........................................................................................................................................................................."
+    ]
+    for dot in dots:
+        p_d = doc.add_paragraph()
+        p_d.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        p_d.paragraph_format.first_line_indent = Mm(10)
+        p_d.paragraph_format.space_before = Pt(2)
+        p_d.paragraph_format.space_after = Pt(2)
+        p_d.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+        p_d.paragraph_format.line_spacing = Pt(18)
+        r = p_d.add_run(dot)
+        r.font.name = "Times New Roman"
+        r.font.size = Pt(13)
+
+    # Lưu ý
+    p_note = doc.add_paragraph()
+    p_note.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_note.paragraph_format.first_line_indent = Mm(10)
+    p_note.paragraph_format.space_before = Pt(8)
+    p_note.paragraph_format.space_after = Pt(12)
+    p_note.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+    p_note.paragraph_format.line_spacing = Pt(18)
+    r = p_note.add_run("* Phiếu xin ý kiến đề nghị gửi về Thường trực Đảng uỷ (qua Văn phòng Đảng uỷ) trước ngày 08/10/2026 để tổng hợp báo cáo Thường trực Đảng uỷ xem xét, quyết định.*")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(13)
+    r.font.italic = True
+
+    # 7. Khối Ký tên
+    p_sign_t = doc.add_paragraph()
+    p_sign_t.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_sign_t.paragraph_format.right_indent = Mm(10)
+    p_sign_t.paragraph_format.space_before = Pt(6)
+    p_sign_t.paragraph_format.space_after = Pt(2)
+    p_sign_t.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+    p_sign_t.paragraph_format.line_spacing = 1.05
+    r = p_sign_t.add_run("UỶ VIÊN BAN THƯỜNG VỤ ĐẢNG UỶ")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(13.5)
+    r.font.bold = True
+
+    p_sign_sub = doc.add_paragraph()
+    p_sign_sub.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_sign_sub.paragraph_format.right_indent = Mm(25)
+    p_sign_sub.paragraph_format.space_before = Pt(0)
+    p_sign_sub.paragraph_format.space_after = Pt(0)
+    p_sign_sub.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+    p_sign_sub.paragraph_format.line_spacing = 1.05
+    r = p_sign_sub.add_run("(Ký và ghi rõ họ tên)")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(12)
+    r.font.italic = True
+
+    for _ in range(5):
+        p_b = doc.add_paragraph()
+        p_b.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+        p_b.paragraph_format.line_spacing = Pt(14)
+        p_b.paragraph_format.space_before = Pt(0)
+        p_b.paragraph_format.space_after = Pt(0)
+
+    p_name = doc.add_paragraph()
+    p_name.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_name.paragraph_format.right_indent = Mm(20)
+    p_name.paragraph_format.space_before = Pt(0)
+    p_name.paragraph_format.space_after = Pt(0)
+    r = p_name.add_run("......................................................")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(14)
+    r.font.bold = True
+
+    if not out_file:
+        base_dir = Path(__file__).resolve().parent.parent
+        out_file = str(base_dir / "van_ban_du_thao" / "2026" / "Phieu_xin_y_kien_BTV_ve_TBKL_kiem_tra_Chi_bo_Suoi_Gieng.docx")
+
+    Path(out_file).parent.mkdir(parents=True, exist_ok=True)
+    doc.save(out_file)
+    print(f"Đã xuất Phiếu xin ý kiến: {out_file}")
+    return out_file
 
 
 def run_demo():

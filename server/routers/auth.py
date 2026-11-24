@@ -12,6 +12,7 @@ Bảo vệ tuyệt đối thông tin cá nhân (Zero PII to AI):
 """
 
 import hashlib
+import secrets
 import time
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -20,6 +21,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from server import chat_engine
+from server.config import AUTH_SECRET
 from server.logger import get_logger
 from server.services import db_service
 from server.services.zalo_api import send_message
@@ -27,7 +29,6 @@ from server.services.zalo_api import send_message
 logger = get_logger("router_auth")
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-AUTH_SECRET = "cong_hai_party_office_auth_secret_2026"
 ACTIVE_TOKENS: Dict[str, Dict[str, Any]] = {}
 
 
@@ -46,10 +47,9 @@ class SessionCheckRequest(BaseModel):
     token: Optional[str] = None
 
 
-def generate_auth_token(can_bo_id: str, phone: str) -> str:
-    """Sinh token định danh phiên an toàn cho cán bộ."""
-    raw = f"{can_bo_id}:{phone}:{time.time()}:{AUTH_SECRET}"
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:40]
+def generate_auth_token(can_bo_id: str = "", phone: str = "") -> str:
+    """Sinh token định danh phiên an toàn bằng CSPRNG (256-bit entropy)."""
+    return secrets.token_hex(32)
 
 
 @router.post("/send-otp")
@@ -79,11 +79,12 @@ async def send_otp(req: SendOtpRequest):
             )
         )
 
-    otp_code, _ = db_service.create_zalo_otp(clean_phone)
+    otp_code, _, err_msg = db_service.create_zalo_otp(clean_phone)
     if not otp_code:
+        status_code = status.HTTP_429_TOO_MANY_REQUESTS if "đợi" in err_msg else status.HTTP_500_INTERNAL_SERVER_ERROR
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Không thể tạo mã xác thực. Vui lòng thử lại sau ít phút."
+            status_code=status_code,
+            detail=err_msg or "Không thể tạo mã xác thực. Vui lòng thử lại sau ít phút."
         )
 
     # Gửi mã OTP trực tiếp qua tin nhắn Zalo cá nhân của cán bộ (chống rò rỉ trên Web)
@@ -149,9 +150,9 @@ async def verify_otp(req: VerifyOtpRequest):
         "created_at": time.time(),
     }
 
-    # Lưu token phiên bền vững vào SQLite (30 ngày)
+    # Lưu token phiên bền vững vào SQLite (7 ngày)
     try:
-        db_service.save_auth_session(token, can_bo_info, duration_days=30)
+        db_service.save_auth_session(token, can_bo_info, duration_days=7)
     except Exception as db_err:
         logger.warning(f"Lỗi lưu phiên vào CSDL: {db_err}")
 

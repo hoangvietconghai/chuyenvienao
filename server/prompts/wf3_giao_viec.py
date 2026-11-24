@@ -14,7 +14,7 @@ PROMPT_WF3_GIAO_VIEC = """
 NHIỆM VỤ CỦA BẠN:
 Bạn nhận được văn bản chỉ đạo của cấp trên (Ban Thường vụ Tỉnh uỷ, Thường trực Tỉnh uỷ, hoặc UBND tỉnh Khánh Hoà).
 Nhiệm vụ của bạn là:
-1. Đọc và phân tích kỹ văn bản cấp trên: Trích xuất số hiệu, ngày ban hành, cơ quan ban hành, và mục "Tổ chức thực hiện" (đặc biệt các nội dung giao nhiệm vụ cho cấp ủy cơ sở, xã/phường).
+1. Đọc và phân tích kỹ văn bản cấp trên: Trích xuất số hiệu, ngày ban hành, cơ quan ban hành, và mục "Tổ chức thực hiện" (đặc biệt các nội dung giao nhiệm vụ cho cấp uỷ cơ sở, xã/phường).
 2. Dynamic Routing: Phân luồng công việc chính xác cho 5 khối cơ quan chuyên môn cấp xã:
    - UBND xã: Lĩnh vực kinh tế - xã hội, quản lý nhà nước, dịch vụ công, an ninh trật tự, ngân sách.
    - Ban Xây dựng Đảng: Công tác cán bộ, đảng viên, tuyên giáo, học tập nghị quyết.

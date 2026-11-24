@@ -19,11 +19,9 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 try:
-    from scripts.export_docx import export_party_document, PartyDocumentBuilder
-    from scripts.generate_cong_van_lay_y_kien import generate_phieu_xin_y_kien
+    from scripts.export_docx import export_party_document, PartyDocumentBuilder, generate_phieu_xin_y_kien
 except ImportError:
-    from export_docx import export_party_document, PartyDocumentBuilder
-    from generate_cong_van_lay_y_kien import generate_phieu_xin_y_kien
+    from export_docx import export_party_document, PartyDocumentBuilder, generate_phieu_xin_y_kien
 
 
 def test_tc02_thong_bao_ket_luan():

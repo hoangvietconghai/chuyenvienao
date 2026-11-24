@@ -222,7 +222,7 @@ def init_database() -> None:
             default_chuyen_de = [
                 ("CDS_DEAN06", "Chuyển đổi số & Đề án 06", "Ban Chỉ đạo 57, chuyển đổi số, Đề án 06, CNTT, cải cách hành chính", "chuyển đổi số, đề án 06, nq57, số hoá, căn cước, dịch vụ công, ban chỉ đạo 57, phần mềm, trực tuyến", 1),
                 ("XD_DANG_CAN_BO", "Xây dựng Đảng & Cán bộ", "Tổ chức cán bộ, phát triển đảng viên, bảo vệ chính trị nội bộ, sinh hoạt chi bộ", "xây dựng đảng, tổ chức, đảng viên, kết nạp, cán bộ, chi bộ, sinh hoạt, chính trị nội bộ, đào tạo, bồi dưỡng", 2),
-                ("KT_GIAM_SAT", "Kiểm tra & Giám sát", "Ủy ban Kiểm tra, giám sát chuyên đề, thi hành kỷ luật Đảng, phòng chống tham nhũng", "kiểm tra, giám sát, kỷ luật, ubkt, ủy ban kiểm tra, khiếu nại, tố cáo, vi phạm, phòng chống tham nhũng", 3),
+                ("KT_GIAM_SAT", "Kiểm tra & Giám sát", "Uỷ ban Kiểm tra, giám sát chuyên đề, thi hành kỷ luật Đảng, phòng chống tham nhũng", "kiểm tra, giám sát, kỷ luật, ubkt, uỷ ban kiểm tra, khiếu nại, tố cáo, vi phạm, phòng chống tham nhũng", 3),
                 ("KINH_TE_NGAN_SACH", "Kinh tế & Ngân sách", "Tài chính ngân sách xã, đầu tư công, phát triển kinh tế, nông thôn mới nâng cao", "kinh tế, ngân sách, thu chi, tài chính, đầu tư công, nông thôn mới, tăng trưởng, dự toán, quyết toán, thuế", 4),
                 ("DAT_DAI_MOI_TRUONG", "Đất đai & Tài nguyên", "Quản lý đất đai, bồi thường giải phóng mặt bằng, tài nguyên khoáng sản, môi trường", "đất đai, tài nguyên, môi trường, khoáng sản, quy hoạch, gcn, bồi thường, tái định cư, trật tự xây dựng", 5),
                 ("VAN_HOA_XA_HOI", "Văn hoá & Xã hội", "Văn hoá, giáo dục, y tế, an sinh xã hội, giảm nghèo, chính sách dân tộc Raglai", "văn hoá, giáo dục, y tế, an sinh, giảm nghèo, hộ nghèo, dân tộc, tôn giáo, raglai, chính sách xã hội, người có công", 6),
@@ -1042,21 +1042,30 @@ def link_can_bo_zalo(phone: str, zalo_chat_id: str, zalo_user_id: str = "") -> T
     return False, None
 
 
-def create_zalo_otp(phone: str) -> Tuple[str, Optional[Dict[str, Any]]]:
-    """Sinh mã xác thực OTP 6 số và lưu vào CSDL (hạn dùng 5 phút)."""
-    import random
+def create_zalo_otp(phone: str) -> Tuple[str, Optional[Dict[str, Any]], str]:
+    """Sinh mã xác thực OTP 6 số (CSPRNG an toàn mật mã) và lưu vào CSDL (hạn dùng 5 phút, giới hạn 60s/lần)."""
+    import secrets
     import time
     clean_p = normalize_phone_number(phone)
     can_bo = get_can_bo_by_phone(clean_p)
     if not can_bo:
-        return "", None
+        return "", None, "Số điện thoại chưa có trong danh bạ cán bộ xã Công Hải."
 
-    otp_code = f"{random.randint(100000, 999999)}"
     now = time.time()
-    expires_at = now + 300.0  # 5 phút
-
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        # Chống spam OTP (Rate limiting 60 giây)
+        cursor.execute("SELECT created_at FROM xac_thuc_otp WHERE phone = ?;", (clean_p,))
+        existing = cursor.fetchone()
+        if existing:
+            elapsed = now - existing["created_at"]
+            if elapsed < 60:
+                wait_sec = int(60 - elapsed)
+                return "", can_bo, f"Mã OTP vừa được gửi. Vui lòng đợi {wait_sec} giây trước khi yêu cầu mã mới."
+
+        otp_code = f"{secrets.randbelow(900000) + 100000}"
+        expires_at = now + 300.0  # 5 phút
+
         cursor.execute("""
         INSERT INTO xac_thuc_otp (phone, otp_code, created_at, expires_at, attempts)
         VALUES (?, ?, ?, ?, 0)
@@ -1067,8 +1076,8 @@ def create_zalo_otp(phone: str) -> Tuple[str, Optional[Dict[str, Any]]]:
             attempts = 0;
         """, (clean_p, otp_code, now, expires_at))
 
-    logger.info(f"Đã tạo OTP cho số {clean_p} (Cán bộ: {can_bo.get('ho_ten')})")
-    return otp_code, can_bo
+    logger.info(f"Đã tạo OTP CSPRNG bảo mật cho số {clean_p} (Cán bộ: {can_bo.get('ho_ten')})")
+    return otp_code, can_bo, ""
 
 
 def verify_zalo_otp(phone: str, otp_code: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
@@ -1104,8 +1113,8 @@ def verify_zalo_otp(phone: str, otp_code: str) -> Tuple[bool, str, Optional[Dict
     return True, "Xác thực thành công", can_bo
 
 
-def save_auth_session(token: str, can_bo: Dict[str, Any], duration_days: int = 30) -> bool:
-    """Lưu phiên đăng nhập bền vững của cán bộ vào SQLite (mặc định 30 ngày)."""
+def save_auth_session(token: str, can_bo: Dict[str, Any], duration_days: int = 7) -> bool:
+    """Lưu phiên đăng nhập bền vững của cán bộ vào SQLite (mặc định 7 ngày)."""
     import time
     now = time.time()
     expires_at = now + (duration_days * 86400)

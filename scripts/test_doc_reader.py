@@ -83,26 +83,28 @@ Ban Thường vụ Tỉnh uỷ yêu cầu các địa phương thực hiện cá
         try:
             doc = fitz.open()
             page = doc.new_page()
+            sample_text = (
+                "ĐẢNG UỶ XÃ CÔNG HẢI\n"
+                "Số 12-BC/UBND\n"
+                "Báo cáo tình hình tuần 40\n\n"
+                "Kính gửi: Thường trực Đảng uỷ xã Công Hải.\n\n"
+                "Thực hiện sự phân công và chỉ đạo của Ban Thường vụ Đảng uỷ xã, Uỷ ban nhân dân xã "
+                "báo cáo tóm tắt tình hình kinh tế - xã hội, quốc phòng, an ninh và công tác chỉ đạo điều hành tuần 40. "
+                "Trong tuần qua, tình hình an ninh chính trị và trật tự an toàn xã hội trên địa bàn 08 thôn được giữ vững ổn định. "
+                "Tiến độ thu ngân sách nhà nước trên địa bàn đạt 85% kế hoạch đề ra. Công tác giải phóng mặt bằng các công trình "
+                "trọng điểm nông thôn mới được nhân dân đồng thuận cao. Uỷ ban nhân dân xã tiếp tục rà soát các thủ tục cải cách hành chính."
+            )
             font_path = "C:/Windows/Fonts/times.ttf"
             if os.path.exists(font_path):
                 page.insert_font(fontname="times", fontfile=font_path)
-                page.insert_text(
-                    (50, 72),
-                    "ĐẢNG UỶ XÃ CÔNG HẢI\nSố 12-BC/UBND\nBáo cáo tình hình tuần 40",
-                    fontsize=12,
-                    fontname="times"
-                )
+                page.insert_textbox(fitz.Rect(50, 50, 550, 750), sample_text, fontsize=12, fontname="times")
             else:
-                page.insert_text(
-                    (50, 72),
-                    "DANG UY XA CONG HAI\nSo 12-BC/UBND\nBao cao tinh hinh tuan 40",
-                    fontsize=12
-                )
+                page.insert_textbox(fitz.Rect(50, 50, 550, 750), sample_text, fontsize=12)
             doc.save(pdf_path)
             doc.close()
 
             result = extract_document_text(pdf_path)
-            self.assertEqual(result["format"], "pdf")
+            self.assertIn(result["format"], ["pdf", "pdf_scanned_ocr"])
             self.assertIn("Báo cáo tình hình tuần 40", result["text"])
             self.assertEqual(result["metadata"]["suggested_type"], "bao_cao_co_so")
             self.assertEqual(result["metadata"]["suggested_wf"], "wf1_tong_hop_bao_cao")

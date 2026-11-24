@@ -41,7 +41,11 @@ def _get_gemini_embedding(clean_text: str, timeout: float = 10.0) -> Optional[Li
     if not model_name.startswith("models/"):
         model_name = f"models/{model_name}"
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/{model_name}:embedContent?key={GEMINI_API_KEY.strip()}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/{model_name}:embedContent"
+    headers = {
+        "x-goog-api-key": GEMINI_API_KEY.strip(),
+        "Content-Type": "application/json",
+    }
     payload = {
         "content": {
             "parts": [{"text": clean_text}]
@@ -49,7 +53,7 @@ def _get_gemini_embedding(clean_text: str, timeout: float = 10.0) -> Optional[Li
     }
     try:
         with httpx.Client(timeout=timeout) as client:
-            resp = client.post(url, json=payload)
+            resp = client.post(url, headers=headers, json=payload)
             if resp.status_code == 200:
                 values = resp.json().get("embedding", {}).get("values", [])
                 if values and isinstance(values, list):

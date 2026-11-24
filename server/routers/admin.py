@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
@@ -23,6 +23,7 @@ from server.config import (
     BASE_DIR,
     CO_QUAN_BAN_HANH,
     CO_QUAN_CAP_TREN,
+    DEPLOY_WEBHOOK_SECRET,
     NAM_HIEN_TAI,
     SUPPORTED_MODELS,
     VAN_BAN_DEN_DIR,
@@ -90,6 +91,65 @@ class TaskCreateRequest(BaseModel):
 class TaskStatusUpdateRequest(BaseModel):
     trang_thai: str
     ket_qua_bao_cao: Optional[str] = ""
+
+
+# --- MIDDLEWARE XÁC THỰC PHÂN QUYỀN (AUTHENTICATION & AUTHORIZATION) ---
+
+async def get_current_cadre(request: Request) -> Optional[Dict[str, Any]]:
+    """Xác thực token cán bộ từ Header Authorization (Bearer) hoặc query/header token."""
+    token = None
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    elif not token:
+        token = request.headers.get("x-auth-token") or request.query_params.get("token")
+
+    if not token:
+        return None
+
+    from server.routers.auth import ACTIVE_TOKENS
+    if token in ACTIVE_TOKENS:
+        return ACTIVE_TOKENS[token].get("can_bo")
+
+    session_data = db_service.get_auth_session(token)
+    if session_data:
+        can_bo_info = {
+            "can_bo_id": session_data["can_bo_id"],
+            "ho_ten": session_data["ho_ten"],
+            "chuc_vu": session_data["chuc_vu"],
+            "co_quan": session_data["co_quan"],
+            "co_quan_code": session_data["co_quan_code"],
+            "so_dien_thoai": session_data.get("so_dien_thoai"),
+            "vai_tro": session_data.get("vai_tro", "can_bo"),
+        }
+        ACTIVE_TOKENS[token] = {
+            "can_bo": can_bo_info,
+            "created_at": session_data.get("created_at", 0),
+        }
+        return can_bo_info
+    return None
+
+
+async def require_cadre(request: Request) -> Dict[str, Any]:
+    """Dependency bắt buộc cán bộ đã đăng nhập xác thực."""
+    cadre = await get_current_cadre(request)
+    if not cadre:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Phiên làm việc đã hết hạn hoặc chưa đăng nhập. Vui lòng đăng nhập bằng số điện thoại để tiếp tục.",
+        )
+    return cadre
+
+
+async def require_admin(request: Request) -> Dict[str, Any]:
+    """Dependency bắt buộc quyền Quản trị viên (Admin)."""
+    cadre = await require_cadre(request)
+    if cadre.get("vai_tro") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Truy cập bị từ chối: Thao tác này chỉ dành riêng cho Quản trị viên (Admin) của Văn phòng Đảng uỷ.",
+        )
+    return cadre
 
 
 # --- SYSTEM & MODEL STATUS ENDPOINTS ---
@@ -173,8 +233,8 @@ async def list_available_models():
 
 
 @router.post("/api/models/switch")
-async def switch_model(req: ModelSwitchRequest):
-    """Chuyển đổi mô hình AI đang sử dụng (Gemini, DeepSeek hoặc Local 3B/7B/14B)."""
+async def switch_model(req: ModelSwitchRequest, admin: Dict[str, Any] = Depends(require_admin)):
+    """Chuyển đổi mô hình AI đang sử dụng (Gemini, DeepSeek hoặc Local 3B/7B/14B). Yêu cầu quyền Admin."""
     res = default_ai_client.switch_model(req.model_id, req.provider)
     return {
         "success": True,
@@ -289,8 +349,8 @@ async def list_tasks(
 
 
 @router.post("/api/tasks")
-async def create_or_update_task_endpoint(req: TaskCreateRequest):
-    """Thêm mới hoặc cập nhật nhiệm vụ (tự động khử trùng lặp)."""
+async def create_or_update_task_endpoint(req: TaskCreateRequest, cadre: Dict[str, Any] = Depends(require_cadre)):
+    """Thêm mới hoặc cập nhật nhiệm vụ (tự động khử trùng lặp). Yêu cầu cán bộ đăng nhập."""
     task_dict = req.dict()
     ok, task_id, action = await run_in_threadpool(db_service.add_or_update_task, task_dict)
     return {
@@ -302,8 +362,8 @@ async def create_or_update_task_endpoint(req: TaskCreateRequest):
 
 
 @router.put("/api/tasks/{task_id}/status")
-async def update_task_status_endpoint(task_id: str, req: TaskStatusUpdateRequest):
-    """Cập nhật trạng thái thực hiện nhiệm vụ (Hoàn thành / Đang thực hiện...)."""
+async def update_task_status_endpoint(task_id: str, req: TaskStatusUpdateRequest, cadre: Dict[str, Any] = Depends(require_cadre)):
+    """Cập nhật trạng thái thực hiện nhiệm vụ (Hoàn thành / Đang thực hiện...). Yêu cầu cán bộ đăng nhập."""
     ok = await run_in_threadpool(db_service.update_task_status, task_id, req.trang_thai, req.ket_qua_bao_cao or "")
     if not ok:
         raise HTTPException(status_code=404, detail="Không tìm thấy nhiệm vụ yêu cầu.")
@@ -311,8 +371,8 @@ async def update_task_status_endpoint(task_id: str, req: TaskStatusUpdateRequest
 
 
 @router.delete("/api/tasks/{task_id}")
-async def delete_task_endpoint(task_id: str):
-    """Xoá một nhiệm vụ theo ID."""
+async def delete_task_endpoint(task_id: str, admin: Dict[str, Any] = Depends(require_admin)):
+    """Xoá một nhiệm vụ theo ID. Yêu cầu quyền Admin."""
     ok = await run_in_threadpool(db_service.delete_task, task_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Không tìm thấy nhiệm vụ.")
@@ -342,6 +402,7 @@ async def get_admin_conversations(
     search: Optional[str] = None,
     page: int = 1,
     page_size: int = 30,
+    admin: Dict[str, Any] = Depends(require_admin),
 ):
     """Lấy danh sách nhật ký hội thoại đa kênh (Web Chat & Zalo Bot) phục vụ quản trị."""
     offset = max(0, (page - 1) * page_size)
@@ -374,6 +435,7 @@ async def get_admin_sessions(
     search: Optional[str] = None,
     page: int = 1,
     page_size: int = 20,
+    cadre: Dict[str, Any] = Depends(require_cadre),
 ):
     """Lấy danh sách các phiên làm việc tổng hợp (Session-Centric View) phục vụ Giám sát hội thoại mới."""
     offset = max(0, (page - 1) * page_size)
@@ -399,7 +461,7 @@ async def get_admin_sessions(
 
 
 @router.get("/api/admin/sessions/{session_id}/messages")
-async def get_admin_session_messages(session_id: str):
+async def get_admin_session_messages(session_id: str, cadre: Dict[str, Any] = Depends(require_cadre)):
     """Lấy toàn bộ dòng chảy tin nhắn của 1 phiên làm việc để mở Drawer/Modal chi tiết."""
     msgs = await run_in_threadpool(db_service.get_session_messages, session_id=session_id)
     return {
@@ -410,7 +472,7 @@ async def get_admin_session_messages(session_id: str):
 
 
 @router.delete("/api/admin/sessions/{session_id}")
-async def delete_admin_session(session_id: str):
+async def delete_admin_session(session_id: str, admin: Dict[str, Any] = Depends(require_admin)):
     """Xoá toàn bộ lịch sử và nhật ký của một phiên làm việc."""
     from server import chat_engine
     cleared = chat_engine.clear_session_history(session_id, delete_logs_in_db=True)
@@ -418,7 +480,7 @@ async def delete_admin_session(session_id: str):
 
 
 @router.get("/api/admin/system/metrics")
-async def get_system_metrics_endpoint():
+async def get_system_metrics_endpoint(admin: Dict[str, Any] = Depends(require_admin)):
     """Lấy số liệu tài nguyên VPS (RAM, CPU, Ổ đĩa) và tình trạng các dịch vụ."""
     metrics = await run_in_threadpool(db_service.get_system_metrics)
     metrics["ai"] = {
@@ -434,14 +496,14 @@ async def get_system_metrics_endpoint():
 
 
 @router.get("/api/admin/system/logs")
-async def get_system_logs_endpoint(limit: int = 80):
+async def get_system_logs_endpoint(limit: int = 80, admin: Dict[str, Any] = Depends(require_admin)):
     """Xem nhật ký hệ thống gần nhất trực tiếp trên trình duyệt."""
     logs = await run_in_threadpool(db_service.get_recent_system_logs, max_lines=limit)
     return {"logs": logs, "total_lines": len(logs)}
 
 
 @router.put("/api/admin/cadres/{can_bo_id}/phone")
-async def update_cadre_phone_endpoint(can_bo_id: str, req: CadrePhoneUpdateRequest):
+async def update_cadre_phone_endpoint(can_bo_id: str, req: CadrePhoneUpdateRequest, admin: Dict[str, Any] = Depends(require_admin)):
     """Cập nhật số điện thoại Zalo và phân quyền cho cán bộ trong danh bạ."""
     clean_p = db_service.normalize_phone_number(req.so_dien_thoai)
     with db_service.get_db_connection() as conn:
@@ -472,14 +534,14 @@ class CadreUpsertRequest(BaseModel):
 
 
 @router.get("/api/admin/cadres")
-async def get_admin_cadres():
+async def get_admin_cadres(admin: Dict[str, Any] = Depends(require_admin)):
     """Lấy danh sách toàn bộ cán bộ phục vụ quản trị danh bạ (CRUD)."""
     cadres = await run_in_threadpool(db_service.get_all_can_bo, only_active=False)
     return {"cadres": cadres, "total": len(cadres)}
 
 
 @router.post("/api/admin/cadres")
-async def create_cadre_endpoint(req: CadreUpsertRequest):
+async def create_cadre_endpoint(req: CadreUpsertRequest, admin: Dict[str, Any] = Depends(require_admin)):
     """Thêm cán bộ mới vào danh bạ."""
     import uuid
     clean_phone = db_service.normalize_phone_number(req.so_dien_thoai) if req.so_dien_thoai else None
@@ -500,7 +562,7 @@ async def create_cadre_endpoint(req: CadreUpsertRequest):
 
 
 @router.put("/api/admin/cadres/{can_bo_id}")
-async def update_cadre_endpoint(can_bo_id: str, req: CadreUpsertRequest):
+async def update_cadre_endpoint(can_bo_id: str, req: CadreUpsertRequest, admin: Dict[str, Any] = Depends(require_admin)):
     """Cập nhật toàn diện thông tin cán bộ trong danh bạ."""
     clean_phone = db_service.normalize_phone_number(req.so_dien_thoai) if req.so_dien_thoai else None
     cadre_data = {
@@ -519,7 +581,7 @@ async def update_cadre_endpoint(can_bo_id: str, req: CadreUpsertRequest):
 
 
 @router.delete("/api/admin/cadres/{can_bo_id}")
-async def delete_cadre_endpoint(can_bo_id: str):
+async def delete_cadre_endpoint(can_bo_id: str, admin: Dict[str, Any] = Depends(require_admin)):
     """Xoá cán bộ khỏi danh bạ."""
     try:
         ok = await run_in_threadpool(db_service.delete_can_bo, can_bo_id)
@@ -537,7 +599,7 @@ class SendZaloMessageRequest(BaseModel):
 
 
 @router.post("/api/admin/cadres/send-zalo")
-async def send_zalo_to_cadres_endpoint(req: SendZaloMessageRequest):
+async def send_zalo_to_cadres_endpoint(req: SendZaloMessageRequest, admin: Dict[str, Any] = Depends(require_admin)):
     """Gửi tin nhắn thông báo qua Bot Zalo cho cán bộ (chọn 1 hoặc nhiều người)."""
     if not req.can_bo_ids:
         raise HTTPException(status_code=400, detail="Vui lòng chọn ít nhất một cán bộ để gửi tin nhắn.")
@@ -635,7 +697,19 @@ async def send_zalo_to_cadres_endpoint(req: SendZaloMessageRequest):
 
 @router.post("/api/admin/system/deploy-webhook")
 async def deploy_webhook(request: Request):
-    """Webhook nhận tín hiệu push từ GitHub để tự động cập nhật hệ thống trên VPS."""
+    """Webhook nhận tín hiệu push từ GitHub để tự động cập nhật hệ thống trên VPS (Có mã xác thực bảo mật)."""
+    token = (
+        request.headers.get("x-deploy-token")
+        or request.query_params.get("token")
+        or request.query_params.get("secret")
+    )
+    if not DEPLOY_WEBHOOK_SECRET or token != DEPLOY_WEBHOOK_SECRET:
+        logger.warning("Cảnh báo bảo mật: Truy cập trái phép vào /api/admin/system/deploy-webhook (Sai hoặc thiếu token).")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Truy cập bị từ chối: Mã xác thực deploy webhook không hợp lệ.",
+        )
+
     try:
         update_script = BASE_DIR / "scripts" / "update_vps.sh"
         if update_script.exists():

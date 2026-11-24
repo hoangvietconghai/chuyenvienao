@@ -236,8 +236,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 23/11/2026 15:30:30*
-> *Quy mô: **55** tệp Python | **14,365** dòng mã | **52** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 24/11/2026 12:42:38*
+> *Quy mô: **55** tệp Python | **14,722** dòng mã | **52** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -248,13 +248,13 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | **`GET`** | `/` | `serve_index` | [`server/app.py`](server/app.py) | Phục vụ giao diện người dùng chính. |
 | **`GET`** | `/api/status` | `get_system_status` | [`server/routers/admin.py`](server/routers/admin.py) | Kiểm tra tình trạng vận hành hệ thống và kết nối AI. |
 | **`GET`** | `/api/models` | `list_available_models` | [`server/routers/admin.py`](server/routers/admin.py) | Liệt kê các mô hình khả dụng và kiểm tra trạng thái Ollama Local. |
-| **`POST`** | `/api/models/switch` | `switch_model` | [`server/routers/admin.py`](server/routers/admin.py) | Chuyển đổi mô hình AI đang sử dụng (Gemini, DeepSeek hoặc Local 3B/7B/14B). |
+| **`POST`** | `/api/models/switch` | `switch_model` | [`server/routers/admin.py`](server/routers/admin.py) | Chuyển đổi mô hình AI đang sử dụng (Gemini, DeepSeek hoặc Local 3B/7B/14B). Yêu cầu quyền Admin. |
 | **`POST`** | `/api/workflow/{wf_name}/analyze` | `handle_workflow_analysis` | [`server/routers/admin.py`](server/routers/admin.py) | Kích hoạt phân tích văn bản theo từng quy trình nghiệp vụ (WF1 - WF4). |
 | **`POST`** | `/api/workflow/{wf_name}/generate` | `handle_workflow_generation` | [`server/routers/admin.py`](server/routers/admin.py) | Xuất các file Word chuẩn HD 05-HD/VPTW bằng worker thread non-blocking. |
 | **`GET`** | `/api/tasks` | `list_tasks` | [`server/routers/admin.py`](server/routers/admin.py) | Truy vấn danh sách nhiệm vụ từ Sổ Nhiệm vụ (SQLite DB). |
-| **`POST`** | `/api/tasks` | `create_or_update_task_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Thêm mới hoặc cập nhật nhiệm vụ (tự động khử trùng lặp). |
-| **`PUT`** | `/api/tasks/{task_id}/status` | `update_task_status_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Cập nhật trạng thái thực hiện nhiệm vụ (Hoàn thành / Đang thực hiện...). |
-| **`DELETE`** | `/api/tasks/{task_id}` | `delete_task_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Xoá một nhiệm vụ theo ID. |
+| **`POST`** | `/api/tasks` | `create_or_update_task_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Thêm mới hoặc cập nhật nhiệm vụ (tự động khử trùng lặp). Yêu cầu cán bộ đăng nhập. |
+| **`PUT`** | `/api/tasks/{task_id}/status` | `update_task_status_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Cập nhật trạng thái thực hiện nhiệm vụ (Hoàn thành / Đang thực hiện...). Yêu cầu cán bộ đăng nhập. |
+| **`DELETE`** | `/api/tasks/{task_id}` | `delete_task_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Xoá một nhiệm vụ theo ID. Yêu cầu quyền Admin. |
 | **`GET`** | `/api/directory` | `list_directory` | [`server/routers/admin.py`](server/routers/admin.py) | Lấy danh bạ cán bộ, lãnh đạo, 08 thôn và 21 chi bộ xã Công Hải. |
 | **`GET`** | `/api/admin/conversations` | `get_admin_conversations` | [`server/routers/admin.py`](server/routers/admin.py) | Lấy danh sách nhật ký hội thoại đa kênh (Web Chat & Zalo Bot) phục vụ quản trị. |
 | **`GET`** | `/api/admin/sessions` | `get_admin_sessions` | [`server/routers/admin.py`](server/routers/admin.py) | Lấy danh sách các phiên làm việc tổng hợp (Session-Centric View) phục vụ Giám sát hội thoại mới. |
@@ -268,7 +268,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | **`PUT`** | `/api/admin/cadres/{can_bo_id}` | `update_cadre_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Cập nhật toàn diện thông tin cán bộ trong danh bạ. |
 | **`DELETE`** | `/api/admin/cadres/{can_bo_id}` | `delete_cadre_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Xoá cán bộ khỏi danh bạ. |
 | **`POST`** | `/api/admin/cadres/send-zalo` | `send_zalo_to_cadres_endpoint` | [`server/routers/admin.py`](server/routers/admin.py) | Gửi tin nhắn thông báo qua Bot Zalo cho cán bộ (chọn 1 hoặc nhiều người). |
-| **`POST`** | `/api/admin/system/deploy-webhook` | `deploy_webhook` | [`server/routers/admin.py`](server/routers/admin.py) | Webhook nhận tín hiệu push từ GitHub để tự động cập nhật hệ thống trên VPS. |
+| **`POST`** | `/api/admin/system/deploy-webhook` | `deploy_webhook` | [`server/routers/admin.py`](server/routers/admin.py) | Webhook nhận tín hiệu push từ GitHub để tự động cập nhật hệ thống trên VPS (Có mã xác thực bảo mật). |
 | **`POST`** | `/send-otp` | `send_otp` | [`server/routers/auth.py`](server/routers/auth.py) | Gửi mã xác thực OTP 6 số bảo mật trực tiếp tới ứng dụng Zalo của cán bộ. |
 | **`POST`** | `/verify-otp` | `verify_otp` | [`server/routers/auth.py`](server/routers/auth.py) | Xác thực mã OTP 6 số và đăng nhập chính danh cán bộ. |
 | **`POST`** | `/check` | `check_auth_session` | [`server/routers/auth.py`](server/routers/auth.py) | Kiểm tra trạng thái đăng nhập của phiên hiện tại và tái gắn danh tính. |
@@ -304,9 +304,9 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/ai_connector.py`](server/ai_connector.py) | 673 | 1 Classes | server/ai_connector.py |
 | [`server/app.py`](server/app.py) | 115 | 3 Endpoints | server/app.py |
 | [`server/chat_engine.py`](server/chat_engine.py) | 1,159 | 23 Funcs | server/chat_engine.py |
-| [`server/config.py`](server/config.py) | 204 | 0 Funcs | server/config.py |
-| [`server/logger.py`](server/logger.py) | 88 | 2 Funcs | server/logger.py |
-| [`server/plan_registry.py`](server/plan_registry.py) | 277 | 8 Funcs | server/plan_registry.py |
+| [`server/config.py`](server/config.py) | 208 | 0 Funcs | server/config.py |
+| [`server/logger.py`](server/logger.py) | 92 | 2 Funcs | server/logger.py |
+| [`server/plan_registry.py`](server/plan_registry.py) | 281 | 8 Funcs | server/plan_registry.py |
 | [`server/prompts/__init__.py`](server/prompts/__init__.py) | 2 | 0 Funcs | Package chứa các bộ Prompt chuyên sâu tối ưu riêng cho DeepSeek API. |
 | [`server/prompts/chat_mode.py`](server/prompts/chat_mode.py) | 40 | 0 Funcs | server/prompts/chat_mode.py |
 | [`server/prompts/intent_router.py`](server/prompts/intent_router.py) | 129 | 2 Funcs | server/prompts/intent_router.py |
@@ -317,14 +317,14 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/prompts/wf4_tham_dinh.py`](server/prompts/wf4_tham_dinh.py) | 159 | 1 Funcs | server/prompts/wf4_tham_dinh.py |
 | [`server/router.py`](server/router.py) | 118 | 1 Funcs | server/router.py |
 | [`server/routers/__init__.py`](server/routers/__init__.py) | 6 | 0 Funcs | server/routers |
-| [`server/routers/admin.py`](server/routers/admin.py) | 656 | 23 Endpoints, 8 Classes | server/routers/admin.py |
-| [`server/routers/auth.py`](server/routers/auth.py) | 249 | 4 Endpoints, 3 Classes | server/routers/auth.py |
+| [`server/routers/admin.py`](server/routers/admin.py) | 730 | 23 Endpoints, 8 Classes | server/routers/admin.py |
+| [`server/routers/auth.py`](server/routers/auth.py) | 250 | 4 Endpoints, 3 Classes | server/routers/auth.py |
 | [`server/routers/chat.py`](server/routers/chat.py) | 211 | 8 Endpoints, 2 Classes | server/routers/chat.py |
 | [`server/routers/knowledge.py`](server/routers/knowledge.py) | 218 | 12 Endpoints, 3 Classes | server/routers/knowledge.py |
-| [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 399 | 2 Endpoints | server/routers/zalo_webhook.py |
+| [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 400 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
-| [`server/services/db_service.py`](server/services/db_service.py) | 1,544 | 45 Funcs | server/services/db_service.py |
-| [`server/services/embedding_service.py`](server/services/embedding_service.py) | 137 | 5 Funcs | server/services/embedding_service.py |
+| [`server/services/db_service.py`](server/services/db_service.py) | 1,553 | 45 Funcs | server/services/db_service.py |
+| [`server/services/embedding_service.py`](server/services/embedding_service.py) | 141 | 5 Funcs | server/services/embedding_service.py |
 | [`server/services/gdrive_service.py`](server/services/gdrive_service.py) | 201 | 4 Funcs | server/services/gdrive_service.py |
 | [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 148 | 4 Funcs | server/services/knowledge_loader.py |
 | [`server/services/query_analyzer.py`](server/services/query_analyzer.py) | 344 | 5 Funcs | server/services/query_analyzer.py |
@@ -344,7 +344,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`scripts/build_plan_registry.py`](scripts/build_plan_registry.py) | 188 | 1 Funcs | Khởi tạo và biên soạn Sổ Kế hoạch - Chỉ đạo nghiệp vụ của Đảng uỷ xã Công Hải |
 | [`scripts/deploy_remote.py`](scripts/deploy_remote.py) | 184 | 3 Funcs | scripts/deploy_remote.py |
 | [`scripts/doc_reader.py`](scripts/doc_reader.py) | 567 | 10 Funcs | scripts/doc_reader.py |
-| [`scripts/export_docx.py`](scripts/export_docx.py) | 1,129 | 1 Classes | scripts/export_docx.py |
+| [`scripts/export_docx.py`](scripts/export_docx.py) | 1,385 | 1 Classes | scripts/export_docx.py |
 | [`scripts/generate_code_map.py`](scripts/generate_code_map.py) | 308 | 1 Classes | scripts/generate_code_map.py |
 | [`scripts/log_guinhan.py`](scripts/log_guinhan.py) | 15 | 0 Funcs | scripts/log_guinhan.py |
 | [`scripts/pull_db_from_vps.py`](scripts/pull_db_from_vps.py) | 117 | 1 Funcs | scripts/pull_db_from_vps.py |
@@ -352,9 +352,9 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`scripts/reindex_gemini_embeddings.py`](scripts/reindex_gemini_embeddings.py) | 77 | 1 Funcs | scripts/reindex_gemini_embeddings.py |
 | [`scripts/run_zalo_bot.py`](scripts/run_zalo_bot.py) | 93 | 1 Funcs | scripts/run_zalo_bot.py |
 | [`scripts/seed_database.py`](scripts/seed_database.py) | 175 | 3 Funcs | scripts/seed_database.py |
-| [`scripts/test_doc_reader.py`](scripts/test_doc_reader.py) | 116 | 1 Classes | scripts/test_doc_reader.py |
+| [`scripts/test_doc_reader.py`](scripts/test_doc_reader.py) | 118 | 1 Classes | scripts/test_doc_reader.py |
 | [`scripts/test_system_integration.py`](scripts/test_system_integration.py) | 183 | 1 Classes | scripts/test_system_integration.py |
-| [`scripts/test_workflow.py`](scripts/test_workflow.py) | 471 | 7 Funcs | scripts/test_workflow.py |
+| [`scripts/test_workflow.py`](scripts/test_workflow.py) | 469 | 7 Funcs | scripts/test_workflow.py |
 
 <!-- AUTO_GENERATED_SYMBOLS_END -->
 

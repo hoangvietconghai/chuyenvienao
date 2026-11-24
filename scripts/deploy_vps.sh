@@ -88,6 +88,16 @@ sed -i 's/^SERVER_HOST=.*/SERVER_HOST=127.0.0.1/' .env || echo "SERVER_HOST=127.
 sed -i 's/^SERVER_PORT=.*/SERVER_PORT=8000/' .env || echo "SERVER_PORT=8000" >> .env
 sed -i 's/^DEBUG=.*/DEBUG=False/' .env || echo "DEBUG=False" >> .env
 
+# Đảm bảo tự động sinh khóa bảo mật AUTH_SECRET và DEPLOY_WEBHOOK_SECRET nếu chưa có
+if ! grep -q "^AUTH_SECRET=" .env || grep -q "^AUTH_SECRET=$" .env; then
+    RAND_AUTH=$(python3 -c "import secrets; print(secrets.token_hex(32))" 2>/dev/null || openssl rand -hex 32)
+    sed -i "s/^AUTH_SECRET=.*/AUTH_SECRET=$RAND_AUTH/" .env || echo "AUTH_SECRET=$RAND_AUTH" >> .env
+fi
+if ! grep -q "^DEPLOY_WEBHOOK_SECRET=" .env || grep -q "^DEPLOY_WEBHOOK_SECRET=$" .env; then
+    RAND_DEPLOY=$(python3 -c "import secrets; print(secrets.token_hex(32))" 2>/dev/null || openssl rand -hex 32)
+    sed -i "s/^DEPLOY_WEBHOOK_SECRET=.*/DEPLOY_WEBHOOK_SECRET=$RAND_DEPLOY/" .env || echo "DEPLOY_WEBHOOK_SECRET=$RAND_DEPLOY" >> .env
+fi
+
 # Nếu chưa có GEMINI_API_KEY hoặc DEEPSEEK_API_KEY trong .env, nhắc cán bộ nhập (tự động bỏ qua sau 5 giây nếu không nhập)
 if ! grep -q "^GEMINI_API_KEY=AIza" .env; then
     echo -e "${YELLOW}----------------------------------------------------------------------${NC}"

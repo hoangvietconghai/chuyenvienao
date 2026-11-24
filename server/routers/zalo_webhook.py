@@ -6,6 +6,7 @@ Webhook tiếp nhận và xử lý tin nhắn, tệp đính kèm từ Zalo Bot P
 Điều phối trực tiếp vào server.chat_engine và tự động nạp/tải tệp lên Google Drive.
 """
 
+import json
 import os
 import re
 import shutil

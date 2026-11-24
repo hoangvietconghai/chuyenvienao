@@ -3,6 +3,23 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ============================================================================
+  // BẢO MẬT: TỰ ĐỘNG GẮN AUTH TOKEN CHO TẤT CẢ CÁC YÊU CẦU /api/*
+  // ============================================================================
+  const _rawFetch = window.fetch;
+  window.fetch = function(url, options = {}) {
+    const token = localStorage.getItem('cva_auth_token') || '';
+    if (token && typeof url === 'string' && url.startsWith('/api/')) {
+      const opts = Object.assign({}, options);
+      opts.headers = Object.assign({}, opts.headers || {});
+      if (!opts.headers['Authorization'] && !opts.headers['authorization']) {
+        opts.headers['Authorization'] = `Bearer ${token}`;
+      }
+      return _rawFetch.call(this, url, opts);
+    }
+    return _rawFetch.call(this, url, options);
+  };
+
   // Trạng thái phiên làm việc (Chế độ Khách lưu sessionStorage, Cán bộ đăng nhập lưu localStorage)
   function getStoredSessionId() {
     const token = localStorage.getItem('cva_auth_token');
@@ -190,6 +207,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!sidebarSessionsList) return;
     try {
       const res = await fetch('/api/admin/sessions?page=1&page_size=25');
+      if (res.status === 401 || res.status === 403) {
+        sidebarSessionsList.innerHTML = `
+          <div style="font-size:12px; color:var(--text-muted); padding:16px; text-align:center;">
+            Chế độ Khách (Phiên tạm thời).<br>
+            <small style="opacity:0.8;">Đăng nhập để lưu lịch sử công tác</small>
+          </div>
+        `;
+        return;
+      }
       if (!res.ok) throw new Error('Không thể tải phiên');
       const data = await res.json();
       allSidebarSessions = data.sessions || [];
