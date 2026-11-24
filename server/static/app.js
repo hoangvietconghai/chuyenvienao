@@ -994,6 +994,32 @@ document.addEventListener('DOMContentLoaded', () => {
       content.appendChild(filesDiv);
     }
 
+    // 3.5. Nguồn tra cứu trực tuyến (Google Search Grounding)
+    if (data.web_sources && data.web_sources.length > 0) {
+      const webSourcesDiv = document.createElement('div');
+      webSourcesDiv.className = 'msg-web-sources';
+      webSourcesDiv.style.cssText = 'margin-top: 10px; padding: 10px 14px; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 6px; font-size: 12.5px;';
+
+      const titleSpan = document.createElement('div');
+      titleSpan.style.cssText = 'font-weight: 600; color: #2563eb; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;';
+      titleSpan.innerHTML = '🌐 <span>Nguồn tra cứu trực tuyến (Google Search):</span>';
+      webSourcesDiv.appendChild(titleSpan);
+
+      const listDiv = document.createElement('div');
+      listDiv.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+      data.web_sources.slice(0, 5).forEach((src) => {
+        const link = document.createElement('a');
+        link.href = src.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.cssText = 'color: var(--primary, #0284c7); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; max-width: 100%;';
+        link.innerHTML = `🔗 <span style="text-decoration: underline;">${escapeHtml(src.title || src.url)}</span>`;
+        listDiv.appendChild(link);
+      });
+      webSourcesDiv.appendChild(listDiv);
+      content.appendChild(webSourcesDiv);
+    }
+
     // 4. Các nút hành động (Duyệt, Huỷ, hoặc chọn Workflow)
     if (data.actions && data.actions.length > 0) {
       const actionsDiv = document.createElement('div');
@@ -1052,6 +1078,14 @@ document.addEventListener('DOMContentLoaded', () => {
     modelBadge.className = 'msg-meta-badge';
     modelBadge.textContent = data.model_used ? `🤖 ${data.model_used}` : '🤖 Chuyên viên ảo Công Hải Số';
     toolbarDiv.appendChild(modelBadge);
+
+    if (data.web_sources && data.web_sources.length > 0) {
+      const searchBadge = document.createElement('span');
+      searchBadge.className = 'msg-meta-badge';
+      searchBadge.style.cssText = 'background: rgba(37, 99, 235, 0.12); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.3);';
+      searchBadge.textContent = '🌐 Đã tra cứu Internet';
+      toolbarDiv.appendChild(searchBadge);
+    }
 
     content.appendChild(toolbarDiv);
   }

@@ -236,8 +236,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 24/11/2026 16:18:56*
-> *Quy mô: **57** tệp Python | **15,582** dòng mã | **54** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 24/11/2026 16:46:30*
+> *Quy mô: **57** tệp Python | **15,814** dòng mã | **54** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -303,10 +303,10 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | Tệp tin | Dòng mã | Lớp / Endpoint | Chức năng & Hàm trọng yếu |
 | :--- | :---: | :---: | :--- |
 | [`server/__init__.py`](server/__init__.py) | 2 | 0 Funcs | Package server cho Hệ thống Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải. |
-| [`server/ai_connector.py`](server/ai_connector.py) | 858 | 1 Classes | server/ai_connector.py |
+| [`server/ai_connector.py`](server/ai_connector.py) | 1,076 | 1 Classes | server/ai_connector.py |
 | [`server/app.py`](server/app.py) | 115 | 3 Endpoints | server/app.py |
-| [`server/chat_engine.py`](server/chat_engine.py) | 1,461 | 24 Funcs | server/chat_engine.py |
-| [`server/config.py`](server/config.py) | 211 | 0 Funcs | server/config.py |
+| [`server/chat_engine.py`](server/chat_engine.py) | 1,474 | 24 Funcs | server/chat_engine.py |
+| [`server/config.py`](server/config.py) | 212 | 0 Funcs | server/config.py |
 | [`server/logger.py`](server/logger.py) | 92 | 2 Funcs | server/logger.py |
 | [`server/plan_registry.py`](server/plan_registry.py) | 281 | 8 Funcs | server/plan_registry.py |
 | [`server/prompts/__init__.py`](server/prompts/__init__.py) | 2 | 0 Funcs | Package chứa các bộ Prompt chuyên sâu tối ưu riêng cho DeepSeek API. |

@@ -26,6 +26,7 @@ from server.config import (
     DEEPSEEK_BASE_URL,
     DEEPSEEK_MODEL,
     DEEPSEEK_REASONER_MODEL,
+    ENABLE_WEB_SEARCH,
 )
 
 from server.logger import get_logger
@@ -153,6 +154,66 @@ def repair_and_parse_json(text: str) -> Union[Dict[str, Any], List[Any]]:
         raise ValueError(f"Không thể phân tích cú pháp phản hồi từ mô hình AI thành JSON: {text[:300]}...")
 
 
+def convert_messages_to_gemini(
+    messages: List[Dict[str, str]],
+) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Chuyển đổi danh sách tin nhắn chuẩn OpenAI (role: system/user/assistant)
+    thành định dạng Gemini Native REST API (system_instruction + contents).
+    Tự động gộp các tin nhắn cùng role liên tiếp để Gemini không báo lỗi HTTP 400.
+    """
+    system_text_parts = []
+    contents = []
+
+    for m in messages:
+        role = m.get("role", "user")
+        content = m.get("content", "")
+        if not content:
+            continue
+
+        if role == "system":
+            system_text_parts.append(content)
+        else:
+            gemini_role = "user" if role == "user" else "model"
+            if contents and contents[-1]["role"] == gemini_role:
+                contents[-1]["parts"][0]["text"] += f"\n\n{content}"
+            else:
+                contents.append({
+                    "role": gemini_role,
+                    "parts": [{"text": content}],
+                })
+
+    if contents and contents[0]["role"] == "model":
+        contents.insert(0, {"role": "user", "parts": [{"text": "Bắt đầu hội thoại."}]})
+    elif not contents:
+        contents.append({"role": "user", "parts": [{"text": "Xin chào."}]})
+
+    system_instruction = None
+    if system_text_parts:
+        system_instruction = {"parts": [{"text": "\n\n".join(system_text_parts)}]}
+
+    return system_instruction, contents
+
+
+def extract_web_sources(grounding_metadata: Optional[Dict[str, Any]]) -> List[Dict[str, str]]:
+    """Trích xuất danh sách nguồn bài viết từ groundingMetadata của Google Search Grounding."""
+    if not grounding_metadata:
+        return []
+    sources = []
+    seen_urls = set()
+    for chunk in grounding_metadata.get("groundingChunks", []):
+        web = chunk.get("web")
+        if web and web.get("uri"):
+            uri = web["uri"]
+            if uri not in seen_urls:
+                seen_urls.add(uri)
+                sources.append({
+                    "title": web.get("title") or "Nguồn Internet",
+                    "url": uri,
+                })
+    return sources
+
+
 class DeepSeekClient:
     """
     Bộ điều phối AI đa tầng thông minh (Multi-Provider AI Orchestrator):
@@ -203,6 +264,14 @@ class DeepSeekClient:
 
         self.ollama_base_url = OLLAMA_BASE_URL.rstrip("/")
         self.ollama_model = DEFAULT_LOCAL_MODEL
+
+        # Lưu vết nguồn tra cứu Internet từ Google Search Grounding
+        self.last_web_sources: List[Dict[str, str]] = []
+        self.last_grounding_metadata: Optional[Dict[str, Any]] = None
+
+    def get_last_web_sources(self) -> List[Dict[str, str]]:
+        """Trả về danh sách nguồn tra cứu Internet thu được từ Google Search trong lượt gọi gần nhất."""
+        return list(self.last_web_sources or [])
 
     def _has_valid_key(self, key: Optional[str]) -> bool:
         """Kiểm tra tính hợp lệ của API Key."""
@@ -361,6 +430,122 @@ class DeepSeekClient:
                 except Exception:
                     continue
 
+    async def _execute_gemini_native_call(
+        self,
+        client: httpx.AsyncClient,
+        api_key: str,
+        model: str,
+        messages: List[Dict[str, str]],
+        temperature: float,
+        max_tokens: int,
+        enable_search: bool = True,
+        json_mode: bool = False,
+    ) -> Tuple[str, Dict[str, Any], Optional[Dict[str, Any]]]:
+        """Gửi request trực tiếp tới Google Gemini Native REST API với Google Search Grounding."""
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        headers = {
+            "x-goog-api-key": api_key.strip(),
+            "Content-Type": "application/json",
+        }
+        system_instruction, contents = convert_messages_to_gemini(messages)
+        payload: Dict[str, Any] = {
+            "contents": contents,
+            "generationConfig": {
+                "temperature": temperature,
+                "maxOutputTokens": max_tokens,
+            },
+        }
+        if system_instruction:
+            payload["system_instruction"] = system_instruction
+        if json_mode:
+            payload["generationConfig"]["responseMimeType"] = "application/json"
+        elif enable_search and ENABLE_WEB_SEARCH:
+            payload["tools"] = [{"google_search": {}}]
+
+        response = await client.post(endpoint, headers=headers, json=payload)
+        if response.status_code == 200:
+            data = response.json()
+            candidates = data.get("candidates", [])
+            if not candidates:
+                return "", {}, None
+            candidate = candidates[0]
+            parts = candidate.get("content", {}).get("parts", [])
+            raw_content = "".join(p.get("text", "") for p in parts)
+            grounding_meta = candidate.get("groundingMetadata")
+            usage_meta = data.get("usageMetadata", {})
+            usage = {
+                "prompt_tokens": usage_meta.get("promptTokenCount", 0),
+                "completion_tokens": usage_meta.get("candidatesTokenCount", 0),
+            }
+            if grounding_meta:
+                self.last_grounding_metadata = grounding_meta
+                self.last_web_sources = extract_web_sources(grounding_meta)
+            return raw_content, usage, grounding_meta
+
+        raise httpx.HTTPStatusError(
+            message=f"Gemini Native HTTP {response.status_code}: {response.text[:300]}",
+            request=response.request,
+            response=response,
+        )
+
+    async def _execute_gemini_native_stream(
+        self,
+        client: httpx.AsyncClient,
+        api_key: str,
+        model: str,
+        messages: List[Dict[str, str]],
+        temperature: float,
+        max_tokens: int,
+        enable_search: bool = True,
+    ) -> AsyncGenerator[str, None]:
+        """Streaming phản hồi qua Gemini Native REST API dạng SSE với Google Search Grounding."""
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse"
+        headers = {
+            "x-goog-api-key": api_key.strip(),
+            "Content-Type": "application/json",
+        }
+        system_instruction, contents = convert_messages_to_gemini(messages)
+        payload: Dict[str, Any] = {
+            "contents": contents,
+            "generationConfig": {
+                "temperature": temperature,
+                "maxOutputTokens": max_tokens,
+            },
+        }
+        if system_instruction:
+            payload["system_instruction"] = system_instruction
+        if enable_search and ENABLE_WEB_SEARCH:
+            payload["tools"] = [{"google_search": {}}]
+
+        async with client.stream("POST", endpoint, headers=headers, json=payload) as response:
+            if response.status_code != 200:
+                body = await response.aread()
+                raise httpx.HTTPStatusError(
+                    message=f"Gemini Stream HTTP {response.status_code}: {body.decode('utf-8', errors='ignore')[:300]}",
+                    request=response.request,
+                    response=response,
+                )
+            async for line in response.aiter_lines():
+                line = line.strip()
+                if not line or not line.startswith("data:"):
+                    continue
+                data_str = line[5:].strip()
+                try:
+                    chunk_json = json.loads(data_str)
+                    candidates = chunk_json.get("candidates", [])
+                    if candidates:
+                        cand = candidates[0]
+                        parts = cand.get("content", {}).get("parts", [])
+                        txt = "".join(p.get("text", "") for p in parts)
+                        if txt:
+                            yield txt
+                        gm = cand.get("groundingMetadata")
+                        if gm:
+                            self.last_grounding_metadata = gm
+                            self.last_web_sources = extract_web_sources(gm)
+                except Exception:
+                    continue
+
     async def call_chat_async(
         self,
         messages: List[Dict[str, str]],
@@ -494,20 +679,35 @@ class DeepSeekClient:
             last_error = None
             success = False
             raw_content, usage, finish_reason = "", {}, None
+            self.last_web_sources = []
+            self.last_grounding_metadata = None
 
             # Thử gọi Động cơ chính (Primary)
             for attempt_model in (gemini_candidate_models if primary_provider == "gemini" else [selected_model]):
                 try:
-                    raw_content, usage, finish_reason = await self._execute_openai_call(
-                        client=client,
-                        base_url=active_base,
-                        api_key=active_key,
-                        model=attempt_model,
-                        messages=messages,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                        json_mode=json_mode,
-                    )
+                    if primary_provider == "gemini":
+                        raw_content, usage, _ = await self._execute_gemini_native_call(
+                            client=client,
+                            api_key=active_key,
+                            model=attempt_model,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            enable_search=ENABLE_WEB_SEARCH,
+                            json_mode=json_mode,
+                        )
+                        finish_reason = "stop"
+                    else:
+                        raw_content, usage, finish_reason = await self._execute_openai_call(
+                            client=client,
+                            base_url=active_base,
+                            api_key=active_key,
+                            model=attempt_model,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            json_mode=json_mode,
+                        )
                     selected_model = attempt_model
                     success = True
                     break
@@ -519,7 +719,9 @@ class DeepSeekClient:
                         logger.info(f"Mô hình {attempt_model} chưa khả dụng (404), thử chuyển sang {gemini_candidate_models}...")
                         continue
                     if status_code in (429, 500, 502, 503, 504):
-                        logger.warning(f"Động cơ chính {primary_provider} ({attempt_model}) trả mã {status_code}. Thử phương án dự phòng...")
+                        logger.warning(f"Động cơ chính {primary_provider} ({attempt_model}) trả mã {status_code}. Thử mô hình tiếp theo hoặc phương án dự phòng...")
+                        if primary_provider == "gemini":
+                            continue
                         break
                     # Lỗi 401 hoặc 402
                     break
@@ -622,6 +824,7 @@ class DeepSeekClient:
                 "provider": primary_provider,
                 "fallback_used": fallback_used,
                 "fallback_provider": fallback_provider,
+                "web_sources": list(self.last_web_sources or []),
                 "usage": usage,
             }
 
@@ -712,20 +915,35 @@ class DeepSeekClient:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             success = False
             token_yielded = False
+            self.last_web_sources = []
+            self.last_grounding_metadata = None
 
             # Thử gọi Động cơ chính (Primary)
             models_to_try = gemini_candidate_models if primary_provider == "gemini" else [selected_model]
             for attempt_model in models_to_try:
                 try:
-                    async for chunk in self._execute_openai_stream(
-                        client=client,
-                        base_url=active_base,
-                        api_key=active_key,
-                        model=attempt_model,
-                        messages=messages,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                    ):
+                    if primary_provider == "gemini" and ENABLE_WEB_SEARCH:
+                        stream_gen = self._execute_gemini_native_stream(
+                            client=client,
+                            api_key=active_key,
+                            model=attempt_model,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            enable_search=True,
+                        )
+                    else:
+                        stream_gen = self._execute_openai_stream(
+                            client=client,
+                            base_url=active_base,
+                            api_key=active_key,
+                            model=attempt_model,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                        )
+
+                    async for chunk in stream_gen:
                         token_yielded = True
                         yield chunk
                     success = True

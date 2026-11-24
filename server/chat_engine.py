@@ -945,6 +945,7 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
     res = await default_ai_client.call_chat_async(msgs, temperature=0.3, max_tokens=2000, json_mode=False)
 
     reply_content = res.get("content", "").strip() or "Xin lỗi, tôi chưa có câu trả lời."
+    web_sources = res.get("web_sources", []) or default_ai_client.get_last_web_sources()
     
     # Khử trùng lặp trích dẫn RAG để lưu ngầm vào audit log (không in ra khung chat để giữ phản hồi ngắn gọn)
     unique_citations = []
@@ -961,7 +962,12 @@ async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
     if disclaimer.strip() not in reply_content:
         reply_content += disclaimer
 
-    return _reply(s, reply_content, rag_sources=unique_citations if citations else [])
+    return _reply(
+        s,
+        reply_content,
+        rag_sources=unique_citations if citations else [],
+        web_sources=web_sources if web_sources else [],
+    )
 
 
 # ==============================================================================
@@ -1422,13 +1428,20 @@ async def handle_chat_stream(
                 chunks.append(chunk)
                 yield f"event: token\ndata: {json.dumps({'chunk': chunk}, ensure_ascii=False)}\n\n"
 
+            web_sources = default_ai_client.get_last_web_sources()
+
             full_reply = "".join(chunks).strip() or "Xin lỗi, tôi chưa có câu trả lời."
             disclaimer = "\n\n*Lưu ý: Cán bộ tham mưu chịu trách nhiệm toàn diện về tính chính xác và tính pháp lý của thông tin khi sử dụng thông tin từ AI.*"
             if disclaimer.strip() not in full_reply:
                 full_reply += disclaimer
                 yield f"event: token\ndata: {json.dumps({'chunk': disclaimer}, ensure_ascii=False)}\n\n"
 
-            res = _reply(s, full_reply, rag_sources=unique_citations if citations else [])
+            res = _reply(
+                s,
+                full_reply,
+                rag_sources=unique_citations if citations else [],
+                web_sources=web_sources if web_sources else [],
+            )
             _finalize_and_log(res)
             yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
             return
