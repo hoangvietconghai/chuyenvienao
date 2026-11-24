@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
@@ -58,6 +58,29 @@ async def chat_endpoint(req: ChatRequest, request: Request):
             token = auth_header[7:].strip()
     return await chat_engine.handle_chat(
         req.session_id, req.message or "", req.action or "", token=token, attachment_ids=req.attachment_ids
+    )
+
+
+@router.post("/api/chat/stream")
+async def chat_stream_endpoint(req: ChatRequest, request: Request):
+    """Nhận lệnh của cán bộ và phản hồi dạng Server-Sent Events (SSE) Stream thời gian thực."""
+    token = req.token
+    if not token:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+
+    generator = chat_engine.handle_chat_stream(
+        req.session_id, req.message or "", req.action or "", token=token, attachment_ids=req.attachment_ids
+    )
+    return StreamingResponse(
+        generator,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

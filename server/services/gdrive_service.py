@@ -29,7 +29,9 @@ from server.logger import get_logger
 logger = get_logger("gdrive_service")
 
 
-def upload_via_apps_script(file_path: str, filename: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def upload_via_apps_script(
+    file_path: str, filename: Optional[str] = None, folder_id: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """Tải tệp lên Google Drive thông qua Google Apps Script Web App."""
     if not GDRIVE_WEB_APP_URL:
         return None
@@ -40,12 +42,13 @@ def upload_via_apps_script(file_path: str, filename: Optional[str] = None) -> Op
         return None
 
     name = filename or path_obj.name
+    target_folder = folder_id or GDRIVE_FOLDER_ID
     try:
         with open(path_obj, "rb") as f:
             encoded_bytes = base64.b64encode(f.read()).decode("utf-8")
 
         payload = {
-            "folder_id": GDRIVE_FOLDER_ID,
+            "folder_id": target_folder,
             "filename": name,
             "base64": encoded_bytes,
             "mimetype": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -74,7 +77,9 @@ def upload_via_apps_script(file_path: str, filename: Optional[str] = None) -> Op
     return None
 
 
-def upload_via_service_account(file_path: str, filename: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def upload_via_service_account(
+    file_path: str, filename: Optional[str] = None, folder_id: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """Tải tệp lên Google Drive qua Service Account API nếu có tệp credentials."""
     creds_path = Path(GDRIVE_SERVICE_ACCOUNT_FILE)
     if not creds_path.is_absolute():
@@ -95,9 +100,10 @@ def upload_via_service_account(file_path: str, filename: Optional[str] = None) -
         service = build("drive", "v3", credentials=credentials)
 
         name = filename or Path(file_path).name
+        target_folder = folder_id or GDRIVE_FOLDER_ID
         file_metadata = {
             "name": name,
-            "parents": [GDRIVE_FOLDER_ID],
+            "parents": [target_folder],
         }
         media = MediaFileUpload(file_path, resumable=True)
         uploaded = (
@@ -157,7 +163,9 @@ def upload_via_local_gdrive_sync(file_path: str, filename: Optional[str] = None)
     return None
 
 
-def upload_to_gdrive(file_path: str, filename: Optional[str] = None) -> Dict[str, Any]:
+def upload_to_gdrive(
+    file_path: str, filename: Optional[str] = None, folder_id: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Hàm tổng hợp để tải tệp lên Google Drive đám mây (Cloud Network Upload).
     Tự động thử các phương thức tải trực tuyến qua Internet:
@@ -170,19 +178,20 @@ def upload_to_gdrive(file_path: str, filename: Optional[str] = None) -> Dict[str
     name = filename or path_obj.name
 
     # 1. Thử qua Google Apps Script Web App (Tải trực tiếp qua Internet)
-    res = upload_via_apps_script(file_path, name)
+    res = upload_via_apps_script(file_path, name, folder_id=folder_id)
     if res:
         logger.info(f"Đã upload trực tiếp '{name}' lên Google Drive Cloud (Apps Script): {res['file_url']}")
         return res
 
     # 2. Thử qua Google Cloud Service Account
-    res = upload_via_service_account(file_path, name)
+    res = upload_via_service_account(file_path, name, folder_id=folder_id)
     if res:
         logger.info(f"Đã upload trực tiếp '{name}' lên Google Drive Cloud (Service Account): {res['file_url']}")
         return res
 
     # 3. Fallback: liên kết thư mục Google Drive của cơ quan
-    folder_url = GDRIVE_FOLDER_URL or f"https://drive.google.com/drive/folders/{GDRIVE_FOLDER_ID}?usp=sharing"
+    effective_folder_id = folder_id or GDRIVE_FOLDER_ID
+    folder_url = f"https://drive.google.com/drive/folders/{effective_folder_id}?usp=sharing"
     server_link = None
     if SERVER_DOMAIN:
         try:

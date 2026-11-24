@@ -727,4 +727,23 @@ async def deploy_webhook(request: Request):
         return {"status": "error", "message": str(e)}
 
 
+@router.post("/api/admin/backup/trigger")
+async def trigger_manual_backup(current_user: Dict[str, Any] = Depends(require_admin)):
+    """Kích hoạt thủ công tác vụ Sao lưu CSDL và đẩy lên Google Drive (Yêu cầu quyền Quản trị viên)."""
+    try:
+        from server.services.backup_service import perform_full_backup
+        res = await run_in_threadpool(perform_full_backup, upload_gdrive=True, retention_days=30)
+        return {
+            "success": True,
+            "message": f"Sao lưu thành công tệp {res['filename']} ({res['size_mb']} MB)",
+            "details": res,
+        }
+    except Exception as ex:
+        logger.error(f"Lỗi khi kích hoạt sao lưu thủ công: {ex}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Không thể thực hiện sao lưu: {ex}",
+        )
+
+
 

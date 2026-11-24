@@ -732,35 +732,137 @@ document.addEventListener('DOMContentLoaded', () => {
       const headers = { 'Content-Type': 'application/json' };
       if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          session_id: sessionId,
-          message: text,
-          action: action,
-          token: authToken,
-          attachment_ids: currentAtts.map((a) => a.id),
-        }),
-      });
+      const chatPayload = {
+        session_id: sessionId,
+        message: text,
+        action: action,
+        token: authToken,
+        attachment_ids: currentAtts.map((a) => a.id),
+      };
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || 'Lỗi kết nối máy chủ');
+      // 1. Gửi qua kênh AI Streaming SSE thời gian thực
+      let streamSuccess = false;
+      try {
+        const streamRes = await fetch('/api/chat/stream', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(chatPayload),
+        });
+
+        if (streamRes.ok && streamRes.headers.get('content-type')?.includes('text/event-stream')) {
+          const reader = streamRes.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          let buffer = '';
+          let currentEvent = 'message';
+          let accumulatedReply = '';
+          let streamWrap = null;
+          let streamTextDiv = null;
+          let streamDoneData = null;
+
+          function initStreamDom() {
+            if (thinkingEl && thinkingEl.parentNode) thinkingEl.remove();
+            streamWrap = document.createElement('div');
+            streamWrap.className = 'msg-ai';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerHTML = '<img src="/static/assets/logo.png" alt="AI" class="avatar-img" />';
+
+            const content = document.createElement('div');
+            content.className = 'content';
+
+            streamTextDiv = document.createElement('div');
+            streamTextDiv.className = 'ai-text-body';
+            content.appendChild(streamTextDiv);
+
+            streamWrap.appendChild(avatar);
+            streamWrap.appendChild(content);
+            messagesContainer.appendChild(streamWrap);
+          }
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (let rawLine of lines) {
+              const line = rawLine.trim();
+              if (!line) continue;
+
+              if (line.startsWith('event:')) {
+                currentEvent = line.substring(6).trim();
+                continue;
+              }
+
+              if (line.startsWith('data:')) {
+                const dataStr = line.substring(5).trim();
+                let evData = {};
+                try {
+                  evData = JSON.parse(dataStr);
+                } catch {
+                  continue;
+                }
+
+                if (currentEvent === 'meta') {
+                  if (evData.session_id) saveSessionId(evData.session_id);
+                } else if (currentEvent === 'token') {
+                  if (!streamWrap) initStreamDom();
+                  const chunk = evData.chunk || '';
+                  accumulatedReply += chunk;
+                  streamTextDiv.innerHTML = parseMarkdown(accumulatedReply);
+                  scrollToBottom();
+                } else if (currentEvent === 'done') {
+                  streamDoneData = evData;
+                  if (evData.session_id) saveSessionId(evData.session_id);
+                }
+              }
+            }
+          }
+
+          if (streamWrap && streamDoneData) {
+            appendAssistantMessage({
+              ...streamDoneData,
+              reply: streamDoneData.reply || accumulatedReply,
+            }, streamWrap);
+          } else if (streamDoneData && !streamWrap) {
+            if (thinkingEl && thinkingEl.parentNode) thinkingEl.remove();
+            appendAssistantMessage(streamDoneData);
+          }
+
+          loadSidebarSessions();
+          streamSuccess = true;
+        }
+      } catch (streamErr) {
+        console.warn('Lỗi khi streaming, chuyển sang chế độ phản hồi tiêu chuẩn:', streamErr);
       }
 
-      const data = await res.json();
-      if (data.session_id) {
-        saveSessionId(data.session_id);
+      // 2. Chế độ dự phòng: Gọi endpoint tiêu chuẩn nếu stream không thành công
+      if (!streamSuccess) {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(chatPayload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Lỗi kết nối máy chủ');
+        }
+
+        const data = await res.json();
+        if (data.session_id) {
+          saveSessionId(data.session_id);
+        }
+
+        if (thinkingEl && thinkingEl.parentNode) thinkingEl.remove();
+        appendAssistantMessage(data);
+        loadSidebarSessions();
       }
-
-      thinkingEl.remove();
-      appendAssistantMessage(data);
-
-      // Cập nhật lại danh sách phiên ở Sidebar
-      loadSidebarSessions();
     } catch (err) {
-      thinkingEl.remove();
+      if (thinkingEl && thinkingEl.parentNode) thinkingEl.remove();
       appendAssistantMessage({
         reply: `❌ **Không thể hoàn thành yêu cầu:** ${err.message}\n\nĐồng chí vui lòng kiểm tra lại kết nối mạng hoặc khoá API trong tệp \`.env\`.`,
       });
@@ -835,22 +937,38 @@ document.addEventListener('DOMContentLoaded', () => {
     return wrap;
   }
 
-  function appendAssistantMessage(data) {
-    const wrap = document.createElement('div');
-    wrap.className = 'msg-ai';
+  function appendAssistantMessage(data, existingWrap = null) {
+    let wrap = existingWrap;
+    let content;
 
-    const avatar = document.createElement('div');
-    avatar.className = 'avatar';
-    avatar.innerHTML = '<img src="/static/assets/logo.png" alt="AI" class="avatar-img" />';
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.className = 'msg-ai';
 
-    const content = document.createElement('div');
-    content.className = 'content';
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.innerHTML = '<img src="/static/assets/logo.png" alt="AI" class="avatar-img" />';
 
-    // 1. Nội dung văn bản (markdown)
-    const textHtml = parseMarkdown(data.reply || '');
-    const textDiv = document.createElement('div');
-    textDiv.innerHTML = textHtml;
-    content.appendChild(textDiv);
+      content = document.createElement('div');
+      content.className = 'content';
+
+      // 1. Nội dung văn bản (markdown)
+      const textHtml = parseMarkdown(data.reply || '');
+      const textDiv = document.createElement('div');
+      textDiv.className = 'ai-text-body';
+      textDiv.innerHTML = textHtml;
+      content.appendChild(textDiv);
+
+      wrap.appendChild(avatar);
+      wrap.appendChild(content);
+      messagesContainer.appendChild(wrap);
+    } else {
+      content = wrap.querySelector('.content');
+      let textDiv = content.querySelector('.ai-text-body');
+      if (textDiv) {
+        textDiv.innerHTML = parseMarkdown(data.reply || '');
+      }
+    }
 
     // 2. Khung xem trước văn bản hành chính (nếu có)
     if (data.preview && data.preview.length > 0) {
@@ -936,10 +1054,6 @@ document.addEventListener('DOMContentLoaded', () => {
     toolbarDiv.appendChild(modelBadge);
 
     content.appendChild(toolbarDiv);
-
-    wrap.appendChild(avatar);
-    wrap.appendChild(content);
-    messagesContainer.appendChild(wrap);
   }
 
   // ============================================================================

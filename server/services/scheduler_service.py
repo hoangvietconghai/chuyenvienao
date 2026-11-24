@@ -195,6 +195,27 @@ async def check_monthly_cds_report() -> bool:
     return False
 
 
+async def check_nightly_backup() -> bool:
+    """Sao lưu CSDL tự động lúc 01h00 đêm và đẩy lên Google Drive."""
+    now = datetime.now()
+    today_str = now.strftime("%Y-%m-%d")
+    remind_key = f"NIGHTLY_BACKUP_{today_str}"
+
+    if not db_service.acquire_remind_lock(remind_key, None, None, "BACKUP"):
+        logger.debug(f"[Scheduler] Bản sao lưu đêm {today_str} đã được thực hiện trước đó.")
+        return False
+
+    logger.info(f"[Scheduler] Bắt đầu tác vụ Sao lưu CSDL Đêm ({today_str})...")
+    try:
+        from server.services.backup_service import perform_full_backup
+        res = await asyncio.to_thread(perform_full_backup, upload_gdrive=True, retention_days=30)
+        logger.info(f"[Scheduler] Sao lưu đêm hoàn tất thành công: {res['filename']} ({res['size_mb']} MB)")
+        return True
+    except Exception as ex:
+        logger.error(f"[Scheduler] Thất bại khi thực hiện sao lưu đêm: {ex}")
+        return False
+
+
 async def catch_up_missed_jobs():
     """
     CƠ CHẾ KHỞI ĐỘNG BÙ (CATCH-UP):
@@ -204,6 +225,10 @@ async def catch_up_missed_jobs():
     logger.info("[Scheduler] Bắt đầu kiểm tra và thực hiện khởi động bù (catch-up)...")
     try:
         now = datetime.now()
+        # 0. Nếu bật máy sau 01h00 sáng, bù sao lưu CSDL đêm nếu chưa chạy
+        if now.hour >= 1:
+            await check_nightly_backup()
+
         # 1. Nếu bật máy sau 07h30 sáng, bù nhắc việc sáng
         if now.hour >= 7:
             await check_morning_reminders()
@@ -238,6 +263,10 @@ async def _scheduler_loop():
         try:
             now = datetime.now()
             current_hm = now.strftime("%H:%M")
+
+            # 01h00 đêm: Tự động sao lưu CSDL đêm lên Google Drive
+            if current_hm == "01:00":
+                await check_nightly_backup()
 
             # 07h30 sáng
             if current_hm == "07:30":

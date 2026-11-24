@@ -17,7 +17,7 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
 
 import httpx
 
@@ -310,6 +310,57 @@ class DeepSeekClient:
             response=response,
         )
 
+    async def _execute_openai_stream(
+        self,
+        client: httpx.AsyncClient,
+        base_url: str,
+        api_key: str,
+        model: str,
+        messages: List[Dict[str, str]],
+        temperature: float,
+        max_tokens: int,
+    ) -> AsyncGenerator[str, None]:
+        """Gửi request chuẩn OpenAI-compatible dạng SSE Stream và yield từng chunk văn bản."""
+        endpoint = f"{base_url.rstrip('/')}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key.strip()}",
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream",
+        }
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True,
+        }
+
+        async with client.stream("POST", endpoint, headers=headers, json=payload) as response:
+            if response.status_code != 200:
+                body = await response.aread()
+                raise httpx.HTTPStatusError(
+                    message=f"HTTP {response.status_code}: {body.decode('utf-8', errors='ignore')[:300]}",
+                    request=response.request,
+                    response=response,
+                )
+            async for line in response.aiter_lines():
+                line = line.strip()
+                if not line or not line.startswith("data:"):
+                    continue
+                data_str = line[5:].strip()
+                if data_str == "[DONE]":
+                    break
+                try:
+                    chunk_json = json.loads(data_str)
+                    choices = chunk_json.get("choices", [])
+                    if choices:
+                        delta = choices[0].get("delta", {})
+                        content = delta.get("content", "")
+                        if content:
+                            yield content
+                except Exception:
+                    continue
+
     async def call_chat_async(
         self,
         messages: List[Dict[str, str]],
@@ -573,6 +624,140 @@ class DeepSeekClient:
                 "fallback_provider": fallback_provider,
                 "usage": usage,
             }
+
+    async def stream_chat_async(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.3,
+        max_tokens: int = 4096,
+        use_reasoner: bool = False,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Streaming phản hồi thời gian thực qua AsyncGenerator với cơ chế Dual-Engine Failover:
+        1. Ưu tiên mô hình chính (Gemini / DeepSeek Cloud).
+        2. Nếu gặp sự cố, tự động failover sang động cơ dự phòng.
+        3. Hỗ trợ cả Local Ollama streaming nếu đang cấu hình cục bộ.
+        """
+        if not self.is_configured():
+            yield "⚠️ Chưa cấu hình API Key cho Chuyên viên Ảo. Đồng chí vui lòng điền GEMINI_API_KEY hoặc DEEPSEEK_API_KEY trong tệp .env."
+            return
+
+        selected_model = (
+            self.deepseek_reasoner_model if (use_reasoner and not self.is_gemini()) else self.model
+        )
+
+        # ----------------------------------------------------------------------
+        # LUỒNG 1: LOCAL OLLAMA STREAMING
+        # ----------------------------------------------------------------------
+        if self.is_local():
+            endpoint = self.base_url.replace("/v1", "").rstrip("/") + "/api/chat"
+            payload = {
+                "model": selected_model,
+                "messages": messages,
+                "stream": True,
+                "options": {
+                    "temperature": temperature,
+                    "num_predict": max_tokens,
+                },
+            }
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    async with client.stream("POST", endpoint, json=payload) as resp:
+                        if resp.status_code != 200:
+                            err_body = await resp.aread()
+                            yield f"❌ Lỗi Ollama HTTP {resp.status_code}: {err_body.decode('utf-8', errors='ignore')[:200]}"
+                            return
+                        async for line in resp.aiter_lines():
+                            line = line.strip()
+                            if not line:
+                                continue
+                            try:
+                                d = json.loads(line)
+                                chunk = d.get("message", {}).get("content", "")
+                                if chunk:
+                                    yield chunk
+                            except Exception:
+                                continue
+                return
+            except Exception as loc_ex:
+                logger.warning(f"Lỗi Ollama streaming: {loc_ex}")
+                yield f"❌ Lỗi kết nối mô hình cục bộ: {loc_ex}"
+                return
+
+        # ----------------------------------------------------------------------
+        # LUỒNG 2: CLOUD STREAMING (GEMINI HOẶC DEEPSEEK CLOUD)
+        # ----------------------------------------------------------------------
+        primary_provider = "gemini" if self.is_gemini() else "cloud"
+        if primary_provider == "cloud" and not self._has_valid_key(self.api_key) and not self._has_valid_key(self.deepseek_key):
+            if self._has_valid_key(self.gemini_key):
+                primary_provider = "gemini"
+                selected_model = self.gemini_model
+        elif primary_provider == "gemini" and not self._has_valid_key(self.api_key) and not self._has_valid_key(self.gemini_key):
+            if self._has_valid_key(self.deepseek_key):
+                primary_provider = "cloud"
+                selected_model = self.deepseek_model
+
+        active_key = (
+            self.gemini_key if primary_provider == "gemini"
+            else (self.deepseek_key if self._has_valid_key(self.deepseek_key) else self.api_key)
+        )
+        active_base = self.gemini_base_url if primary_provider == "gemini" else self.deepseek_base_url
+
+        gemini_candidate_models = [selected_model]
+        if primary_provider == "gemini":
+            for alt in ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                if alt not in gemini_candidate_models:
+                    gemini_candidate_models.append(alt)
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            success = False
+            token_yielded = False
+
+            # Thử gọi Động cơ chính (Primary)
+            models_to_try = gemini_candidate_models if primary_provider == "gemini" else [selected_model]
+            for attempt_model in models_to_try:
+                try:
+                    async for chunk in self._execute_openai_stream(
+                        client=client,
+                        base_url=active_base,
+                        api_key=active_key,
+                        model=attempt_model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                    ):
+                        token_yielded = True
+                        yield chunk
+                    success = True
+                    break
+                except Exception as stream_err:
+                    if token_yielded:
+                        logger.error(f"Lỗi ngắt quãng giữa chừng khi streaming: {stream_err}")
+                        return
+                    logger.warning(f"Động cơ {primary_provider} ({attempt_model}) gặp sự cố khởi tạo stream: {stream_err}")
+                    continue
+
+            # Failover sang DeepSeek nếu Gemini lỗi hoàn toàn từ đầu
+            if not success and not token_yielded:
+                if primary_provider == "gemini" and self._has_valid_key(self.deepseek_key):
+                    logger.warning("🔄 Kích hoạt Failover streaming sang DeepSeek Cloud...")
+                    try:
+                        async for chunk in self._execute_openai_stream(
+                            client=client,
+                            base_url=self.deepseek_base_url,
+                            api_key=self.deepseek_key,
+                            model=self.deepseek_model,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                        ):
+                            yield chunk
+                        success = True
+                    except Exception as fb_err:
+                        logger.error(f"Cả hai động cơ streaming đều thất bại: {fb_err}")
+                        yield f"❌ Hệ thống tạm thời không thể kết nối tới mô hình AI: {fb_err}"
+                else:
+                    yield "❌ Lỗi kết nối mô hình AI. Đồng chí vui lòng kiểm tra lại cấu hình khoá API."
 
     async def ocr_image_with_vision(
         self,

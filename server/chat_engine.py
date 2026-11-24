@@ -24,7 +24,7 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 from scripts.export_docx import export_party_document
@@ -1157,3 +1157,305 @@ async def handle_chat(
         if s["pending"]:
             result["actions"] = _approval_actions(False)
         return done(result)
+
+
+async def handle_chat_stream(
+    session_id: Optional[str],
+    message: str,
+    action: str = "",
+    token: Optional[str] = None,
+    attachment_ids: Optional[List[str]] = None,
+) -> AsyncGenerator[str, None]:
+    """
+    Xử lý hội thoại dạng Streaming SSE (Server-Sent Events) dành cho Web Frontend.
+    Phát các sự kiện SSE chuẩn:
+      - event: meta -> session_id và trích dẫn RAG
+      - event: token -> từng chunk văn bản
+      - event: done -> kết quả hoàn tất kèm action, file, preview
+    """
+    session_id, s = get_session(session_id)
+    message = (message or "").strip()
+    action = (action or "").strip()
+
+    if attachment_ids:
+        att_id_set = set(attachment_ids)
+        for a in s.get("attachments", []):
+            if a.get("id") in att_id_set:
+                a["used"] = False
+
+    new_atts = [a for a in s["attachments"] if not a["used"]]
+    start_time = time.time()
+
+    # Nạp danh tính cán bộ từ token nếu có
+    if token and not s.get("can_bo"):
+        try:
+            from server.routers.auth import ACTIVE_TOKENS
+            from server.services import db_service
+            can_bo_info = None
+            if token in ACTIVE_TOKENS:
+                can_bo_info = ACTIVE_TOKENS[token]["can_bo"]
+            else:
+                db_s = db_service.get_auth_session(token)
+                if db_s:
+                    can_bo_info = {
+                        "can_bo_id": db_s["can_bo_id"],
+                        "ho_ten": db_s["ho_ten"],
+                        "chuc_vu": db_s["chuc_vu"],
+                        "co_quan": db_s["co_quan"],
+                        "co_quan_code": db_s["co_quan_code"],
+                        "so_dien_thoai": db_s.get("so_dien_thoai"),
+                        "vai_tro": db_s.get("vai_tro", "can_bo"),
+                    }
+                    ACTIVE_TOKENS[token] = {"can_bo": can_bo_info, "created_at": time.time()}
+            if can_bo_info:
+                s["authenticated"] = True
+                s["can_bo"] = can_bo_info
+        except Exception as auth_ex:
+            logger.warning(f"Lỗi nạp danh tính từ token (stream): {auth_ex}")
+
+    # Phát event meta khởi tạo
+    yield f"event: meta\ndata: {json.dumps({'session_id': session_id, 'status': 'start'}, ensure_ascii=False)}\n\n"
+
+    # Helper ghi nhận kết quả và lưu log
+    def _finalize_and_log(result: Dict[str, Any]) -> Dict[str, Any]:
+        result["session_id"] = session_id
+        can_bo = s.get("can_bo")
+        latency_ms = int((time.time() - start_time) * 1000)
+        names = ", ".join(a["name"] for a in s["attachments"])
+        reply_text = result.get("reply", "")
+
+        if can_bo:
+            ho_ten = can_bo.get("ho_ten", "Cán bộ")
+            so_dien_thoai = can_bo.get("so_dien_thoai", "")
+            co_quan = can_bo.get("co_quan", "Văn phòng Đảng uỷ")
+            vai_tro = can_bo.get("vai_tro", "can_bo")
+            can_bo_id = can_bo.get("can_bo_id")
+        else:
+            ho_ten = "Khách (Chưa đăng nhập)"
+            so_dien_thoai = ""
+            co_quan = "Truy cập Web"
+            vai_tro = "khach"
+            can_bo_id = None
+
+        is_zalo_session = bool(session_id and str(session_id).startswith("zalo_"))
+        if (message or reply_text or action) and not is_zalo_session:
+            try:
+                from server.services import db_service
+                db_service.save_chat_log({
+                    "session_id": session_id,
+                    "channel": "web",
+                    "can_bo_id": can_bo_id,
+                    "so_dien_thoai": so_dien_thoai,
+                    "ho_ten": ho_ten,
+                    "co_quan": co_quan,
+                    "vai_tro": vai_tro,
+                    "message_text": message or (f"Thao tác: {action}" if action else "(Gửi tệp đính kèm)"),
+                    "attachment_names": names,
+                    "bot_reply": reply_text,
+                    "model_used": getattr(default_ai_client, "model", "gemini-3.5-flash-lite"),
+                    "latency_ms": latency_ms,
+                    "rag_sources": json.dumps(result.get("rag_sources", []), ensure_ascii=False) if result.get("rag_sources") else "",
+                })
+            except Exception as log_ex:
+                logger.warning(f"Lỗi lưu nhật ký chat stream: {log_ex}")
+
+        _sync_session_to_db(session_id, s)
+        return result
+
+    # 0. Lệnh xoá lịch sử
+    is_clear_action = action in ("clear_history", "reset", "clear")
+    is_clear_cmd = bool(re.search(
+        r'^\s*(?:/clear|/reset|xoá\s*lịch\s*sử|xóa\s*lịch\s*sử|xoá\s*tin\s*nhắn|xóa\s*tin\s*nhắn|xoá\s*cuộc\s*trò\s*chuyện|xóa\s*cuộc\s*trò\s*chuyện|xoá\s*hội\s*thoại|xóa\s*hội\s*thoại|làm\s*mới|bắt\s*đầu\s*lại)\s*$',
+        message,
+        re.IGNORECASE
+    ))
+    if is_clear_action or is_clear_cmd:
+        clear_session_history(session_id, delete_logs_in_db=True)
+        reply = (
+            "🧹 **ĐÃ XOÁ TOÀN BỘ LỊCH SỬ HỘI THOẠI & LÀM MỚI PHIÊN**\n\n"
+            "Toàn bộ ngữ cảnh trao đổi và các tệp đính kèm trước đó đã được dọn sạch hoàn toàn.\n\n"
+            "👉 Đồng chí có thể bắt đầu phiên làm việc mới hoặc nhập yêu cầu tham mưu tiếp theo."
+        )
+        yield f"event: token\ndata: {json.dumps({'chunk': reply}, ensure_ascii=False)}\n\n"
+        res = {"session_id": session_id, "reply": reply, "actions": [], "files": [], "preview": []}
+        _finalize_and_log(res)
+        yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+        return
+
+    # Ghi lịch sử người dùng
+    if message or new_atts:
+        names = ", ".join(a["name"] for a in new_atts)
+        s["history"].append({"role": "user", "content": (message or "(gửi tệp)") + (f"\n[Đính kèm: {names}]" if names else "")})
+
+    try:
+        clean_msg = re.sub(r'^\s*\[@[^\]]+\]\s*', '', message)
+        clean_msg = re.sub(r'^\s*@Bot(?:\s+VPĐU(?:\s+Công\s+Hải)?)?\s*[:,\-]?\s*', '', clean_msg, flags=re.IGNORECASE)
+        clean_msg = re.sub(r'^\s*@[^\s]+\s*', '', clean_msg).strip()
+        core_msg = clean_msg.rstrip('.!?,;: ')
+
+        is_confirm = action == "confirm" or (s["pending"] and len(core_msg) < 40 and (CONFIRM_RE.search(core_msg) or CONFIRM_RE.search(message)))
+        is_cancel = action == "cancel" or (s["pending"] and len(core_msg) < 40 and (CANCEL_RE.search(core_msg) or CANCEL_RE.search(message)))
+
+        if is_confirm:
+            res = _finalize_and_log(_confirm(s))
+            yield f"event: token\ndata: {json.dumps({'chunk': res.get('reply', '')}, ensure_ascii=False)}\n\n"
+            yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+            return
+
+        if is_cancel:
+            s["pending"] = None
+            res = _finalize_and_log(_reply(s, "Đã huỷ dự thảo. Đồng chí cần tôi làm việc gì tiếp theo?"))
+            yield f"event: token\ndata: {json.dumps({'chunk': res.get('reply', '')}, ensure_ascii=False)}\n\n"
+            yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+            return
+
+        if not default_ai_client.is_configured():
+            msg_warn = "⚠️ Chưa cấu hình API Key (**GEMINI_API_KEY** hoặc **DEEPSEEK_API_KEY**) trong tệp `.env`. Đồng chí điền key rồi khởi động lại hệ thống."
+            res = _finalize_and_log(_reply(s, msg_warn))
+            yield f"event: token\ndata: {json.dumps({'chunk': msg_warn}, ensure_ascii=False)}\n\n"
+            yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+            return
+
+        if action.startswith("run:") and action[4:] in WORKFLOWS:
+            res = _finalize_and_log(await _run_workflow(s, action[4:], message, {}))
+            yield f"event: token\ndata: {json.dumps({'chunk': res.get('reply', '')}, ensure_ascii=False)}\n\n"
+            yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+            return
+
+        if not message:
+            if not new_atts:
+                res = _finalize_and_log(_reply(s, "Đồng chí cần tôi giúp việc gì?"))
+                yield f"event: token\ndata: {json.dumps({'chunk': res.get('reply', '')}, ensure_ascii=False)}\n\n"
+                yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+                return
+            if s.get("awaiting"):
+                res = _finalize_and_log(await _run_workflow(s, s["awaiting"], "", {}))
+                yield f"event: token\ndata: {json.dumps({'chunk': res.get('reply', '')}, ensure_ascii=False)}\n\n"
+                yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+                return
+            files_desc = "\n".join(f"- **{a['name']}** — nhận diện: {a['category_label']}" for a in new_atts)
+            suggested = new_atts[0]["suggested_workflow"]
+            actions = [{"id": f"run:{suggested}", "label": f"▶ {WORKFLOWS[suggested]}", "style": "primary"}] if suggested in WORKFLOWS else []
+            actions += [{"id": f"run:{k}", "label": v, "style": "ghost"} for k, v in WORKFLOWS.items() if k != suggested]
+            res = _finalize_and_log(_reply(s, f"Tôi đã nhận tệp:\n{files_desc}\n\nĐồng chí muốn tôi thực hiện nghiệp vụ nào?", actions=actions))
+            yield f"event: token\ndata: {json.dumps({'chunk': res.get('reply', '')}, ensure_ascii=False)}\n\n"
+            yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+            return
+
+        # Phân loại ý định
+        cls = await _classify(message, new_atts, bool(s["pending"]))
+        intent = cls["intent"]
+        if intent == "tro_chuyen" and s.get("awaiting") and new_atts:
+            intent = s["awaiting"]
+        logger.info(f"[chat-stream] intent={intent} | message={message[:80]}")
+
+        # LUỒNG STREAMING TRỰC TIẾP CHO Ý ĐỊNH TRÒ CHUYỆN & TRA CỨU
+        if intent == "tro_chuyen":
+            core_rules = get_core_rules()
+            local_facts = get_local_knowledge_summary()
+            msgs = [{"role": "system", "content": f"{CHAT_SYSTEM_PROMPT}\n\n{core_rules}\n\n{local_facts}"}]
+
+            from server.services.query_analyzer import analyze_query
+            from server.services.rag_service import retrieve_direct_hit, retrieve_hybrid_context, check_and_get_aggregate_stats
+
+            analysis = analyze_query(message, s.get("history", []))
+            citations = []
+
+            if analysis["type"] == "DIRECT_HIT":
+                logger.info(f"RAG Stream: Kích hoạt DIRECT_HIT cho: {analysis.get('primary_canonical')}")
+                rag_res = retrieve_direct_hit(analysis["entities"])
+                if rag_res.get("not_found"):
+                    nf_list = ", ".join(rag_res["not_found"])
+                    msgs.append({
+                        "role": "system",
+                        "content": f"[THÔNG BÁO TRA CỨU]: Cán bộ hỏi thông tin về văn bản '{nf_list}', nhưng Kho CSDL hiện CHƯA LƯU TRỮ văn bản này. Đồng chí hãy trả lời trung thực, rõ ràng rằng hệ thống chưa có dữ liệu văn bản này trong kho và sẵn sàng tiếp nhận để nạp bổ sung nếu cán bộ có văn bản gốc."
+                    })
+                elif rag_res.get("context_text"):
+                    msgs.append({
+                        "role": "system",
+                        "content": f"Dữ liệu tra cứu thực chứng đích danh từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"
+                    })
+                    citations = rag_res.get("citations", [])
+
+            elif analysis["type"] == "AGGREGATE":
+                logger.info("RAG Stream: Kích hoạt AGGREGATE thống kê số lượng văn bản")
+                try:
+                    stats_info = check_and_get_aggregate_stats(message)
+                    if stats_info and stats_info.get("stats_text"):
+                        msgs.append({"role": "system", "content": stats_info["stats_text"]})
+                except Exception as ex:
+                    logger.warning(f"Lỗi kiểm tra thống kê văn bản: {ex}")
+
+            else:
+                logger.info(f"RAG Stream: Kích hoạt THEMATIC Hybrid RAG: '{analysis['enriched_query']}'")
+                try:
+                    rag_res = retrieve_hybrid_context(analysis["enriched_query"], max_slots=4)
+                    if rag_res.get("context_text"):
+                        msgs.append({
+                            "role": "system",
+                            "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"
+                        })
+                        citations = rag_res.get("citations", [])
+                except Exception as ex:
+                    logger.warning(f"Lỗi tra cứu Hybrid RAG: {ex}")
+
+            # Đính kèm tệp nếu có
+            if new_atts:
+                att_text = "\n\n".join(f"=== TỆP: {a['name']} ===\n{a['text']}" for a in new_atts)[:MAX_CHAT_ATTACH_CHARS]
+                msgs.append({"role": "system", "content": f"Cán bộ đã đính kèm các tệp sau, dùng để trả lời nếu liên quan:\n\n{att_text}"})
+            msgs.extend(s["history"][-10:])
+
+            # Cập nhật danh sách citations qua event meta nếu có
+            unique_citations = []
+            if citations:
+                seen_so_hieu = set()
+                for c in citations:
+                    so = (c.get("so_hieu") or "").strip()
+                    if so and so not in seen_so_hieu:
+                        seen_so_hieu.add(so)
+                        unique_citations.append(c)
+                yield f"event: meta\ndata: {json.dumps({'session_id': session_id, 'rag_sources': unique_citations}, ensure_ascii=False)}\n\n"
+
+            # Bắt đầu stream từng token từ LLM
+            chunks = []
+            async for chunk in default_ai_client.stream_chat_async(msgs, temperature=0.3, max_tokens=2000):
+                chunks.append(chunk)
+                yield f"event: token\ndata: {json.dumps({'chunk': chunk}, ensure_ascii=False)}\n\n"
+
+            full_reply = "".join(chunks).strip() or "Xin lỗi, tôi chưa có câu trả lời."
+            disclaimer = "\n\n*Lưu ý: Cán bộ tham mưu chịu trách nhiệm toàn diện về tính chính xác và tính pháp lý của thông tin khi sử dụng thông tin từ AI.*"
+            if disclaimer.strip() not in full_reply:
+                full_reply += disclaimer
+                yield f"event: token\ndata: {json.dumps({'chunk': disclaimer}, ensure_ascii=False)}\n\n"
+
+            res = _reply(s, full_reply, rag_sources=unique_citations if citations else [])
+            _finalize_and_log(res)
+            yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+            return
+
+        # VỚI CÁC Ý ĐỊNH SOẠN THẢO / CHỈNH SỬA / WORKFLOWS
+        if intent == "chinh_sua":
+            res = _finalize_and_log(await _revise(s, message))
+        elif intent == "soan_thao":
+            res = _finalize_and_log(await _draft_party_document(s, message, new_atts))
+        elif intent in WORKFLOWS:
+            res = _finalize_and_log(await _run_workflow(s, intent, message, cls))
+        else:
+            res = _finalize_and_log(await _chat(s, message))
+
+        yield f"event: token\ndata: {json.dumps({'chunk': res.get('reply', '')}, ensure_ascii=False)}\n\n"
+        yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"
+
+    except Exception as ex:
+        logger.exception("Lỗi xử lý tin nhắn stream")
+        advice = (
+            "Đồng chí thử gửi lại lệnh hoặc chuyển sang mô hình Qwen 2.5 (3B) / DeepSeek-R1 để thử lại."
+            if default_ai_client.is_local()
+            else "Đồng chí thử gửi lại lệnh. Nếu lỗi lặp lại, kiểm tra kết nối mạng hoặc số dư DeepSeek."
+        )
+        err_msg = f"❌ Có lỗi khi xử lý: {ex}\n\n{advice}"
+        res = _finalize_and_log(_reply(s, err_msg))
+        if s["pending"]:
+            res["actions"] = _approval_actions(False)
+        yield f"event: token\ndata: {json.dumps({'chunk': err_msg}, ensure_ascii=False)}\n\n"
+        yield f"event: done\ndata: {json.dumps(res, ensure_ascii=False)}\n\n"

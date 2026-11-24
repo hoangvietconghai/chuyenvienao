@@ -160,6 +160,7 @@ VAN_BAN_DEN_DIR = BASE_DIR / "van_ban_den" / str(NAM_HIEN_TAI)
 VAN_BAN_DU_THAO_DIR = BASE_DIR / "van_ban_du_thao" / str(NAM_HIEN_TAI)
 DATA_DIR = BASE_DIR / "data"
 LOGS_DIR = BASE_DIR / "logs"
+BACKUP_DIR = BASE_DIR / "backups" / "db_nightly"
 
 # Các thư mục con của Văn bản đến
 FOLDER_CAP_TREN = VAN_BAN_DEN_DIR / "cap_tren"
@@ -173,6 +174,7 @@ for folder in [
     VAN_BAN_DU_THAO_DIR,
     DATA_DIR,
     LOGS_DIR,
+    BACKUP_DIR,
     FOLDER_CAP_TREN,
     FOLDER_DU_THAO_CQ,
     FOLDER_BAO_CAO_CO_SO,
@@ -205,4 +207,5 @@ GDRIVE_FOLDER_URL = os.getenv(
 )
 GDRIVE_WEB_APP_URL = os.getenv("GDRIVE_WEB_APP_URL", "")
 GDRIVE_SERVICE_ACCOUNT_FILE = os.getenv("GDRIVE_SERVICE_ACCOUNT_FILE", str(BASE_DIR / "credentials.json"))
+GDRIVE_BACKUP_FOLDER_ID = os.getenv("GDRIVE_BACKUP_FOLDER_ID", GDRIVE_FOLDER_ID)
 
