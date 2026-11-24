@@ -10,10 +10,11 @@
 > **Dành cho mọi AI Agent (Antigravity, Cursor, Claude Code, Copilot, DeepSeek, v.v.):**
 > Khi bắt đầu một phiên làm việc mới về **lập trình, sửa lỗi hoặc phát triển tính năng**, bạn chỉ cần đọc tài liệu này kết hợp cùng `AGENTS.md` là có thể nắm trọn 100% bối cảnh kỹ thuật, luồng xử lý và các quy tắc ngầm của toàn bộ dự án mà không cần quét lại thủ công từng file.
 
-### Bộ 3 Tài liệu Cốt lõi của Dự án:
-1. [AGENTS.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/AGENTS.md): **Kim chỉ nam Nghiệp vụ Đảng & Thể thức** — Quy định bắt biến về chính quyền địa phương 02 cấp (không còn cấp huyện), chính tả Khối Đảng (`oà`, `uỷ`, `uý`), định dạng xuất Word HD 05-HD/VPTW, 15 Kỹ năng Đảng và nguyên tắc an toàn thông tin (Human-in-the-Loop, tuyệt đối không đụng mật khẩu, không đưa tài liệu MẬT lên AI).
-2. [CODEBASE_MAP.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/CODEBASE_MAP.md) *(Tài liệu này)*: **Bản đồ Kỹ thuật & Luồng Dữ liệu** — Sơ đồ kiến trúc phân tầng, luồng thực thi (Mermaid), thiết kế CSDL SQLite WAL, bảng ánh xạ các file/hàm và các cạm bẫy kỹ thuật (Gotchas).
-3. [README.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/README.md): **Tổng quan Dự án & Vận hành** — 4 trụ cột năng lực, 3 kênh tương tác và hướng dẫn triển khai máy chủ VPS Ubuntu (45.119.82.227).
+### Bộ 4 Tài liệu Cốt lõi của Dự án:
+1. [PROJECT_CONTEXT.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/PROJECT_CONTEXT.md): **Tài liệu Ngữ cảnh Dự án Toàn diện (Project Master Context Dossier)** — Tổng hợp 100% bối cảnh dự án để khôi phục toàn diện ngay khi mở phiên chat mới.
+2. [AGENTS.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/AGENTS.md): **Kim chỉ nam Nghiệp vụ Đảng & Thể thức** — Quy định bắt biến về chính quyền địa phương 02 cấp (không còn cấp huyện), chính tả Khối Đảng (`oà`, `uỷ`, `uý`), định dạng xuất Word HD 05-HD/VPTW, 15 Kỹ năng Đảng và nguyên tắc an toàn thông tin (Human-in-the-Loop, tuyệt đối không đụng mật khẩu, không đưa tài liệu MẬT lên AI).
+3. [CODEBASE_MAP.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/CODEBASE_MAP.md) *(Tài liệu này)*: **Bản đồ Kỹ thuật & Luồng Dữ liệu** — Sơ đồ kiến trúc phân tầng, luồng thực thi (Mermaid), thiết kế CSDL SQLite WAL, bảng ánh xạ các file/hàm và các cạm bẫy kỹ thuật (Gotchas).
+4. [README.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/README.md): **Tổng quan Dự án & Vận hành** — 4 trụ cột năng lực, 3 kênh tương tác và hướng dẫn triển khai máy chủ VPS Ubuntu (45.119.82.227).
 
 ---
 
@@ -236,8 +237,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 24/11/2026 16:46:30*
-> *Quy mô: **57** tệp Python | **15,814** dòng mã | **54** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 24/11/2026 17:59:06*
+> *Quy mô: **58** tệp Python | **16,122** dòng mã | **54** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -350,6 +351,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`scripts/doc_reader.py`](scripts/doc_reader.py) | 567 | 10 Funcs | scripts/doc_reader.py |
 | [`scripts/export_docx.py`](scripts/export_docx.py) | 1,385 | 1 Classes | scripts/export_docx.py |
 | [`scripts/generate_code_map.py`](scripts/generate_code_map.py) | 308 | 1 Classes | scripts/generate_code_map.py |
+| [`scripts/generate_project_context.py`](scripts/generate_project_context.py) | 308 | 5 Funcs | scripts/generate_project_context.py |
 | [`scripts/log_guinhan.py`](scripts/log_guinhan.py) | 15 | 0 Funcs | scripts/log_guinhan.py |
 | [`scripts/pull_db_from_vps.py`](scripts/pull_db_from_vps.py) | 117 | 1 Funcs | scripts/pull_db_from_vps.py |
 | [`scripts/push_rag_to_vps.py`](scripts/push_rag_to_vps.py) | 452 | 9 Funcs | scripts/push_rag_to_vps.py |

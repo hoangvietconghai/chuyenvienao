@@ -36,7 +36,9 @@ Bạn là **Trợ lý AI Tham mưu Tổng hợp, Văn thư và Tự động hóa
 
 ## Hướng dẫn sử dụng Skills & Tra cứu Tri thức Địa phương
 
-- **Định hướng Kiến trúc & Luồng Mã nguồn (Dành cho AI Lập trình):** Khi thực hiện các tác vụ kỹ thuật, phát triển tính năng, sửa lỗi, thêm endpoint hoặc mở rộng workflow, AI **BẮT BUỘC đọc tệp [CODEBASE_MAP.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/CODEBASE_MAP.md) trước tiên** để nắm trọn vẹn 100% kiến trúc phân tầng, các sơ đồ luồng thực thi (Mermaid), thiết kế CSDL SQLite WAL và bảng ánh xạ chức năng của hệ thống. Sau khi nâng cấp hoặc bổ sung mã nguồn, chạy `python scripts/generate_code_map.py --update-map` để tự động đồng bộ bản đồ mã nguồn.
+- **Khôi phục Ngữ cảnh Toàn diện & Định hướng Kiến trúc (Dành cho AI Agent):**
+  - Khi bắt đầu một phiên chat mới, AI Agent **BẮT BUỘC đọc tệp [PROJECT_CONTEXT.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/PROJECT_CONTEXT.md) và [CODEBASE_MAP.md](file:///e:/Viet%20Design/Chuy%C3%AAn%20vi%C3%AAn%20%E1%BA%A3o/CODEBASE_MAP.md) trước tiên** để khôi phục 100% ngữ cảnh dự án (thể chế chính trị 2 cấp, không còn cấp huyện, chính tả `oà, uỷ, uý`, thể thức HD 05-HD/VPTW, chỉ tiêu Đại hội, kiến trúc AI Dual-Engine, Streaming SSE, Google Search Grounding, SQLite WAL, 4 Workflows, hệ thống Skills và hạ tầng VPS).
+  - Khi thực hiện các tác vụ kỹ thuật, phát triển tính năng, sửa lỗi, thêm endpoint hoặc mở rộng workflow, AI tham chiếu `CODEBASE_MAP.md` để nắm trọn vẹn 100% kiến trúc phân tầng, các sơ đồ luồng thực thi (Mermaid), thiết kế CSDL SQLite WAL và bảng ánh xạ chức năng của hệ thống. Sau khi nâng cấp hoặc bổ sung mã nguồn, chạy `python scripts/generate_code_map.py --update-map` và `python scripts/generate_project_context.py` để đồng bộ song song cả hai tệp.
 
 - Khi nhận yêu cầu soạn thảo hoặc thẩm định văn bản, hãy đọc skill phù hợp trong thư mục `.agents/skills/` trước khi thực hiện. Luôn đọc skill `quy-chuan-nen-tang` (`.agents/skills/quy-chuan-nen-tang/SKILL.md`) trước vì đây là quy chuẩn nền tảng dùng chung.
 
@@ -136,3 +138,10 @@ Khi xuất các tệp Word (.docx) dự thảo vào thư mục `van_ban_du_thao/
   - *Công cụ cốt lõi (Core Engine):* Các script dùng chung toàn hệ thống như `scripts/export_docx.py`, `scripts/doc_reader.py` và các script quản trị tri thức nền tảng bắt buộc phải được duy trì, bảo vệ và nâng cấp thường xuyên.
   - *Script phát sinh dùng 1 lần (One-off Generation Scripts):* Bất kỳ file script bổ trợ nào được tạo ra chỉ nhằm phục vụ việc sinh một văn bản, xử lý dữ liệu hoặc trích xuất cụ thể trong một phiên làm việc (ví dụ: các file `generate_*.py`, `append_*.py`, script xuất bảng biểu mẫu lẻ...).
 - **Quy tắc Tự động Xoá bắt buộc:** Ngay sau khi đã hoàn thành việc sinh file kết quả (`.docx`, `.xlsx`...) thành công và đối soát xong với cán bộ, Chuyên viên ảo **BẮT BUỘC PHẢI TỰ ĐỘNG XOÁ BỎ NGAY CÁC SCRIPT DÙNG 1 LẦN NÀY**, tuyệt đối không để lưu cữu gây rác và phình to thư mục `scripts/`.
+
+## Nguyên tắc Bắt buộc Đồng bộ Song song (Dual-Map Synchronization)
+
+- **Quy tắc Bất biến Toàn dự án:** Toàn bộ mọi sửa đổi, bổ sung, nâng cấp hoặc thay thế liên quan đến tính năng, cấu hình (`.env`, `config.py`), lược đồ CSDL (`db_service.py`), API endpoints (`routers/`), workflows (`workflows/`) hoặc tài liệu nghiệp vụ **BẮT BUỘC PHẢI ĐƯỢC ĐỒNG BỘ CẬP NHẬT ĐẦY ĐỦ VÀO CẢ HAI TỆP**:
+  1. **Bản đồ Kỹ thuật Mã nguồn:** Chạy `python scripts/generate_code_map.py --update-map` (cập nhật `CODEBASE_MAP.md`).
+  2. **Tài liệu Ngữ cảnh Toàn diện Dự án:** Chạy `python scripts/generate_project_context.py` (cập nhật `PROJECT_CONTEXT.md`).
+- **Nghiêm cấm bỏ sót:** Tuyệt đối không kết thúc phiên làm việc khi chưa chạy đồng bộ cả 2 tệp trên sau khi có thay đổi mã nguồn hoặc hệ thống. Cả hai công cụ sinh này là công cụ cốt lõi (Core Engine) phải luôn được bảo vệ và duy trì.
