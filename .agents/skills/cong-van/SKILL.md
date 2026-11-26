@@ -58,14 +58,14 @@ Chuyên viên ảo bắt buộc tuân thủ 5 nguyên tắc thể thức sau:
   * Dòng 1: **`T/M BAN THƯỜNG VỤ`** (Cỡ 14, in hoa, đậm).
   * Dòng 2: **`PHÓ BÍ THƯ`** (Cỡ 14, VIẾT HOA, KHÔNG IN ĐẬM).
   * Cách 5 dòng 14pt (chừa khoảng trống đóng dấu và ký tên).
-  * Dòng cuối: **`Đỗ Thị Phương Nga`** (đậm).
+  * Dòng cuối: **`Nguyễn Xuân Hoàng`** (đậm).
 * **Trường hợp Bí thư Đảng uỷ trực tiếp ký:**  
   Dòng 1: **`T/M BAN THƯỜNG VỤ`** (in hoa, đậm) $\rightarrow$ Dòng 2: **`BÍ THƯ`** (viết hoa, không đậm) $\rightarrow$ cách 5 dòng $\rightarrow$ **`Vũ Thị Thuỳ Trang`** (đậm).
 * **Trường hợp Thường trực giao Văn phòng Đảng uỷ ký thừa lệnh (Lấy ý kiến BTV, Giấy mời họp):**  
   * Dòng 1: **`T/L BAN THƯỜNG VỤ`** (Cỡ 14, in hoa, đậm).
   * Dòng 2: **`PHÓ CHÁNH VĂN PHÒNG`** (hoặc `CHÁNH VĂN PHÒNG`) (VIẾT HOA, KHÔNG IN ĐẬM).
   * Cách 5 dòng 14pt.
-  * Dòng cuối: **`Ngô Hoàng Việt`** (đậm).
+  * Dòng cuối: **`Ngô Hoàng Việt`** (đậm) nếu là Phó Chánh văn phòng, **`Nguyễn Đăng Quang`** (đậm) nếu là Chánh Văn phòng.
 
 ### 4. Spacing & Thụt đầu dòng 1cm Toàn diện
 * **Spacing:** Before 6pt, After 6pt, Line spacing **Exactly 18pt**, Font Times New Roman cỡ 14.
@@ -105,8 +105,8 @@ chuỗi trích dẫn kép)       giao cho cấp xã)           5 kịch bản đ
 * **Trích dẫn chuỗi văn bản nguồn kép:** Khi văn bản của Tỉnh uỷ ban hành nhằm triển khai Nghị quyết/Chỉ thị của Trung ương $\rightarrow$ bắt buộc viện dẫn cả 2 tầng: `Thực hiện [Nghị quyết/Chỉ thị/Kết luận TW] và Kế hoạch số ...-KH/TU ngày dd/mm/yyyy của Ban Thường vụ Tỉnh uỷ về...; Thường trực Đảng uỷ có ý kiến chỉ đạo như sau:`.
 
 ### Bước 2: Khai thác trọng điểm mục "TỔ CHỨC THỰC HIỆN" (Action Clause Mining)
-Chuyên viên ảo không đọc dàn trải toàn bộ văn bản dài hàng chục trang của cấp trên, mà **tập trung rà soát ngay mục La Mã cuối cùng: "TỔ CHỨC THỰC HIỆN"**:
-* **Từ khoá quét nhanh:** Tìm các đoạn giao nhiệm vụ cho: *"các huyện uỷ, thị uỷ, thành uỷ, đảng uỷ trực thuộc"*, *"đảng uỷ các xã, phường, thị trấn"*, *"các cấp uỷ cơ sở"*.
+Chuyên viên ảo không đọc dàn trải toàn bộ văn bản dài hàng chục trang của cấp trên, mà **tập trung rà soát ngay mục: "TỔ CHỨC THỰC HIỆN"**:
+* **Từ khoá quét nhanh:** Tìm các đoạn giao nhiệm vụ cho: *"đảng uỷ trực thuộc"*, *"đảng uỷ các xã, phường, thị trấn"*, *"các cấp uỷ cơ sở"*.
 * **Bóc tách 3 thông số đầu ra bắt buộc:**
   1. *Loại hình sản phẩm cấp uỷ xã phải ban hành:* Cụ thể hoá bằng Kế hoạch (-KH/ĐU)? Chương trình hành động (-CTr/ĐU)? Hay Báo cáo tổng kết (-BC/ĐU)?
   2. *Hạn chót cấp trên yêu cầu nộp về Tỉnh uỷ ($T_{\text{tỉnh}}$):* Ngày tháng cụ thể.
@@ -142,13 +142,22 @@ Dựa vào giá trị $\Delta D$, hệ thống tự động áp dụng 1 trong 5
   Nếu văn bản cấp trên đến muộn mà thời hạn ghi trên văn bản đã trôi qua hoặc bằng ngày hôm nay, AI Agent **tuyệt đối không tự suy đoán hay bịa đặt ngày**, mà **BẮT BUỘC dừng lại và hiển thị cảnh báo đỏ** cho cán bộ:  
   > *"[CẢNH BÁO THỜI HẠN] Văn bản số ... của Tỉnh uỷ yêu cầu hoàn thành trước ngày [T_tỉnh], nhưng hôm nay đã là ngày [T_hôm nay] (quá hạn). Đề nghị cán bộ cho ý kiến: Giao hoàn thành khẩn cấp ngay hôm nay, hay tham mưu văn bản xin gia hạn với Tỉnh uỷ?"*
 
-### Bước 4: Phân rã nội dung và Bắt cặp vào 5 Khối Chức năng Cấp xã
-Đọc lướt phần nhiệm vụ và giải pháp trọng tâm trong văn bản cấp trên để phân bổ đúng đầu việc:
-* Quản lý nhà nước, Kinh tế, Ngân sách, Đất đai, Đầu tư, QPAN, Chuyển đổi số, Đề án 06 $\rightarrow$ Giao **UBND xã** chủ trì.
-* Công tác Đảng, Tổ chức cán bộ, Đảng viên, Tuyên giáo, Chính trị tư tưởng, Học tập chỉ thị $\rightarrow$ Giao **Ban Xây dựng Đảng** chủ trì.
-* Khối đại đoàn kết, Dân vận, Dân tộc, Tôn giáo, Dân chủ cơ sở, Giám sát và phản biện xã hội $\rightarrow$ Giao **Cơ quan UBMTTQVN xã** chủ trì.
-* Kiểm tra, giám sát, kỷ luật đảng $\rightarrow$ Giao **Uỷ ban Kiểm tra Đảng uỷ** chủ trì.
-* Theo dõi, đôn đốc, tiếp nhận dự thảo, thẩm định độc lập 2 tầng $\rightarrow$ Giao **Văn phòng Đảng uỷ**.
+### Bước 4: Phân loại Chế độ Soạn thảo & Bắt cặp Cơ quan (Chống dài dòng)
+Trước khi viết nội dung, Chuyên viên ảo **BẮT BUỘC** phân định văn bản thuộc **Chế độ A** hay **Chế độ B**, đồng thời tuân thủ nguyên tắc: **01 văn bản chỉ đạo của cấp trên chỉ ban hành tối đa 01 Công văn giao việc duy nhất** (gom chung tất cả cơ quan liên quan vào khối `Kính gửi:`, không tách lẻ nhiều công văn).
+
+* **CHẾ ĐỘ A — Công văn Giao tham mưu văn bản (Mặc định khi nhận KH/NQ/CT/KL của cấp trên):**
+  * Áp dụng quy tắc **"3 KHÔNG"** để chống dài dòng và chống lồng ghép sai bản chất:
+    1. **KHÔNG diễn giải, tóm tắt lại nội dung/giải pháp của văn bản cấp trên** vào thân công văn giao việc.
+    2. **KHÔNG lồng ghép nhiệm vụ triển khai trực tiếp xuống cơ sở** (việc triển khai sẽ nằm trong bản Kế hoạch/Chương trình mà cơ quan chuyên môn tham mưu ra sau đó).
+    3. **KHÔNG tự ý chèn thêm các cơ quan không liên quan** cho "đủ bộ" (chỉ giao đúng cơ quan chủ trì; không tự động chèn thêm mục `Giao Văn phòng Đảng uỷ theo dõi, đôn đốc...` vào thân bài trừ khi Văn phòng trực tiếp chủ trì một sản phẩm cụ thể).
+  * Độ dài chuẩn: Gói gọn trong **½ đến tối đa 01 trang A4** (theo đúng chuẩn thực tế `786-CV/ĐU`, `791-CV/ĐU`, `794-CV/ĐU`).
+
+* **CHẾ ĐỘ B — Công văn Chỉ đạo triển khai trực tiếp (Xử lý điểm nghẽn/Cấp bách/Chấn chỉnh):**
+  * Chỉ áp dụng khi cấp uỷ chỉ đạo hành động ngay trên địa bàn (thiên tai, làm sạch dữ liệu đất đai, chấn chỉnh kỷ luật công vụ) mà không qua khâu tham mưu Kế hoạch/Chương trình riêng. Lúc này mới nêu rõ các đầu việc cụ thể cho từng khối thực hiện:
+    * Quản lý nhà nước, KT-XH, Ngân sách, Đất đai, QPAN, CĐS chính quyền, Đề án 06 $\rightarrow$ Giao **UBND xã**.
+    * Công tác Đảng, Tổ chức cán bộ, Đảng viên, Tuyên giáo, Quán triệt chỉ thị $\rightarrow$ Giao **Ban Xây dựng Đảng**.
+    * Đại đoàn kết, Dân vận, Dân tộc, Tôn giáo, Dân chủ cơ sở $\rightarrow$ Giao **Cơ quan UBMTTQVN xã**.
+    * Kiểm tra, giám sát, kỷ luật đảng $\rightarrow$ Giao **Uỷ ban Kiểm tra Đảng uỷ**.
 
 ---
 
@@ -229,7 +238,7 @@ Tuyệt đối không áp dụng mô hình phân công cào bằng hoặc gom c�
 
 ## IV. MẪU DỰ THẢO CÔNG VĂN (MARKDOWN TEMPLATES)
 
-### Mẫu 1: Công văn Giao tham mưu Kế hoạch cụ thể hoá chỉ đạo cấp trên (Đa cơ quan theo chức năng)
+### Mẫu 1: Công văn Giao tham mưu Kế hoạch, văn bản cụ thể hoá chỉ đạo cấp trên 
 
 ```markdown
 ┌──────────────────────────────────────────┬──────────────────────────────────────────┐
@@ -237,43 +246,32 @@ Tuyệt đối không áp dụng mô hình phân công cào bằng hoặc gom c�
 │          ĐẢNG UỶ XÃ CÔNG HẢI             │                   ────────────────────── │
 │                   *                      │         Công Hải, ngày   tháng   năm 2026│
 │          Số      -CV/ĐU                  │                                          │
-│ *Tham mưu Kế hoạch triển khai thực hiện* │                                          │
-│  *Kế hoạch số 30-KH/TU của Tỉnh uỷ*      │                                          │
+│ *Tham mưu triển khai thực hiện Kế hoạch* │                                          │
+│        *số 30-KH/TU của Tỉnh uỷ*         │                                          │
 └──────────────────────────────────────────┴──────────────────────────────────────────┘
 
 ┌────────────────────┬────────────────────────────────────────────────────────────────┐
 │        *Kính gửi:* │ - Uỷ ban nhân dân xã;                                          │
-│                    │ - Ban Xây dựng Đảng;                                           │
-│                    │ - Cơ quan Uỷ ban Mặt trận Tổ quốc Việt Nam xã;                 │
-│                    │ - Văn phòng Đảng uỷ.                                           │
+│                    │ - Ban Xây dựng Đảng.                                           │
 └────────────────────┴────────────────────────────────────────────────────────────────┘
 
-    Thực hiện Kế hoạch số 30-KH/TU ngày 28/8/2026 của Ban Thường vụ Tỉnh uỷ Khánh Hoà về triển khai thực hiện Nghị quyết số 19-NQ/TW của Ban Chấp hành Trung ương Đảng và Chương trình hành động số 33-CTr/TW ngày 28/7/2026 của Bộ Chính trị về đổi mới mô hình phát triển kinh tế; Thường trực Đảng uỷ có ý kiến chỉ đạo như sau:
+    Thực hiện Kế hoạch số 30-KH/TU ngày 28/8/2026 của Ban Thường vụ Tỉnh uỷ về triển khai thực hiện Nghị quyết số 19-NQ/TW của Ban Chấp hành Trung ương Đảng và Chương trình hành động số 33-CTr/TW ngày 28/7/2026 của Bộ Chính trị về đổi mới mô hình phát triển kinh tế; Thường trực Đảng uỷ có ý kiến chỉ đạo như sau:
 
-    **1. Giao Uỷ ban nhân dân xã:**
-    Chủ trì, phối hợp với các cơ quan liên quan nghiên cứu, cụ thể hoá các mục tiêu, nhiệm vụ về phát triển kinh tế - xã hội, ứng dụng khoa học công nghệ, thu hút đầu tư và chuyển đổi số; xây dựng dự thảo Kế hoạch của Ban Thường vụ Đảng uỷ xã triển khai thực hiện trên địa bàn xã Công Hải; hoàn thành dự thảo gửi về Thường trực Đảng uỷ (qua Văn phòng Đảng uỷ) **trước ngày 15/10/2026**.
+    - Giao Ban Xây dựng Đảng chủ trì, phối hợp các cơ quan liên quan tham mưu Ban Thường vụ Đảng uỷ xây dựng Kế hoạch quán triệt, tuyên truyền Nghị quyết số 19-NQ/TW và Kế hoạch số 30-KH/TU; trình Thường trực Đảng uỷ **trước ngày 12/10/2026**.
 
-    **2. Giao Ban Xây dựng Đảng:**
-    Chủ trì tham mưu Kế hoạch tuyên truyền, học tập, quán triệt sâu rộng các nội dung của Nghị quyết số 19-NQ/TW và Kế hoạch số 30-KH/TU đến toàn thể cán bộ, đảng viên; đồng thời phối hợp với UBND xã rà soát các tiêu chí về nâng cao chất lượng nguồn nhân lực gắn với công tác cán bộ; trình Thường trực Đảng uỷ **trước ngày 12/10/2026**.
-
-    **3. Giao Cơ quan Uỷ ban Mặt trận Tổ quốc Việt Nam xã:**
-    Xây dựng kế hoạch tuyên truyền, vận động các tầng lớp nhân dân, đoàn viên, hội viên đồng thuận thực hiện; phát huy vai trò giám sát, phản biện xã hội trong quá trình triển khai thực hiện các chương trình, dự án phát triển kinh tế - xã hội tại địa phương.
-
-    **4. Giao Văn phòng Đảng uỷ:**
-    Theo dõi, đôn đốc tiến độ thực hiện của các cơ quan; tiếp nhận dự thảo văn bản từ UBND xã và Ban Xây dựng Đảng để tiến hành thẩm định thể thức và nội dung trước khi trình Thường trực Đảng uỷ xem xét.
+    - Giao Uỷ ban nhân dân xã chủ trì, căn cứ tình hình thực tế địa phương tham mưu Ban Thường vụ Đảng uỷ cụ thể hoá xây dựng Kế hoạch triển khai thực hiện Kế hoạch số 30-KH/TU; trình Thường trực Đảng uỷ (qua Văn phòng Đảng uỷ) **trước ngày 15/10/2026**.
 
     Đề nghị các cơ quan, đơn vị nghiêm túc triển khai thực hiện./.
 
-    *(Đính kèm Kế hoạch số 30-KH/TU ngày 28/8/2026 của Ban Thường vụ Tỉnh uỷ)./.*
+    *(Đính kèm Kế hoạch số 30-KH/TU ngày 28/8/2026 của Ban Thường vụ Tỉnh uỷ).*
 
 ┌──────────────────────────────────────────┬──────────────────────────────────────────┐
 │ Nơi nhận:                                │ T/M BAN THƯỜNG VỤ                        │
 │ - Như kính gửi;                          │ PHÓ BÍ THƯ                               │
-│ - Thường trực Tỉnh uỷ (để b/c);          │                                          │
 │ - Thường trực Đảng uỷ;                   │                                          │
 │ - Lưu VPĐU.                              │                                          │
 │                                          │                                          │
-│                                          │ Đỗ Thị Phương Nga                        │
+│                                          │ Nguyễn Xuân Hoàng                        │
 └──────────────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
@@ -318,7 +316,7 @@ Tuyệt đối không áp dụng mô hình phân công cào bằng hoặc gom c�
 │ - Thường trực Đảng uỷ;                   │                                          │
 │ - Lưu VPĐU.                              │                                          │
 │                                          │                                          │
-│                                          │ Đỗ Thị Phương Nga                        │
+│                                          │ Nguyễn Xuân Hoàng                        │
 └──────────────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
@@ -368,7 +366,7 @@ Tuyệt đối không áp dụng mô hình phân công cào bằng hoặc gom c�
 │ - Thường trực Đảng uỷ;                   │                                          │
 │ - Lưu VPĐU.                              │                                          │
 │                                          │                                          │
-│                                          │ Đỗ Thị Phương Nga                        │
+│                                          │ Nguyễn Xuân Hoàng                        │
 └──────────────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
@@ -410,7 +408,7 @@ Tuyệt đối không áp dụng mô hình phân công cào bằng hoặc gom c�
 │ - Thường trực Đảng uỷ;                   │                                          │
 │ - Lưu VPĐU.                              │                                          │
 │                                          │                                          │
-│                                          │ Đỗ Thị Phương Nga                        │
+│                                          │ Nguyễn Xuân Hoàng                        │
 └──────────────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
@@ -452,42 +450,6 @@ Tuyệt đối không áp dụng mô hình phân công cào bằng hoặc gom c�
 
 ---
 
-### Mẫu 6: Phiếu xin ý kiến Ủy viên Ban Thường vụ Đảng uỷ (Gửi kèm Công văn)
-
-```markdown
-┌──────────────────────────────────────────┬──────────────────────────────────────────┐
-│         ĐẢNG BỘ TỈNH KHÁNH HOÀ           │                   ĐẢNG CỘNG SẢN VIỆT NAM │
-│          ĐẢNG UỶ XÃ CÔNG HẢI             │                   ────────────────────── │
-│                   *                      │         Công Hải, ngày   tháng   năm 2026│
-└──────────────────────────────────────────┴──────────────────────────────────────────┘
-
-                               PHIẾU XIN Ý KIẾN
-                        ỦY VIÊN BAN THƯỜNG VỤ ĐẢNG UỶ
-          Về dự thảo [Tên loại văn bản] của Ban Thường vụ Đảng uỷ xã
-                                     -----
-
-    Họ và tên Ủy viên Ban Thường vụ: ....................................................
-    Chức vụ: ............................................................................
-
-    Sau khi nghiên cứu dự thảo [Tên văn bản], tôi có ý kiến như sau:
-
-    [  ] **1. Đồng ý hoàn toàn** với toàn bộ nội dung dự thảo.
-
-    [  ] **2. Cơ bản đồng ý nhưng đề nghị chỉnh sửa, bổ sung** một số nội dung sau:
-    ....................................................................................
-    ....................................................................................
-    ....................................................................................
-
-    [  ] **3. Không đồng ý** (nêu rõ lý do):
-    ....................................................................................
-    ....................................................................................
-
-                                                Ý KIẾN CỦA ỦY VIÊN BAN THƯỜNG VỤ
-                                                          (Ký và ghi rõ họ tên)
-```
-
----
-
 ## V. CHECKLIST KIỂM TRA CHẤT LƯỢNG (QUALITY GATE)
 
 Trước khi xuất file Word (`.docx`) hoặc trình duyệt dự thảo Công văn, Chuyên viên ảo bắt buộc tự đối chiếu 10 tiêu chí:
@@ -506,8 +468,8 @@ Trước khi xuất file Word (`.docx`) hoặc trình duyệt dự thảo Công 
   * Ngày tháng trong nội dung viết dạng số `dd/mm/yyyy`, tuyệt đối không viết chữ ngày... tháng... năm...
   * Đã đối soát mốc Ngày Hiện Tại ($T_{\text{hôm nay}}$) để áp dụng đúng kịch bản thời hạn an toàn ($\Delta D = T_{\text{tỉnh}} - T_{\text{hôm nay}}$), không để xảy ra nghịch lý ngày giao việc nằm trong quá khứ hoặc trùng với hạn của Tỉnh.
 - [ ] 7. **Thẩm quyền ký chuẩn:**
-  * Công văn chỉ đạo thường xuyên: `T/M BAN THƯỜNG VỤ` $\rightarrow$ `PHÓ BÍ THƯ` $\rightarrow$ `Đỗ Thị Phương Nga` (hoặc Bí thư `Vũ Thị Thuỳ Trang`).
+  * Công văn chỉ đạo thường xuyên: `T/M BAN THƯỜNG VỤ` $\rightarrow$ `PHÓ BÍ THƯ` $\rightarrow$ `Nguyễn Xuân Hoàng` (hoặc Bí thư `Vũ Thị Thuỳ Trang`).
   * Công văn lấy ý kiến hoặc giấy mời: `T/L BAN THƯỜNG VỤ` $\rightarrow$ `PHÓ CHÁNH VĂN PHÒNG` $\rightarrow$ `Ngô Hoàng Việt`.
 - [ ] 8. **Giãn dòng & Thụt lề:** Before 6pt, After 6pt, Line spacing Exactly 18pt; **thụt đầu dòng 1cm cho 100% các đoạn**.
-- [ ] 9. **Dòng đính kèm tài liệu:** Cuối bài bắt buộc có dòng ngoặc đơn in nghiêng `*(Đính kèm... và các phụ lục kèm theo)./.*`.
-- [ ] 10. **Quy chuẩn đặt tên tệp Word (.docx):** `CV [Hành động/Trích yếu rút gọn] [TU/ĐU] [Đối tượng/Thời gian].docx` (Ví dụ: `CV trien khai KH 30 TU ve doi moi mo hinh.docx`, `CV don doc bao cao BCD 57 UBND.docx`).
+- [ ] 9. **Dòng đính kèm tài liệu:** Cuối bài bắt buộc có dòng ngoặc đơn in nghiêng `*(Đính kèm...).*`.
+- [ ] 10. **Quy chuẩn đặt tên tệp Word (.docx):** Tiếng Việt có dấu rút gọn súc tích `[Mã loại] [Hành động/Trích yếu rút gọn] [Số hiệu/Cơ quan] [Đối tượng].docx` (Ví dụ: `CV triển khai KH 30 TU về đổi mới mô hình.docx`, `CV đôn đốc báo cáo BCĐ 57 UBND.docx`).

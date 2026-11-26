@@ -37,16 +37,17 @@ description: >-
 - **Nguyên tắc môi trường mạng (Internet vs Intranet):** Trên môi trường Internet (`dhtn.dcs.vn`), hệ thống chỉ xử lý văn bản thông thường, hoàn toàn **KHÔNG CÓ VĂN BẢN MẬT**. Văn bản có độ mật ("Mật", "Tối mật") chỉ được hiển thị và xử lý khi người dùng truy cập từ mạng thông tin diện rộng chuyên dùng của Đảng có gắn thiết bị mã hoá của Ban Cơ yếu Chính phủ.
 - **Nguyên tắc "Human-in-the-Loop" (Con người quyết định):** Chuyên viên ảo đóng vai trò trợ lý kỹ thuật chuẩn bị dữ liệu, đọc trích xuất, phát hiện hạn xử lý, gợi ý bút phê và tự động điền form. AI **TUYỆT ĐỐI KHÔNG** tự ý bấm các nút xác nhận có tính pháp lý như: nút đỏ `[⏩ Chuyển văn bản]`, nút `[💾 Ghi lại]` ý kiến chỉ đạo, nút `[Hoàn thành]` hoặc `[Trả lại]`. Mọi thao tác gửi đi phải dừng lại để cán bộ kiểm tra và tự tay bấm nút.
 - **Tuyệt đối không lưu mật khẩu:** AI hoạt động trên phiên làm việc (session) đã được cán bộ đăng nhập sẵn trên trình duyệt. Tuyệt đối không yêu cầu, không lưu trữ mã PIN, mật khẩu tài khoản hoặc thiết bị lưu khoá bí mật.
+- **Nguyên tắc Nhịp độ Thao tác Tự nhiên (Human-Paced Throttling — Chống quá tải & Giám sát ANM):** Theo Quy chế 07-QC/TW, hệ thống mạng của Đảng có giám sát lưu lượng truy cập tập trung. AI **TUYỆT ĐỐI KHÔNG** dùng công cụ bắn request hàng loạt, không chạy đa luồng song song, không thao tác quét quá nhanh. Khi cần đọc nhiều văn bản, bắt buộc chạy tuần tự **1 luồng duy nhất** với khoảng nghỉ tự nhiên từ **4–7 giây giữa mỗi văn bản** (tương đương nhịp đọc của con người), hoặc ưu tiên dùng tính năng `Xuất Excel` tích hợp sẵn của phần mềm.
 
 ### 3. Sơ đồ nhân sự & Luồng phân phối tại Văn phòng Đảng uỷ xã Công Hải
 - **Đầu mối tiếp nhận ban đầu:** Đồng chí Hồ Thị Thuý Nhi (Văn thư) tiếp nhận văn bản đến điện tử, vào sổ, gắn dấu đến điện tử $\rightarrow$ Chuyển cho Chánh Văn phòng (đồng chí Nguyễn Đăng Quang) hoặc chuyển trực tiếp cho Phó Chánh Văn phòng (đồng chí Ngô Hoàng Việt).
 - **Đầu mối phân phối & lãnh đạo:**
   - Đồng chí Nguyễn Đăng Quang (Chánh Văn phòng) và đồng chí Ngô Hoàng Việt (Phó Chánh Văn phòng).
   - Phân công giao việc cho các chuyên viên Văn phòng Đảng uỷ:
-    + **Katơr Vế:** Chuyên viên văn phòng.
-    + **Mai Thị Thuỷ:** Chuyên viên văn phòng.
-    + **Lê Thị Bích Thuỷ:** Chuyên viên văn phòng.
-    + **Hồ Thị Thuý Nhi:** Văn thư cơ quan.
+    + **Katơr Vế:** Theo dõi, tham mưu mảng **Xây dựng Đảng, Mặt trận đoàn thể, kiểm tra giám sát, công tác chi bộ** (đầu mối theo dõi/tham mưu giao việc cho *Ban Xây dựng Đảng, Uỷ ban MTTQ Việt Nam xã, Uỷ ban Kiểm tra Đảng uỷ xã*).
+    + **Mai Thị Thuỷ:** Theo dõi, tham mưu mảng **Kinh tế - Xã hội, nội chính, phòng chống tham nhũng, lãng phí, tiêu cực** (đầu mối theo dõi/tham mưu giao việc cho *UBND xã, Uỷ ban Kiểm tra Đảng uỷ xã*).
+    + **Lê Thị Bích Thuỷ:** Theo dõi, tham mưu mảng **Tài chính Đảng, kế toán, chuyển đổi số, công nghệ thông tin**.
+    + **Hồ Thị Thuý Nhi:** Văn thư cơ quan (tiếp nhận văn bản đến, vào sổ, cấp số phát hành văn bản đi, lưu trữ).
   - Phân công giao việc cho các cơ quan chuyên trách tham mưu: **Ban Xây dựng Đảng xã**, **Cơ quan Uỷ ban Kiểm tra Đảng uỷ xã**.
 - **Đặc thù khối Chính quyền (UBND xã) và Mặt trận (MTTQ xã):** Hệ thống phần mềm ĐHTN của Đảng **không tạo nhiệm vụ trực tiếp** sang khối chính quyền và mặt trận. Do đó, đối với các chỉ đạo của cấp trên cần UBND xã hoặc Mặt trận tổ chức thực hiện, Văn phòng Đảng uỷ bắt buộc phải **ban hành Công văn giao việc (-CV/ĐU)** của Đảng uỷ xã gửi sang.
 
@@ -66,35 +67,47 @@ flowchart TD
 
 ### 1. Bảng danh sách "Văn bản chờ xử lý" (13 Cột thông tin chuẩn)
 Truy cập qua URL chính: `https://dhtn.dcs.vn/app-view/theme/admin-ex/pages/main.zul` (hoặc click widget `Chờ xử lý` trên Dashboard):
-- **Cột 1 (Checkbox):** Chọn một hoặc nhiều văn bản.
-- **Cột 2 (STT):** Số thứ tự hiển thị.
-- **Cột 3 (Thao tác):** Cụm 8 icon hành động nhanh: *[Chia sẻ]*, *[Tạo nhiệm vụ đơn vị]*, *[Chuyển văn bản]*, *[Lưu/Tạo hồ sơ]*, *[Biểu đồ xử lý]*, *[Hoàn thành xử lý]*, *[Ghi chú]*, *[Trả lại]*.
-- **Cột 4 (Đơn vị ban hành):** Tên cơ quan gửi (Ví dụ: *UBND xã Công Hải*, *Văn phòng Tỉnh uỷ Khánh Hoà*, *Ban Tuyên giáo và Dân vận Tỉnh uỷ*...).
-- **Cột 5 (Số, ký hiệu):** Số hiệu văn bản gốc (Hyperlink mở chi tiết).
-- **Cột 6 (Trích yếu nội dung văn bản):** Nội dung trích yếu, kèm badge phân loại như `[CT]` (Chủ trì), `[PH]` (Phối hợp).
-- **Cột 7 (Thể loại văn bản):** Quyết định, Kế hoạch, Báo cáo, Thông báo, Công văn, Tờ trình...
-- **Cột 8 (Độ khẩn):** Thường, Khẩn, Thượng khẩn, Hoả tốc.
-- **Cột 9 (Độ mật):** Thường (trên môi trường Internet luôn là Thường).
-- **Cột 10 (Trạng thái văn bản):** Chờ xử lý.
-- **Cột 11 (Thời gian nhận):** Ngày giờ nhận văn bản (dd/mm/yyyy).
-- **Cột 12 (Ý kiến chuyển):** Bút phê chỉ đạo luân chuyển của Lãnh đạo cấp trên (Ví dụ: *"Cập nhật, tham mưu thực hiện' Lưu HS"*, *"Trình TTĐU biết; VP tham mưu chỉ đạo thực hiện"*).
-- **Cột 13 (File văn bản):** Tên file PDF đã đóng dấu điện tử (`*_dadongdau.pdf`), kèm icon tải xuống.
+- **Cột 1 (Checkbox):** Chọn một hoặc nhiều văn bản phục vụ xử lý hàng loạt.
+- **Cột 2 (STT):** Số thứ tự hiển thị (phân trang 10, 20... bản ghi/trang).
+- **Cột 3 (Thao tác):** Cụm 8 icon hành động nhanh monochrome phẳng xếp thành 2 hàng:
+  + Hàng trên: *[Chuyển văn bản]*, *[Xem chi tiết/xử lý]*, *[Trả lại văn bản]*, *[Chuyển tiếp]*.
+  + Hàng dưới: *[Tạo tờ trình]*, *[Nhập ý kiến chỉ đạo/góp ý]*, *[Xem lịch sử luân chuyển]*, *[Chia sẻ/Gán tag]*.
+- **Cột 4 (Đơn vị ban hành):** Tên cơ quan gửi (Ví dụ: *UBND xã Công Hải*, *Văn phòng Tỉnh uỷ Khánh Hoà*, *Ban Tuyên giáo Tỉnh uỷ*...). Có ô lọc text trực tiếp trên đầu cột.
+- **Cột 5 (Số, ký hiệu):** Số hiệu văn bản gốc (Hyperlink mở chi tiết, kèm ô lọc mã văn bản).
+- **Cột 6 (Trích yếu nội dung văn bản):** Nội dung trích yếu, kèm Badge huy hiệu nổi bật: `[CT]` (Chủ trì xử lý chính) hoặc `[PH]` (Phối hợp xử lý). Có ô lọc text trực tiếp.
+- **Cột 7 (Thể loại văn bản):** Quyết định, Kế hoạch, Báo cáo, Thông báo, Công văn, Tờ trình... (Kèm dropdown lọc).
+- **Cột 8 (Độ khẩn):** Thường, Khẩn, Thượng khẩn, Hoả tốc (Kèm dropdown lọc).
+- **Cột 9 (Độ mật):** Thường (trên môi trường Internet luôn là Thường, kèm dropdown lọc).
+- **Cột 10 (Trạng thái văn bản):** Chờ xử lý (Kèm dropdown lọc).
+- **Cột 11 (Thời gian nhận):** Ngày giờ nhận văn bản (dd/mm/yyyy), kèm Datepicker 📅 chọn khoảng ngày.
+- **Cột 12 (Ý kiến chuyển):** Bút phê chỉ đạo luân chuyển dùng chung cho cả một đợt chuyển nhiều người nhận (Ví dụ: *"Trình TTĐU biết; VP cập nhật, lưu hồ sơ"*, *"Cập nhật, tham mưu thực hiện' Lưu HS"*). **⚠️ CẢNH BÁO NGHIỆP VỤ QUAN TRỌNG:** Khi người chuyển chọn nhiều người nhận cùng lúc (ví dụ: Bí thư nhận để biết, Chuyên viên xử lý chính, Phó CVP phối hợp) thì Cột 12 đều hiển thị giống hệt nhau ở tài khoản tất cả mọi người. Vì vậy, **TUYỆT ĐỐI KHÔNG đọc Cột 12 rồi tự suy đoán vai trò của đồng chí Ngô Hoàng Việt**, mà bắt buộc phải kiểm tra đối chiếu trong `Biểu đồ xử lý` (Bước 2).
+- **Cột 13 (File văn bản):** Tên file PDF đã đóng dấu điện tử (`*_dadongdau.pdf`), kèm icon tải xuống  và link xem thêm.
 
-### 2. Cửa sổ Modal "Thông tin chi tiết văn bản"
-Chia thành 2 nửa rõ rệt:
-- **Nửa bên trái (Thông tin & Danh mục accordion):**
-  1. *Khung Thông tin chi tiết:* Trích yếu, Số ký hiệu, Người ký, Ngày ban hành, Mã định danh (`A32.65-...`), Thể loại, Đơn vị ban hành.
-  2. *Khung File đính kèm:* Danh sách các tệp PDF/Doc kèm nút xem trực tiếp (con mắt), in và tải về.
-  3. *Panel Danh sách người gửi đến.*
-  4. *Panel Danh sách ký duyệt.*
-  5. *Panel Danh sách cho ý kiến.*
-  6. *Panel Danh sách trình duyệt.*
-  7. **`Panel Danh sách nhiệm vụ đơn vị (X)`:** **Mục cốt lõi để xác định văn bản này đã được giao việc chưa**.
-- **Nửa bên phải (PDF Viewer nhúng):**
-  - Hiển thị trực tiếp toàn văn văn bản PDF có chữ ký số và con dấu đỏ. Cho phép AI đọc toàn văn để phân tích chỉ tiêu, nhiệm vụ.
-- **Thanh tác vụ dưới đáy (17 nút chức năng):**
-  - Nhóm 1: `[X Đóng]`, `[Gán tag]`, `[Công khai]`, `[Tạo lịch họp]`, `[Lưu tài liệu]`, `[Lưu/Tạo hồ sơ]`, `[Ghi chú]`, `[Tạo nhiệm vụ đơn vị]`, `[Chia sẻ]`, `[Xem luân chuyển]`, `[Biểu đồ xử lý]`, `[Trả lại]`.
-  - Nhóm 2 (Trọng tâm): `[Hoàn thành]`, `[Nhập ý kiến chỉ đạo]`, `[Tạo phiếu trình]`, `[Tạo dự thảo]`, `[Chuyển văn bản]` (Nút màu đỏ nổi bật nhất).
+### 2. Cửa sổ Modal "Thông tin chi tiết văn bản" (Kiến trúc Split-View 50/50 nâng cấp)
+Hệ thống nâng cấp thiết kế chia thành 2 nửa màn hình song song:
+- **Nửa bên phải (PDF.js Viewer nhúng toàn diện):**
+  - Hiển thị trực tiếp toàn văn văn bản PDF có chữ ký số và con dấu đỏ. Cho phép AI/cán bộ đọc ngay văn bản mà không cần mở tab mới, hỗ trợ đầy đủ công cụ zoom, in, tải về.
+- **Nửa bên trái (Thông tin & Hệ thống Accordion Panels gập/mở):**
+  1. *Accordion Thông tin chi tiết:* Trích yếu, Số ký hiệu, Người ký, Ngày ban hành, Thời gian nhận, Hạn xử lý, Độ khẩn, Độ mật, Loại bản (Bản gốc/Bản sao), Mã định danh (`A32.65-...`), Thể loại, Đơn vị ban hành.
+  2. *Accordion File đính kèm (Phân hoá 3 lớp dữ liệu):*
+     - File đính kèm chính: File PDF scan gốc đã đóng dấu (`*_dadongdau.pdf`).
+     - File biểu mẫu: File Word đính kèm sẵn mẫu dự thảo (`*.docx`).
+     - Tài liệu liên quan: File Word/PDF chứa các nghị quyết, kế hoạch căn cứ (`*.docx`).
+  3. *Accordion Danh sách đã gửi đi:* Gồm 4 tab con: `[Đơn vị]`, `[Cá nhân]`, `[Nhóm]`, `[Đơn vị liên thông]`.
+  4. *Accordion Danh sách người gửi đến:* Thể hiện rõ ai chuyển đến vào ngày giờ nào kèm bút phê.
+  5. **`Accordion Danh sách nhiệm vụ đơn vị (X)`:** **Mục cốt lõi xác định văn bản đã giao việc chưa**.
+  6. *Accordion Thuộc hồ sơ:* Danh mục hồ sơ công việc lưu trữ văn bản.
+  7. *Accordion Sao gửi văn bản (X).*
+  8. *Accordion Lịch sử chỉnh sửa văn bản (X).*
+  9. *Accordion Dự thảo (X):* **Điểm mới nâng cấp** cho phép quản lý trực tiếp các văn bản đi dự thảo được tạo ra để phản hồi văn bản đến này.
+- **Thanh tác vụ cố định dưới đáy (Action Toolbar 17 nút):**
+  - Hàng trên (12 nút phụ trợ & lưu trữ): `[✕ Đóng]`, `[🏷 Gán tag văn bản]`, `[⬆ Công khai văn bản]`, `[📅 Tạo lịch họp]`, `[👤+ Lưu tài liệu cá nhân]`, `[📁 Lưu/Tạo hồ sơ]`, `[📝 Ghi chú]`, `[💼 Tạo nhiệm vụ đơn vị]`, `[✉ Chia sẻ]`, `[👁 Xem luân chuyển]`, `[☊ Biểu đồ xử lý]`, `[↩ Trả lại]`.
+  - Hàng dưới (5 nút nghiệp vụ trọng tâm):
+    1. `[✔ Hoàn thành]` (Nút trắng viền xám).
+    2. `[⚙ Nhập ý kiến chỉ đạo]` (Nút trắng viền xám).
+    3. `[📋 Tạo phiếu trình]` (Nút trắng viền xám).
+    4. `[📝 Tạo dự thảo]` (Nút trắng viền xám - **Nút mới nâng cấp** giúp nhảy nhanh sang soạn thảo văn bản đi trả lời).
+    5. `[➤ Chuyển văn bản]` (**NÚT MÀU ĐỎ THẮM NỔI BẬT NHẤT** - Nút hành động chính).
 
 ---
 
@@ -118,22 +131,27 @@ flowchart TD
 ```
 
 ### Bước 1: Quét danh sách "Văn bản chờ xử lý" & Thu thập dữ liệu
-1. **Truy cập:** Mở tab `Văn bản chờ xử lý` (từ Dashboard click widget `Chờ xử lý (209)` hoặc Menu Sidebar `Văn bản đến >> Văn bản chờ xử lý`).
+1. **Truy cập:** Mở tab `Văn bản chờ xử lý` (từ Dashboard click widget `Chờ xử lý` hoặc Menu Sidebar `Văn bản đến >> Văn bản chờ xử lý`).
 2. **Thu thập dữ liệu từng dòng:**
    - Đọc Số ký hiệu (Cột 5), Đơn vị ban hành (Cột 4), Trích yếu (Cột 6), Thời gian nhận (Cột 11), Ý kiến chuyển (Cột 12).
    - Kiểm tra trạng thái màu sắc: Nếu dòng chữ đỏ là `Văn bản quá hạn` (Ưu tiên P0); nếu chữ đen in đậm là `Văn bản chưa đọc`; nếu chữ xám là `Văn bản đã đọc`.
 3. **Tải file đính kèm:** Click icon download tại Cột 13 (`File văn bản`) hoặc click mở chi tiết văn bản để đọc tệp PDF nhúng ở nửa màn hình bên phải.
 
-### Bước 2: Giải mã "Biểu đồ xử lý" (Xác định vai trò của Phó CVP)
+### Bước 2: Giải mã "Biểu đồ xử lý" (Xác định chính xác vai trò từng người nhận)
+> **Nguyên tắc đối soát chéo:** Vì Cột 12 (`Ý kiến chuyển`) là chuỗi text dùng chung cho tất cả người nhận trong cùng một đợt chuyển (ví dụ cùng ghi *"Trình TTĐU biết; VP cập nhật, lưu hồ sơ"* cho cả Bí thư, Phó Bí thư và Phó CVP), AI **BẮT BUỘC** phải mở `Biểu đồ xử lý` để biết đích xác người chuyển muốn đồng chí Ngô Hoàng Việt làm gì.
+
 1. **Thao tác:** Click icon `Biểu đồ xử lý` tại Cột 3 (hoặc click nút `Biểu đồ xử lý` tại thanh công cụ dưới đáy cửa sổ chi tiết).
-2. **Quy tắc phân tích đường nối:**
-   - **🔴 Đường nối MÀU ĐỎ = XỬ LÝ CHÍNH:** Cán bộ đích của đường nối màu đỏ là **Người chủ trì trực tiếp giải quyết văn bản**.
-     - Nếu đường đỏ trỏ về đồng chí Ngô Hoàng Việt $\rightarrow$ Đồng chí là người trực tiếp tham mưu. AI kích hoạt luồng tự động soạn dự thảo văn bản trả lời/phiếu trình.
-     - Nếu đường đỏ trỏ về chuyên viên khác (ví dụ: Lê Thị Bích Thuỷ, Katơr Vế, Mai Thị Thuỷ) $\rightarrow$ Chuyên viên đó là người chủ trì.
-   - **🟢 Đường nối MÀU XANH LÁ = PHỐI HỢP:** Cán bộ đích là người phối hợp/giám sát.
-     - Nếu đường xanh lá trỏ về đồng chí Ngô Hoàng Việt (kèm biểu tượng sao vàng) $\rightarrow$ Đồng chí giữ vai trò **Lãnh đạo Văn phòng giám sát, kiểm soát tiến độ** của chuyên viên. AI kích hoạt luồng theo dõi hạn và đối soát chất lượng tham mưu.
-   - **⚫ Đường nối MÀU ĐEN = NHẬN ĐỂ BIẾT:** Chỉ lưu trữ theo dõi thông tin.
-3. **Đóng modal:** Bấm nút `[X]` hoặc `[X Đóng]` để quay lại an toàn.
+2. **Kiểm tra 2 chế độ hiển thị trong Biểu đồ xử lý:**
+   - **Tab `Danh sách` (Ưu tiên cao nhất để đọc chính xác):** Bấm tab `Danh sách` ở góc trên bên trái modal để xem bảng *Danh sách quá trình xử lý*. Lọc theo dòng có `Người nhận = Ngô Hoàng Việt` và đọc cột **`Loại xử lý`**:
+     + Nếu là **`Xử lý chính`** (nền đỏ): Đồng chí là người chủ trì trực tiếp thực hiện phần việc giao cho Văn phòng/cá nhân.
+     + Nếu là **`Phối hợp`** (nền xanh lá): Đồng chí là người phối hợp hoặc Lãnh đạo theo dõi, giám sát chuyên viên chủ trì (xem ai ở dòng `Xử lý chính` cùng đợt chuyển).
+     + Nếu là **`Nhận để biết`** (nền xám tím): Chỉ đọc nắm thông tin, không phải tham mưu giải quyết.
+   - **Tab `Biểu đồ` (Xem trực quan đường nối):**
+     + **🔴 Đường nối MÀU ĐỎ = XỬ LÝ CHÍNH**
+     + **🟢 Đường nối MÀU XANH LÁ = PHỐI HỢP**
+     + **⚫ Đường nối MÀU ĐEN = NHẬN ĐỂ BIẾT**
+     + Node có **biểu tượng ngôi sao vàng** là vị trí của tài khoản đang đăng nhập (`Ngô Hoàng Việt`).
+3. **Đóng modal:** Bấm nút `[✕]` để quay lại màn hình chi tiết/danh sách an toàn.
 
 ### Bước 3: Kiểm tra panel "Danh sách nhiệm vụ đơn vị" trong văn bản đến
 1. **Thao tác:** Trong cửa sổ *Thông tin chi tiết văn bản*, cuộn chuột ở khung bên trái xuống dưới mục *Danh sách trình duyệt* để tìm tiêu đề **`Danh sách nhiệm vụ đơn vị (X)`**.
@@ -146,18 +164,18 @@ flowchart TD
      - AI đọc 7 cột trong bảng: `Tên nhiệm vụ`, `Đơn vị chủ trì`, `Ngày bắt đầu`, `Ngày hoàn thành`, `Kết quả thực hiện`, `Trạng thái`.
      - Tự động trích xuất deadline hoàn thành để đưa vào danh mục theo dõi tiến độ.
 
-### Bước 4: Thao tác tự động hoá Pop-up "Chuyển văn bản" (Giao việc chuyên viên)
-Khi đồng chí Phó Chánh Văn phòng yêu cầu chuyển giao văn bản cho chuyên viên:
-1. **Mở Pop-up:** Click nút đỏ `[⏩ Chuyển văn bản]` ở góc dưới cùng bên phải cửa sổ chi tiết.
-2. **Điền thông tin tự động:**
-   - **Ô `Ý kiến chuyển (2000)`:** Nhập nội dung chỉ đạo ngắn gọn, rõ ràng theo công thức:
-     `Giao đ/c [Tên chuyên viên] chủ trì nghiên cứu, tham mưu [Nhiệm vụ cụ thể]; báo cáo lãnh đạo VP trước ngày [dd/mm/yyyy].`
-   - **Ô `Hạn xử lý`:** Chọn ngày deadline qua datepicker (thường từ 3 - 5 ngày làm việc tuỳ tính chất khẩn).
-   - **Mục `Danh sách cá nhân`:** Nhập tên và tích chọn đích danh chuyên viên tương ứng:
-     - Đ/c **Katơr Vế**: Mảng công tác dân tộc, tôn giáo, các hội quần chúng, phối hợp chính quyền.
-     - Đ/c **Mai Thị Thuỷ**: Mảng công tác văn phòng, kiểm tra đảng uỷ, nội chính.
-     - Đ/c **Lê Thị Bích Thuỷ**: Mảng công tác tài chính đảng, chuyển đổi số, ngân sách.
-     - Đ/c **Hồ Thị Thuý Nhi**: Mảng văn thư, lưu trữ, tiếp nhận phát hành văn bản.
+### Bước 4: Thao tác tự động hoá Pop-up "Chuyển văn bản" (Giao việc linh hoạt)
+Khi đồng chí Phó Chánh Văn phòng yêu cầu chuyển giao văn bản cho chuyên viên hoặc đơn vị:
+1. **Mở Pop-up:** Click nút đỏ `[➤ Chuyển văn bản]` ở góc dưới cùng bên phải cửa sổ chi tiết.
+2. **Điền thông tin linh hoạt theo ngữ cảnh thực tế:**
+   - **Ô `Ý kiến chuyển (2000)`:** AI đọc toàn văn văn bản đến, nắm bắt yêu cầu cốt lõi và **linh hoạt** soạn bút phê chỉ đạo phù hợp với từng tình huống thực tế (không áp đặt khuôn mẫu cứng). Có thể tham khảo cấu trúc ngắn gọn:
+     `Giao đ/c [Tên chuyên viên] chủ trì nghiên cứu, tham mưu [hướng xử lý phù hợp với nội dung văn bản]; báo cáo lãnh đạo VP trước ngày [dd/mm/yyyy].`
+   - **Ô `Hạn xử lý`:** Chọn ngày deadline qua datepicker phù hợp với độ khẩn và thời hạn quy định trong văn bản gốc.
+   - **Mục `Danh sách cá nhân`:** Dựa trên bản đồ lĩnh vực phụ trách tham khảo (có thể điều chỉnh linh hoạt theo chỉ đạo thực tế của đồng chí Phó CVP):
+     - Đ/c **Katơr Vế**: Thường theo dõi mảng Xây dựng Đảng, Mặt trận đoàn thể, kiểm tra giám sát, công tác chi bộ (*Ban Xây dựng Đảng, Uỷ ban MTTQ Việt Nam xã, UBKT Đảng uỷ xã*).
+     - Đ/c **Mai Thị Thuỷ**: Thường theo dõi mảng Kinh tế - Xã hội, nội chính, phòng chống tham nhũng, lãng phí, tiêu cực (*UBND xã, UBKT Đảng uỷ xã*).
+     - Đ/c **Lê Thị Bích Thuỷ**: Thường theo dõi mảng Tài chính Đảng, kế toán, chuyển đổi số, công nghệ thông tin.
+     - Đ/c **Hồ Thị Thuý Nhi**: Văn thư, lưu trữ, tiếp nhận và phát hành văn bản.
    - **Tùy chọn `☑️ Gửi tin nhắn thông báo`:** Luôn giữ trạng thái tích chọn để hệ thống gửi thông báo tới điện thoại cán bộ.
 3. **QUY TẮC AN TOÀN HUMAN-IN-THE-LOOP (DỪNG CHỜ):**
    - AI điền xong toàn bộ form và **DỪNG LẠI NGAY LẬP TỨC**.
@@ -165,15 +183,16 @@ Khi đồng chí Phó Chánh Văn phòng yêu cầu chuyển giao văn bản cho
      *"Đã nạp sẵn ý kiến chuyển giao việc cho đ/c [Tên chuyên viên] với hạn chót [dd/mm/yyyy]. Kính mời đồng chí kiểm tra trên màn hình và tự tay bấm nút đỏ [Chuyển văn bản] để phê duyệt."*
    - Tuyệt đối không tự kích hoạt sự kiện click của nút đỏ `Chuyển văn bản`.
 
-### Bước 5: Tự động khởi tạo Công văn giao việc (-CV/ĐU) gửi UBND / Mặt trận
-Khi văn bản đến từ cấp trên (Tỉnh uỷ, UBND tỉnh) yêu cầu triển khai các nhiệm vụ thuộc thẩm quyền của chính quyền cấp xã (về quản lý đất đai, giải ngân đầu tư, an sinh xã hội, trật tự đô thị, chuyển đổi số hành chính):
-1. Nhận diện do hệ thống ĐHTN của Đảng không tạo nhiệm vụ sang UBND xã/MTTQ xã được.
-2. AI tự động kích hoạt kỹ năng **`cong-van`** (`.agents/skills/cong-van/SKILL.md`).
-3. Trích xuất căn cứ pháp lý từ văn bản đến (Số hiệu, ngày ban hành, cơ quan ban hành, trích yếu).
-4. Tự động soạn thảo dự thảo Công văn giao việc của Ban Thường vụ Đảng uỷ xã gửi UBND xã:
-   - File Word lưu tại: `van_ban_du_thao/2026/Cong_van/CV giao viec UBND xa [Trich yeu rut gon].docx`.
-   - Đúng chuẩn thể thức Hướng dẫn số 05-HD/VPTW (lề 30-15-20-20mm, spacing 6pt-6pt-18pt, thụt dòng 1cm, bảng ẩn Kính gửi).
-   - Nội dung giao việc rõ ràng: Giao UBND xã tổ chức triển khai, phân công cơ quan chuyên môn, ấn định thời hạn báo cáo kết quả về Ban Thường vụ Đảng uỷ xã.
+### Bước 5: Kích hoạt chuyển giao sang Skill Soạn thảo Công văn giao việc (`-CV/ĐU`)
+> **Nguyên tắc bất biến (1 Văn bản đến $\rightarrow$ 1 Công văn giao việc duy nhất):** Một văn bản chỉ đạo của cấp trên (Tỉnh uỷ, các Ban Đảng tỉnh...) khi cần cụ thể hoá bằng văn bản giao việc thì chỉ sinh ra **DUY NHẤT 01 Công văn giao việc (`-CV/ĐU`)** của Thường trực/Ban Thường vụ Đảng uỷ, tuyệt đối không tách lẻ thành nhiều công văn riêng rẽ cho từng cơ quan.
+
+1. **Nhận diện nhu cầu ban hành văn bản giao việc:**
+   - Khi văn bản cấp trên có yêu cầu địa phương tổ chức quán triệt, tuyên truyền hoặc triển khai thực hiện (đặc biệt là khi giao cho khối chính quyền UBND xã/MTTQ xã vì hệ thống ĐHTN không tạo nhiệm vụ trực tiếp sang được).
+2. **Đóng gói ngữ cảnh bàn giao sang Skill `cong-van`:**
+   - Trích xuất căn cứ pháp lý (Số hiệu, ngày ban hành, cơ quan ban hành, trích yếu).
+   - Chia các gạch đầu dòng giao rõ nhiệm vụ và hạn trình cho từng cơ quan ngay trong cùng một công văn (học theo mẫu thực tế đã ban hành của Đảng uỷ xã: `786-CV/ĐU`, `791-CV/ĐU`, `794-CV/ĐU`).
+3. **Sinh tệp dự thảo:**
+   - Gọi skill **`cong-van`** để xuất tệp Word lưu tại `van_ban_du_thao/2026/Cong_van/CV giao viec [Trich yeu rut gon].docx` đúng chuẩn thể thức Hướng dẫn số 05-HD/VPTW.
 
 ---
 
@@ -201,15 +220,18 @@ Hệ thống ĐHTN hiện ghi nhận: [X] văn bản đến chờ xử lý ([Y] 
 Kính báo đồng chí xem xét, chỉ đạo!
 ```
 
-### 2. Thư viện Mẫu Bút phê Chỉ đạo chuẩn trong Pop-up "Chuyển văn bản"
-- **Mẫu 1 (Giao tham mưu văn bản chỉ đạo):**
-  `Giao đ/c [Tên] chủ trì nghiên cứu nội dung văn bản; khẩn trương tham mưu dự thảo Kế hoạch/Công văn của Đảng uỷ xã triển khai thực hiện; trình Thường trực Đảng uỷ trước ngày [dd/mm/yyyy].`
-- **Mẫu 2 (Giao theo dõi, đôn đốc UBND xã):**
-  `Giao đ/c [Tên] theo dõi, đôn đốc UBND xã triển khai thực hiện đúng tiến độ; tổng hợp báo cáo Thường trực Đảng uỷ định kỳ.`
-- **Mẫu 3 (Chuyển lưu trữ, cập nhật dữ liệu):**
-  `Cập nhật dữ liệu, theo dõi và lưu hồ sơ công việc theo quy định.`
-- **Mẫu 4 (Trình xin ý kiến Thường trực Đảng uỷ):**
-  `Kính trình đồng chí Bí thư / Phó Bí thư Thường trực Đảng uỷ xem xét, cho ý kiến chỉ đạo.`
+### 2. Thư viện Mẫu Bút phê Chỉ đạo thực chiến trong Pop-up "Chuyển văn bản"
+*(Các mẫu tham khảo sát với thực tế điều hành tại Văn phòng Đảng uỷ xã Công Hải, AI vận dụng linh hoạt theo nội dung từng văn bản đến)*:
+
+- **Mẫu 1 (Giao Ban Xây dựng Đảng chủ trì toàn bộ khi thuộc chức năng Ban XDĐ):**
+  `Tham mưu Công văn giao Ban Xây dựng Đảng tham mưu Kế hoạch quán triệt, tuyên truyền, đồng thời tham mưu văn bản triển khai thực hiện; trình lãnh đạo Văn phòng trước ngày [dd/mm/yyyy].`
+- **Mẫu 2 (Giao phối hợp 2 cơ quan: Ban Xây dựng Đảng quán triệt + UBND xã triển khai):**
+  `Tham mưu Công văn giao Ban Xây dựng Đảng tham mưu Kế hoạch quán triệt, tuyên truyền; giao UBND xã tham mưu văn bản triển khai thực hiện; trình lãnh đạo Văn phòng trước ngày [dd/mm/yyyy].`
+- **Mẫu 3 (Khi thuộc chức năng trực tiếp của Văn phòng Đảng uỷ):**
+  `Tham mưu Văn bản triển khai thực hiện; trình lãnh đạo Văn phòng trước ngày [dd/mm/yyyy].`
+- **Mẫu 4 (Đối với văn bản từ các cơ quan thuộc xã gửi đến - UBND xã, MTTQ, các Ban, Chi bộ...):**
+  `Theo dõi, cập nhật.`
+  *(⚠️ Lưu ý quan trọng: Quy tắc này áp dụng cho báo cáo, quyết định, kế hoạch, công văn thông thường từ các cơ quan thuộc xã; **TRỪ CÁC TỜ TRÌNH (-TTr) CỦA CÁC CƠ QUAN TRÌNH XIN Ý KIẾN/CHỦ TRƯƠNG** — đối với Tờ trình thì phải tham mưu thẩm định, bố trí lịch họp BTV/Thường trực cho ý kiến hoặc tham mưu văn bản trả lời).*
 
 ---
 
