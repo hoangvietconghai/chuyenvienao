@@ -60,11 +60,9 @@ STATS_PATTERNS = [
 NAMED_DOCUMENT_ALIASES = [
     {
         "patterns": [
-            r'nghị\s*quyết\s*đại\s*hội',
-            r'nq\s*đại\s*hội',
+            r'(?:nghị\s*quyết|nq)\s*đại\s*hội\s*(?:đại\s*biểu\s*)?đảng\s*bộ\s*xã',
             r'đại\s*hội\s*(?:đại\s*biểu\s*)?đảng\s*bộ\s*xã',
             r'đại\s*hội\s*lần\s*thứ\s*i\b',
-            r'đại\s*hội\s*i\b',
             r'nq\s*[-/]?\s*đh\b',
             r'01\s*[-/]?\s*nq\s*[-/]?\s*đh\b',
             r'chỉ\s*tiêu\s*đại\s*hội',
@@ -303,6 +301,8 @@ def is_implementation_lookup_query(query: str, entities: List[Dict[str, Any]]) -
         "văn bản nào thực hiện", "văn bản nào triển khai", "văn bản lãnh đạo",
         "đã có văn bản nào", "cụ thể hoá", "cụ thể hóa",
         "triển khai thực hiện", "quán triệt, tuyên truyền",
+        "chương trình của đảng uỷ", "chương trình hành động thực hiện",
+        "hành động thực hiện nghị quyết", "toàn quốc lần thứ xiv",
         "ban hanh van ban nao", "da ban van ban", "van ban nao thuc hien",
         "trien khai thuc hien", "quan triet", "tuyen truyen",
     ]
