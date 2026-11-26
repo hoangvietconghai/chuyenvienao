@@ -783,16 +783,33 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
         elif len(words) <= 3:
             fts_query = " AND ".join(f'"{w}"' for w in words[:-1]) + f' AND "{words[-1]}"*'
         else:
-            # Lọc bỏ các hư từ / từ đệm thông thường tiếng Việt (37 từ chuẩn, không lọc từ hành chính)
+            # Lọc bỏ các hư từ / từ đệm và từ rào đón thông thường để giữ lại từ khoá nội dung thực sự
             stopwords = {
                 "của", "và", "các", "những", "này", "đó", "cho", "về", "trong",
                 "được", "có", "là", "ai", "gì", "nào", "theo", "đối", "với",
                 "từ", "đến", "tại", "khi", "đã", "sẽ", "cần", "phải", "nên",
-                "như", "thì", "vào", "bị", "do", "lại", "hay", "hoặc", "mà", "nếu"
+                "như", "thì", "vào", "bị", "do", "lại", "hay", "hoặc", "mà", "nếu",
+                "tôi", "biết", "xin", "hãy", "vui", "lòng", "đồng", "chí",
+                "đảng", "uỷ", "ủy", "xã", "công", "hải", "tỉnh", "khánh", "hoà", "hòa",
+                "văn", "bản", "ban", "hành", "số", "ngày", "tháng", "năm", "hiện"
             }
             meaningful_words = [w for w in words if w.lower() not in stopwords]
             target_words = meaningful_words if len(meaningful_words) >= 2 else words
-            fts_query = " OR ".join(f'"{w}"*' for w in target_words[:8])
+            # Ưu tiên token chứa số hiệu hoặc dấu gạch nối/chéo lên đầu, bỏ trùng lặp giữ thứ tự
+            seen_w = set()
+            prioritized_codes = []
+            normal_words = []
+            for w in target_words:
+                wl = w.lower()
+                if wl in seen_w:
+                    continue
+                seen_w.add(wl)
+                if any(ch.isdigit() for ch in w) or "-" in w or "/" in w:
+                    prioritized_codes.append(w)
+                else:
+                    normal_words.append(w)
+            ordered_words = (prioritized_codes + normal_words)[:18]
+            fts_query = " OR ".join(f'"{w}"*' for w in ordered_words)
 
         try:
             cursor.execute("""

@@ -237,8 +237,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 24/11/2026 23:37:12*
-> *Quy mô: **58** tệp Python | **16,122** dòng mã | **54** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 26/11/2026 08:58:18*
+> *Quy mô: **58** tệp Python | **16,152** dòng mã | **54** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -306,7 +306,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/__init__.py`](server/__init__.py) | 2 | 0 Funcs | Package server cho Hệ thống Chuyên viên ảo Văn phòng Đảng uỷ xã Công Hải. |
 | [`server/ai_connector.py`](server/ai_connector.py) | 1,076 | 1 Classes | server/ai_connector.py |
 | [`server/app.py`](server/app.py) | 115 | 3 Endpoints | server/app.py |
-| [`server/chat_engine.py`](server/chat_engine.py) | 1,474 | 24 Funcs | server/chat_engine.py |
+| [`server/chat_engine.py`](server/chat_engine.py) | 1,456 | 25 Funcs | server/chat_engine.py |
 | [`server/config.py`](server/config.py) | 212 | 0 Funcs | server/config.py |
 | [`server/logger.py`](server/logger.py) | 92 | 2 Funcs | server/logger.py |
 | [`server/plan_registry.py`](server/plan_registry.py) | 281 | 8 Funcs | server/plan_registry.py |
@@ -327,11 +327,11 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/routers/zalo_webhook.py`](server/routers/zalo_webhook.py) | 400 | 2 Endpoints | server/routers/zalo_webhook.py |
 | [`server/services/__init__.py`](server/services/__init__.py) | 6 | 0 Funcs | server/services |
 | [`server/services/backup_service.py`](server/services/backup_service.py) | 187 | 5 Funcs | server/services/backup_service.py |
-| [`server/services/db_service.py`](server/services/db_service.py) | 1,553 | 45 Funcs | server/services/db_service.py |
+| [`server/services/db_service.py`](server/services/db_service.py) | 1,570 | 45 Funcs | server/services/db_service.py |
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 141 | 5 Funcs | server/services/embedding_service.py |
 | [`server/services/gdrive_service.py`](server/services/gdrive_service.py) | 210 | 4 Funcs | server/services/gdrive_service.py |
 | [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 148 | 4 Funcs | server/services/knowledge_loader.py |
-| [`server/services/query_analyzer.py`](server/services/query_analyzer.py) | 344 | 5 Funcs | server/services/query_analyzer.py |
+| [`server/services/query_analyzer.py`](server/services/query_analyzer.py) | 375 | 6 Funcs | server/services/query_analyzer.py |
 | [`server/services/rag_service.py`](server/services/rag_service.py) | 1,196 | 15 Funcs | server/services/rag_service.py |
 | [`server/services/scheduler_service.py`](server/services/scheduler_service.py) | 307 | 10 Funcs | server/services/scheduler_service.py |
 | [`server/services/zalo_api.py`](server/services/zalo_api.py) | 155 | 6 Funcs | server/services/zalo_api.py |

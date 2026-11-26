@@ -885,57 +885,80 @@ def _confirm(s: Dict[str, Any]) -> Dict[str, Any]:
     )
 
 
-async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
-    core_rules = get_core_rules()
-    local_facts = get_local_knowledge_summary()
-    msgs = [{"role": "system", "content": f"{CHAT_SYSTEM_PROMPT}\n\n{core_rules}\n\n{local_facts}"}]
-
-    # 1. Phân tích ý định & thực thể câu truy vấn (Query Analyzer & Anaphora Resolver)
+def _build_rag_context_messages(message: str, history: List[Dict[str, str]]) -> Tuple[List[Dict[str, str]], List[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """
+    Helper dùng chung cho cả luồng chat đồng bộ và luồng chat Stream:
+    Định tuyến truy vấn (DIRECT_HIT / AGGREGATE / THEMATIC) kèm tự động fallback
+    sang Hybrid RAG nếu DIRECT_HIT không tìm thấy đích danh.
+    """
     from server.services.query_analyzer import analyze_query
     from server.services.rag_service import retrieve_direct_hit, retrieve_hybrid_context, check_and_get_aggregate_stats
 
-    analysis = analyze_query(message, s.get("history", []))
-    citations = []
-    stats_info = None
+    analysis = analyze_query(message, history=history)
+    rag_msgs: List[Dict[str, str]] = []
+    citations: List[Dict[str, Any]] = []
+    stats_info: Optional[Dict[str, Any]] = None
 
     if analysis["type"] == "DIRECT_HIT":
         logger.info(f"RAG: Kích hoạt nhánh DIRECT_HIT cho thực thể: {analysis.get('primary_canonical')}")
         rag_res = retrieve_direct_hit(analysis["entities"])
-        if rag_res.get("not_found"):
-            nf_list = ", ".join(rag_res["not_found"])
-            msgs.append({
-                "role": "system",
-                "content": f"[THÔNG BÁO TRA CỨU]: Cán bộ hỏi thông tin về văn bản '{nf_list}', nhưng Kho CSDL hiện CHƯA LƯU TRỮ văn bản này. Đồng chí hãy trả lời trung thực, rõ ràng rằng hệ thống chưa có dữ liệu văn bản này trong kho và sẵn sàng tiếp nhận để nạp bổ sung nếu cán bộ có văn bản gốc."
-            })
-        elif rag_res.get("context_text"):
-            msgs.append({
+        if rag_res.get("context_text"):
+            rag_msgs.append({
                 "role": "system",
                 "content": f"Dữ liệu tra cứu thực chứng đích danh từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"
             })
             citations = rag_res.get("citations", [])
+        elif rag_res.get("not_found"):
+            try:
+                hyb_res = retrieve_hybrid_context(analysis["enriched_query"], max_slots=6)
+                if hyb_res.get("context_text"):
+                    rag_msgs.append({
+                        "role": "system",
+                        "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản Đảng uỷ & UBND xã:\n{hyb_res['context_text']}"
+                    })
+                    citations = hyb_res.get("citations", [])
+                else:
+                    nf_list = ", ".join(rag_res["not_found"])
+                    rag_msgs.append({
+                        "role": "system",
+                        "content": f"[THÔNG BÁO TRA CỨU]: Cán bộ hỏi thông tin về văn bản '{nf_list}', nhưng Kho CSDL hiện CHƯA LƯU TRỮ văn bản này. Đồng chí hãy trả lời trung thực, rõ ràng rằng hệ thống chưa có dữ liệu văn bản này trong kho và sẵn sàng tiếp nhận để nạp bổ sung nếu cán bộ có văn bản gốc."
+                    })
+            except Exception as ex:
+                logger.warning(f"Lỗi fallback Hybrid RAG sau DIRECT_HIT: {ex}")
 
     elif analysis["type"] == "AGGREGATE":
         logger.info("RAG: Kích hoạt nhánh AGGREGATE thống kê số lượng văn bản")
         try:
             stats_info = check_and_get_aggregate_stats(message)
             if stats_info and stats_info.get("stats_text"):
-                msgs.append({"role": "system", "content": stats_info["stats_text"]})
+                rag_msgs.append({"role": "system", "content": stats_info["stats_text"]})
         except Exception as ex:
             logger.warning(f"Lỗi khi kiểm tra thống kê văn bản: {ex}")
 
     else:
-        # Nhánh THEMATIC: True Hybrid RAG (FTS5 BM25 weighted + Gemini Embedding + RRF)
         logger.info(f"RAG: Kích hoạt nhánh THEMATIC Hybrid RAG với query: '{analysis['enriched_query']}'")
         try:
-            rag_res = retrieve_hybrid_context(analysis["enriched_query"], max_slots=4)
+            rag_res = retrieve_hybrid_context(analysis["enriched_query"], max_slots=6)
             if rag_res.get("context_text"):
-                msgs.append({
+                rag_msgs.append({
                     "role": "system",
                     "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"
                 })
                 citations = rag_res.get("citations", [])
         except Exception as ex:
             logger.warning(f"Lỗi khi tra cứu Hybrid RAG: {ex}")
+
+    return rag_msgs, citations, stats_info
+
+
+async def _chat(s: Dict[str, Any], message: str) -> Dict[str, Any]:
+    core_rules = get_core_rules()
+    local_facts = get_local_knowledge_summary()
+    msgs = [{"role": "system", "content": f"{CHAT_SYSTEM_PROMPT}\n\n{core_rules}\n\n{local_facts}"}]
+
+    # 1. Phân tích ý định & thực thể câu truy vấn (Query Analyzer & Anaphora Resolver)
+    rag_msgs, citations, stats_info = _build_rag_context_messages(message, s.get("history", []))
+    msgs.extend(rag_msgs)
 
     new_atts = [a for a in s["attachments"] if not a["used"]]
     if new_atts:
@@ -1361,49 +1384,8 @@ async def handle_chat_stream(
             local_facts = get_local_knowledge_summary()
             msgs = [{"role": "system", "content": f"{CHAT_SYSTEM_PROMPT}\n\n{core_rules}\n\n{local_facts}"}]
 
-            from server.services.query_analyzer import analyze_query
-            from server.services.rag_service import retrieve_direct_hit, retrieve_hybrid_context, check_and_get_aggregate_stats
-
-            analysis = analyze_query(message, s.get("history", []))
-            citations = []
-
-            if analysis["type"] == "DIRECT_HIT":
-                logger.info(f"RAG Stream: Kích hoạt DIRECT_HIT cho: {analysis.get('primary_canonical')}")
-                rag_res = retrieve_direct_hit(analysis["entities"])
-                if rag_res.get("not_found"):
-                    nf_list = ", ".join(rag_res["not_found"])
-                    msgs.append({
-                        "role": "system",
-                        "content": f"[THÔNG BÁO TRA CỨU]: Cán bộ hỏi thông tin về văn bản '{nf_list}', nhưng Kho CSDL hiện CHƯA LƯU TRỮ văn bản này. Đồng chí hãy trả lời trung thực, rõ ràng rằng hệ thống chưa có dữ liệu văn bản này trong kho và sẵn sàng tiếp nhận để nạp bổ sung nếu cán bộ có văn bản gốc."
-                    })
-                elif rag_res.get("context_text"):
-                    msgs.append({
-                        "role": "system",
-                        "content": f"Dữ liệu tra cứu thực chứng đích danh từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"
-                    })
-                    citations = rag_res.get("citations", [])
-
-            elif analysis["type"] == "AGGREGATE":
-                logger.info("RAG Stream: Kích hoạt AGGREGATE thống kê số lượng văn bản")
-                try:
-                    stats_info = check_and_get_aggregate_stats(message)
-                    if stats_info and stats_info.get("stats_text"):
-                        msgs.append({"role": "system", "content": stats_info["stats_text"]})
-                except Exception as ex:
-                    logger.warning(f"Lỗi kiểm tra thống kê văn bản: {ex}")
-
-            else:
-                logger.info(f"RAG Stream: Kích hoạt THEMATIC Hybrid RAG: '{analysis['enriched_query']}'")
-                try:
-                    rag_res = retrieve_hybrid_context(analysis["enriched_query"], max_slots=4)
-                    if rag_res.get("context_text"):
-                        msgs.append({
-                            "role": "system",
-                            "content": f"Dữ liệu tra cứu thực chứng từ Kho văn bản Đảng uỷ & UBND xã:\n{rag_res['context_text']}"
-                        })
-                        citations = rag_res.get("citations", [])
-                except Exception as ex:
-                    logger.warning(f"Lỗi tra cứu Hybrid RAG: {ex}")
+            rag_msgs, citations, _ = _build_rag_context_messages(message, s.get("history", []))
+            msgs.extend(rag_msgs)
 
             # Đính kèm tệp nếu có
             if new_atts:

@@ -178,15 +178,16 @@ def extract_entities(query: str) -> List[Dict[str, Any]]:
                 "search_patterns": patterns
             })
 
-    # Mẫu 2: Dạng rút gọn: e.g. "11-NQ", "69-KH"
+    # Mẫu 2: Dạng rút gọn: e.g. "11-NQ", "69-KH" (chỉ thêm nếu chưa có bản đầy đủ kèm cơ quan)
     pat2 = re.compile(r'\b(\d+)\s*[-–]\s*(NQ|KH|BC|QĐ|QD|CV|TB|KL|CT|TTr|CTr|HD|QĐi|QC)\b', re.IGNORECASE)
     for m in pat2.finditer(query):
         so_raw = m.group(1)
         loai_raw = m.group(2).upper()
         loai = "QĐ" if loai_raw == "QD" else loai_raw
         pad, raw = _normalize_num(so_raw)
+        has_full = any(r.get("the_loai") == loai and r.get("so") == pad for r in results)
         key = f"{loai}_{pad}"
-        if key not in seen_keys:
+        if key not in seen_keys and not has_full:
             seen_keys.add(key)
             patterns = [
                 f"{pad}-{loai}%",
@@ -211,8 +212,9 @@ def extract_entities(query: str) -> List[Dict[str, Any]]:
         loai = DOC_TYPE_MAP.get(ten_loai, "")
         if loai:
             pad, raw = _normalize_num(so_raw)
+            has_full = any(r.get("the_loai") == loai and r.get("so") == pad for r in results)
             key = f"{loai}_{pad}"
-            if key not in seen_keys:
+            if key not in seen_keys and not has_full:
                 seen_keys.add(key)
                 patterns = [
                     f"{pad}-{loai}%",
@@ -233,8 +235,9 @@ def extract_entities(query: str) -> List[Dict[str, Any]]:
         loai = "QĐ" if loai_raw == "QD" else loai_raw
         so_raw = m.group(2)
         pad, raw = _normalize_num(so_raw)
+        has_full = any(r.get("the_loai") == loai and r.get("so") == pad for r in results)
         key = f"{loai}_{pad}"
-        if key not in seen_keys:
+        if key not in seen_keys and not has_full:
             seen_keys.add(key)
             patterns = [
                 f"{pad}-{loai}%",
@@ -288,6 +291,29 @@ def is_aggregate_query(query: str) -> bool:
     return False
 
 
+def is_implementation_lookup_query(query: str, entities: List[Dict[str, Any]]) -> bool:
+    """
+    Nhận diện câu hỏi tìm kiếm văn bản cấp xã đã ban hành để triển khai văn bản cấp trên
+    (TW, Tỉnh uỷ, UBND tỉnh...). Khi đó không chạy DIRECT_HIT đơn thuần theo số hiệu cấp trên
+    mà phải chuyển sang THEMATIC Hybrid RAG để quét trích yếu và toàn văn văn bản của xã.
+    """
+    if not query:
+        return False
+    q_lower = query.lower()
+    lookup_markers = [
+        "ban hành văn bản nào", "đã ban văn bản", "đã ban hành văn bản",
+        "văn bản nào thực hiện", "văn bản nào triển khai", "văn bản lãnh đạo",
+        "đã có văn bản nào", "cụ thể hoá", "cụ thể hóa",
+        "triển khai thực hiện", "quán triệt, tuyên truyền",
+    ]
+    if any(m in q_lower for m in lookup_markers):
+        return True
+    higher_orgs = {"TW", "TU", "BCT", "BTCTW", "VPTW", "UBND", "CP", "QH", "TTCP"}
+    if entities and all((e.get("co_quan") or "").upper() in higher_orgs for e in entities):
+        return True
+    return False
+
+
 def analyze_query(query: str, history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
     """
     Hàm phân tích toàn diện câu truy vấn:
@@ -315,7 +341,7 @@ def analyze_query(query: str, history: Optional[List[Dict[str, str]]] = None) ->
             resolved_from_anaphora = True
 
     # 3. Phân loại định tuyến
-    if entities:
+    if entities and not is_implementation_lookup_query(query_clean, entities):
         canonical_str = " ".join(e["canonical"] for e in entities)
         enriched = f"{canonical_str} {query_clean}"
         return {
@@ -335,10 +361,15 @@ def analyze_query(query: str, history: Optional[List[Dict[str, str]]] = None) ->
             "primary_canonical": None
         }
 
+    enriched = query_clean
+    if entities:
+        canonical_str = " ".join(e["canonical"] for e in entities)
+        enriched = f"{canonical_str} {query_clean}"
+
     return {
         "type": "THEMATIC",
-        "entities": [],
-        "resolved_from_anaphora": False,
-        "enriched_query": query_clean,
-        "primary_canonical": None
+        "entities": entities,
+        "resolved_from_anaphora": resolved_from_anaphora,
+        "enriched_query": enriched,
+        "primary_canonical": entities[0]["canonical"] if entities else None
     }

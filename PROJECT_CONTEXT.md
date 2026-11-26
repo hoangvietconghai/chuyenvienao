@@ -1,6 +1,6 @@
 # TÀI LIỆU BỐI CẢNH DỰ ÁN TOÀN DIỆN (PROJECT MASTER CONTEXT DOSSIER)
 ## HỆ THỐNG CHUYÊN VIÊN ẢO VĂN PHÒNG ĐẢNG UỶ XÃ CÔNG HẢI, TỈNH KHÁNH HOÀ
-*(Cập nhật tự động: 24/11/2026 23:37:12 — Mô hình chính quyền địa phương 02 cấp & Thể thức HD 05-HD/VPTW)*
+*(Cập nhật tự động: 26/11/2026 08:58:18 — Mô hình chính quyền địa phương 02 cấp & Thể thức HD 05-HD/VPTW)*
 
 ---
 
@@ -145,7 +145,7 @@ Hệ thống sử dụng cơ sở dữ liệu SQLite tối ưu chế độ WAL (
 ## 📊 PHẦN 6: THỐNG KÊ QUY MÔ MÃ NGUỒN HIỆN TẠI
 
 - **Tổng số tệp mã nguồn Python:** **58** tệp
-- **Tổng số dòng mã nguồn:** **16,122** dòng
+- **Tổng số dòng mã nguồn:** **16,152** dòng
 - **Số lượng API Endpoints (FastAPI Routes):** **58** endpoints
 - **Các thư viện hạt nhân:** FastAPI, Uvicorn, Python-docx, SQLite3, Google-genai, OpenAI SDK, Schedule, Requests, PyCryptodome.
 
