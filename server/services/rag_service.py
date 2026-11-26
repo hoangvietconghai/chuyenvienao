@@ -906,11 +906,12 @@ def retrieve_hybrid_context(
     max_slots: int = 6
 ) -> Dict[str, Any]:
     """
-    Chiến lược truy xuất True Hybrid RAG:
-    - Bước 1: FTS5 BM25 weighted lọc Top 40 ứng viên.
-    - Bước 2: Reranking bằng RRF (Reciprocal Rank Fusion) kết hợp Gemini Vector Embedding.
+    Chiến lược truy xuất True Hybrid RAG (Dual-Retrieval + Deduplication + Sổ bộ bổ trợ):
+    - Bước 1: Truy xuất song song FTS5 BM25 Top 35 VÀ Vector Semantic Search Top 25 toàn kho.
+    - Bước 2: Hợp nhất ứng viên, chấm điểm RRF (Reciprocal Rank Fusion) và chống trùng theo số hiệu văn bản
+              (ưu tiên bản toàn văn .md thay vì bản tóm tắt Excel VB-DI-*).
     - Bước 3: Phân bổ Slot Thích ứng (Score-First) kết hợp Sàn Đa dạng (Diversity Floor).
-    - Bước 4: 1-Hop Citation Expansion kéo theo văn bản căn cứ liên kết.
+    - Bước 4: 1-Hop Citation Expansion + Bổ sung danh mục văn bản liên quan trong Sổ đăng ký (so_van_ban).
     """
     empty_resp = {
         "context_text": "",
@@ -921,46 +922,78 @@ def retrieve_hybrid_context(
     if not query.strip():
         return empty_resp
 
-    candidates = db_service.search_fts_bm25(query=query, limit=40)
-    if not candidates:
-        return empty_resp
+    bm25_candidates = db_service.search_fts_bm25(query=query, limit=35)
 
-    # BƯỚC 2: RERANKING BẰNG RRF (RECIPROCAL RANK FUSION) VỚI GEMINI VECTOR EMBEDDING
+    # BƯỚC 2: TRUE DUAL-RETRIEVAL & RRF (BM25 + VECTOR SEMANTIC SEARCH TOÀN KHO)
     from server.services import embedding_service
     query_emb_blob = embedding_service.get_embedding(query, timeout=6.0)
     query_vec = embedding_service.unpack_embedding(query_emb_blob) if query_emb_blob else []
 
-    bm25_ranks = {c["chunk_id"]: idx + 1 for idx, c in enumerate(candidates)}
-    vector_ranks = {}
+    vec_candidates = db_service.search_vector_candidates(query_vec, limit=25) if query_vec else []
 
-    if query_vec:
-        scored_vecs = []
-        for c in candidates:
-            c_blob = c.get("embedding")
-            c_vec = embedding_service.unpack_embedding(c_blob) if c_blob else []
-            sim = embedding_service.cosine_similarity(query_vec, c_vec) if c_vec else 0.0
-            scored_vecs.append((c["chunk_id"], sim))
+    if not bm25_candidates and not vec_candidates:
+        catalog_refs = db_service.search_catalog_references(query, limit=6)
+        if not catalog_refs:
+            return empty_resp
+        # Chỉ tìm thấy trong sổ bộ so_van_ban (chưa có chunk toàn văn)
+        cat_lines = [
+            "=== DANH MỤC VĂN BẢN LIÊN QUAN TRONG SỔ ĐĂNG KÝ (SO_VAN_BAN) ===",
+            "[LƯU Ý: Các văn bản dưới đây đã được ghi nhận ban hành trong sổ đăng ký nhưng chưa nạp toàn văn chunk:]"
+        ]
+        for idx, cr in enumerate(catalog_refs, 1):
+            cat_lines.append(f"{idx}. Số {cr.get('so_hieu_vb')} ngày {cr.get('ngay_ban_hanh')}: {cr.get('trich_yeu')}")
+        return {
+            "context_text": "\n".join(cat_lines),
+            "citations": [{"slot_index": i, "so_hieu": cr.get("so_hieu_vb", ""), "trich_yeu": cr.get("trich_yeu", ""), "tier": "SỔ ĐĂNG KÝ", "header": ""} for i, cr in enumerate(catalog_refs, 1)],
+            "total_slots": len(catalog_refs),
+            "slot_breakdown": {"core_directive": 0, "thematic_case": 0, "citation_linked": 0}
+        }
 
-        scored_vecs.sort(key=lambda x: x[1], reverse=True)
-        vector_ranks = {cid: idx + 1 for idx, (cid, sim) in enumerate(scored_vecs)}
+    # Gộp danh sách ứng viên theo chunk_id
+    merged_map: Dict[Any, Dict[str, Any]] = {}
+    bm25_ranks: Dict[Any, int] = {}
+    vector_ranks: Dict[Any, int] = {}
 
+    for idx, c in enumerate(bm25_candidates, 1):
+        cid = c["chunk_id"]
+        bm25_ranks[cid] = idx
+        merged_map[cid] = c
+
+    for idx, c in enumerate(vec_candidates, 1):
+        cid = c["chunk_id"]
+        vector_ranks[cid] = idx
+        if cid not in merged_map:
+            merged_map[cid] = c
+
+    candidates = list(merged_map.values())
     for c in candidates:
         cid = c["chunk_id"]
         r_bm25 = bm25_ranks.get(cid, 60)
-        r_vec = vector_ranks.get(cid, 60) if vector_ranks else r_bm25
-        c["rrf_score"] = (1.0 / (60.0 + r_bm25)) + (1.0 / (60.0 + r_vec))
+        r_vec = vector_ranks.get(cid, 60) if query_vec else r_bm25
+        # Ưu tiên nhẹ bản toàn văn (.md) so với bản metadata Excel (VB-DI-*)
+        full_text_bonus = 0.005 if not str(c.get("doc_id", "")).startswith("VB-DI-") else 0.0
+        c["rrf_score"] = (1.0 / (60.0 + r_bm25)) + (1.0 / (60.0 + r_vec)) + full_text_bonus
 
     # Tái sắp xếp ứng viên theo RRF score giảm dần
     candidates.sort(key=lambda x: x.get("rrf_score", 0.0), reverse=True)
 
-    # BƯỚC 3: PHÂN BỔ SLOT THÍCH ỨNG THEO ĐIỂM (SCORE-FIRST) + SÀN ĐA DẠNG (DIVERSITY FLOOR)
+    # BƯỚC 3: PHÂN BỔ SLOT CHỐNG TRÙNG THEO SỐ HIỆU VĂN BẢN + SÀN ĐA DẠNG
     selected_slots: List[Dict[str, Any]] = []
     selected_doc_ids = set()
+    selected_so_hieus = set()
 
     for cand in candidates:
-        if cand["doc_id"] not in selected_doc_ids and len(selected_slots) < max_slots:
-            selected_slots.append(cand)
-            selected_doc_ids.add(cand["doc_id"])
+        so_key = (cand.get("so_hieu_vb") or "").strip().upper()
+        if cand["doc_id"] in selected_doc_ids:
+            continue
+        if so_key and so_key in selected_so_hieus:
+            continue
+        selected_slots.append(cand)
+        selected_doc_ids.add(cand["doc_id"])
+        if so_key:
+            selected_so_hieus.add(so_key)
+        if len(selected_slots) >= max_slots:
+            break
 
     # Diversity Floor: Nếu không có văn bản CORE_DIRECTIVE nào trong các slot đã chọn,
     # nhưng có ứng viên CORE_DIRECTIVE trong top candidates với điểm tương đối tốt (>= 30% top score),
@@ -969,12 +1002,20 @@ def retrieve_hybrid_context(
     if not has_core and len(selected_slots) >= 2:
         top_score = selected_slots[0].get("rrf_score", 0.0)
         best_core = next(
-            (c for c in candidates if c.get("nhom_vong_doi") == "CORE_DIRECTIVE" and c["doc_id"] not in selected_doc_ids),
+            (
+                c for c in candidates
+                if c.get("nhom_vong_doi") == "CORE_DIRECTIVE"
+                and c["doc_id"] not in selected_doc_ids
+                and ((c.get("so_hieu_vb") or "").strip().upper() not in selected_so_hieus)
+            ),
             None
         )
         if best_core and best_core.get("rrf_score", 0.0) >= top_score * 0.3:
             selected_slots[-1] = best_core
             selected_doc_ids.add(best_core["doc_id"])
+            so_bc = (best_core.get("so_hieu_vb") or "").strip().upper()
+            if so_bc:
+                selected_so_hieus.add(so_bc)
 
     # Kéo theo từ Đồ thị Căn cứ (1-Hop Citation Expansion) nếu còn chỗ
     citation_limit = 1 if max_slots >= 4 else 0
@@ -1033,6 +1074,19 @@ def retrieve_hybrid_context(
             "tier": tier_label,
             "header": header
         })
+
+    # Bổ sung danh mục văn bản liên quan trong Sổ đăng ký (chưa có trong các slot đã trích)
+    try:
+        catalog_extra = [
+            cr for cr in db_service.search_catalog_references(query, limit=6)
+            if (cr.get("so_hieu_vb") or "").strip().upper() not in selected_so_hieus
+        ][:4]
+        if catalog_extra:
+            context_lines.append("\n=== VĂN BẢN LIÊN QUAN KHÁC TRONG SỔ ĐĂNG KÝ (CHƯA NẠP TOÀN VĂN) ===")
+            for cr in catalog_extra:
+                context_lines.append(f"- Số {cr.get('so_hieu_vb')} ngày {cr.get('ngay_ban_hanh')}: {cr.get('trich_yeu')}")
+    except Exception:
+        pass
 
     return {
         "context_text": "\n".join(context_lines),

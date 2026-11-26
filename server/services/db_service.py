@@ -857,10 +857,124 @@ def search_fts_bm25(query: str, limit: int = 30) -> List[Dict[str, Any]]:
             return [dict(row) for row in cursor.fetchall()]
 
 
+def _strip_vn_accents(text: str) -> str:
+    """Chuyển chuỗi tiếng Việt có dấu sang không dấu để hỗ trợ tìm kiếm linh hoạt."""
+    import unicodedata
+    if not text:
+        return ""
+    text = text.replace("đ", "d").replace("Đ", "D")
+    nfkd = unicodedata.normalize("NFKD", text)
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+
+def search_vector_candidates(query_vec: List[float], limit: int = 25) -> List[Dict[str, Any]]:
+    """
+    Tìm kiếm ngữ nghĩa trực tiếp trên toàn bộ các chunk đã có Vector Embedding.
+    Giúp bắt được các câu hỏi dùng từ đồng nghĩa hoặc diễn đạt tự nhiên mà FTS5 bỏ sót.
+    """
+    if not query_vec:
+        return []
+    from server.services import embedding_service
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT
+            c.chunk_id,
+            c.doc_id,
+            vb.so_hieu_vb,
+            vb.trich_yeu,
+            c.section_path,
+            c.chunk_text,
+            0.0 AS bm25_rank,
+            c.context_header,
+            c.sub_doc_owner,
+            c.chunk_type,
+            c.embedding,
+            vb.nhom_vong_doi,
+            vb.trang_thai_hieu_luc,
+            vb.ngay_ban_hanh,
+            vb.trong_so_tham_quyen
+        FROM van_ban_chunks c
+        JOIN so_van_ban vb ON c.doc_id = vb.doc_id
+        WHERE c.embedding IS NOT NULL
+          AND vb.trang_thai_hieu_luc NOT IN ('BI_THAY_THE', 'HET_HIEU_LUC', 'BI_BAI_BO');
+        """)
+        scored: List[Tuple[float, Dict[str, Any]]] = []
+        for row in cursor.fetchall():
+            d = dict(row)
+            c_vec = embedding_service.unpack_embedding(d.get("embedding"))
+            if not c_vec:
+                continue
+            sim = embedding_service.cosine_similarity(query_vec, c_vec)
+            if sim > 0.25:
+                d["vector_score"] = sim
+                scored.append((sim, d))
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [item[1] for item in scored[:limit]]
+
+
+def search_catalog_references(query: str, limit: int = 8) -> List[Dict[str, Any]]:
+    """
+    Tra cứu bổ trợ trực tiếp trên Sổ đăng ký văn bản (`so_van_ban`) theo trích yếu và số hiệu
+    (hỗ trợ cả không dấu tiếng Việt) để không bỏ sót các Công văn/Báo cáo chưa cắt chunk.
+    """
+    if not query or not query.strip():
+        return []
+
+    stopwords = {
+        "của", "và", "các", "những", "này", "đó", "cho", "về", "trong",
+        "được", "có", "là", "ai", "gì", "nào", "theo", "đối", "với",
+        "từ", "đến", "tại", "khi", "đã", "sẽ", "cần", "phải", "nên",
+        "như", "thì", "vào", "bị", "do", "lại", "hay", "hoặc", "mà", "nếu",
+        "tôi", "biết", "xin", "hãy", "vui", "lòng", "đồng", "chí",
+        "đảng", "uỷ", "ủy", "xã", "công", "hải", "tỉnh", "khánh", "hoà", "hòa",
+        "văn", "bản", "ban", "hành", "số", "ngày", "tháng", "năm", "hiện",
+        "cua", "va", "cac", "nhung", "nay", "do", "cho", "ve", "trong",
+        "duoc", "co", "la", "nao", "dang", "uy", "xa", "cong", "hai", "van", "ban", "hanh"
+    }
+    raw_tokens = [re.sub(r'[^A-Za-z0-9À-Ỹà-ỹ\-\/\.]', '', w) for w in query.split()]
+    tokens = []
+    for w in raw_tokens:
+        wn = _strip_vn_accents(w).lower()
+        if len(wn) >= 2 and wn not in stopwords and w.lower() not in stopwords:
+            tokens.append(wn)
+    if not tokens:
+        return []
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT doc_id, so_hieu_vb, the_loai_vb, ngay_ban_hanh, trich_yeu, nguoi_ky, nhom_vong_doi, trang_thai_hieu_luc
+        FROM so_van_ban
+        WHERE trang_thai_hieu_luc NOT IN ('BI_THAY_THE', 'HET_HIEU_LUC', 'BI_BAI_BO')
+        ORDER BY ngay_ban_hanh DESC;
+        """)
+        scored: List[Tuple[int, Dict[str, Any]]] = []
+        seen_so = set()
+        for row in cursor.fetchall():
+            d = dict(row)
+            so_key = (d.get("so_hieu_vb") or "").strip().upper()
+            if not so_key or so_key in seen_so:
+                continue
+            haystack = _strip_vn_accents(f"{so_key} {d.get('trich_yeu') or ''}").lower()
+            hits = sum(1 for t in set(tokens) if t in haystack)
+            # Ưu tiên khớp số hiệu hoặc khớp >= 2 từ khoá đặc thù
+            code_hits = sum(1 for t in set(tokens) if (any(ch.isdigit() for ch in t) or "-" in t) and t in haystack)
+            score = hits + code_hits * 3
+            if hits >= 2 or code_hits >= 1:
+                seen_so.add(so_key)
+                scored.append((score, d))
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [item[1] for item in scored[:limit]]
+
+
 def lookup_by_so_hieu_patterns(patterns: List[str], limit: int = 4) -> List[Dict[str, Any]]:
     """
     Tra cứu đích danh văn bản theo danh sách mẫu LIKE của số hiệu (ví dụ: '11-NQ%', '%11-NQ%').
-    Trả về danh sách đầy đủ thông tin văn bản kèm chunk_text, context_header, embedding.
+    Luôn ưu tiên bản toàn văn (.md) trước bản tóm tắt Excel Master (VB-DI-*) và chống trùng số hiệu.
     """
     if not patterns:
         return []
@@ -893,12 +1007,30 @@ def lookup_by_so_hieu_patterns(patterns: List[str], limit: int = 4) -> List[Dict
         JOIN van_ban_chunks c ON vb.doc_id = c.doc_id
         WHERE ({where_sql})
           AND vb.trang_thai_hieu_luc NOT IN ('BI_THAY_THE', 'HET_HIEU_LUC', 'BI_BAI_BO')
-        ORDER BY vb.trong_so_tham_quyen DESC, vb.ngay_ban_hanh DESC
+        ORDER BY
+            CASE WHEN vb.doc_id NOT LIKE 'VB-DI-%' THEN 1 ELSE 0 END DESC,
+            length(c.chunk_text) DESC,
+            vb.trong_so_tham_quyen DESC,
+            vb.ngay_ban_hanh DESC
         LIMIT ?;
         """
-        params = list(patterns) + [limit]
+        params = list(patterns) + [limit * 3]
         cursor.execute(sql, params)
-        return [dict(row) for row in cursor.fetchall()]
+        rows = [dict(row) for row in cursor.fetchall()]
+
+        # Chống trùng lặp giữa bản .md và bản VB-DI-* cùng số hiệu
+        deduped: List[Dict[str, Any]] = []
+        seen_so = set()
+        for r in rows:
+            so_key = (r.get("so_hieu_vb") or "").strip().upper()
+            if so_key and so_key in seen_so:
+                continue
+            if so_key:
+                seen_so.add(so_key)
+            deduped.append(r)
+            if len(deduped) >= limit:
+                break
+        return deduped
 
 
 

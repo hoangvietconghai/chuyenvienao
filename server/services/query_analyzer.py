@@ -48,11 +48,11 @@ ANAPHORA_MARKERS = [
 
 # Từ khoá nhận diện câu hỏi thống kê / đếm số lượng
 STATS_PATTERNS = [
-    r'có\s+bao\s+nhiêu\s+(văn\s+bản|nghị\s+quyết|kế\s+hoạch|báo\s+cáo|quyết\s+định|công\s+văn)',
-    r'thống\s+kê\s+(các|toàn\s+bộ|số\s+lượng)?\s*(văn\s+bản|nghị\s+quyết|kế\s+hoạch|báo\s+cáo)',
-    r'đếm\s+số\s+lượng\s+(văn\s+bản|nghị\s+quyết|kế\s+hoạch)',
+    r'có\s+bao\s+nhiêu\s+(?:tệp\s+|file\s+)?(văn\s+bản|nghị\s+quyết|kế\s+hoạch|báo\s+cáo|quyết\s+định|công\s+văn)',
+    r'thống\s+kê\s+(?:các|toàn\s+bộ|tổng\s+số|số\s+lượng|tổng\s+số\s+lượng)?\s*(văn\s+bản|nghị\s+quyết|kế\s+hoạch|báo\s+cáo|quyết\s+định|công\s+văn)',
+    r'đếm\s+số\s+lượng\s+(văn\s+bản|nghị\s+quyết|kế\s+hoạch|báo\s+cáo)',
     r'danh\s+sách\s+(tất\s+cả\s+|toàn\s+bộ\s+)?(nghị\s+quyết|kế\s+hoạch|văn\s+bản)',
-    r'tổng\s+số\s+(văn\s+bản|nghị\s+quyết|kế\s+hoạch)'
+    r'tổng\s+số\s+(?:lượng\s+)?(văn\s+bản|nghị\s+quyết|kế\s+hoạch|báo\s+cáo)'
 ]
 
 
@@ -77,9 +77,8 @@ NAMED_DOCUMENT_ALIASES = [
     },
     {
         "patterns": [
-            r'nghị\s*quyết\s*(?:về\s*)?(?:chuyển\s*đổi\s*số|cđs)',
-            r'nq\s*(?:về\s*)?(?:chuyển\s*đổi\s*số|cđs)',
-            r'nghị\s*quyết\s*57\s*(?:của\s*xã|xã|đảng\s*uỷ)',
+            r'(?:nghị\s*quyết|nq)\b.{0,30}?(?:chuyển\s*đổi\s*số|cđs)',
+            r'nghị\s*quyết\s*57\s*(?:của\s*xã|xã|đảng\s*uỷ|đảng\s*ủy)',
         ],
         "the_loai": "NQ",
         "so": "02",
@@ -89,8 +88,8 @@ NAMED_DOCUMENT_ALIASES = [
     },
     {
         "patterns": [
-            r'nghị\s*quyết\s*(?:nhiệm\s*vụ|phương\s*hướng)?\s*năm\s*2026',
-            r'nq\s*(?:nhiệm\s*vụ|phương\s*hướng)?\s*năm\s*2026',
+            r'(?:nghị\s*quyết|nq)\b.{0,50}?(?:nhiệm\s*vụ|phương\s*hướng|kinh\s*tế\s*xã\s*hội).{0,15}năm\s*2026',
+            r'(?:nghị\s*quyết|nq)\s*(?:nhiệm\s*vụ|phương\s*hướng)?\s*năm\s*2026',
         ],
         "the_loai": "NQ",
         "so": "05",
@@ -100,14 +99,13 @@ NAMED_DOCUMENT_ALIASES = [
     },
     {
         "patterns": [
-            r'kế\s*hoạch\s*(?:về\s*)?(?:chuẩn\s*hoá|rà\s*soát|làm\s*sạch)\s*dữ\s*liệu\s*(?:đảng\s*viên|đv)',
-            r'kh\s*(?:về\s*)?(?:chuẩn\s*hoá|rà\s*soát|làm\s*sạch)\s*dữ\s*liệu\s*(?:đảng\s*viên|đv)',
+            r'(?:kế\s*hoạch|kh)\b.{0,30}?(?:chuẩn\s*hoá|chuẩn\s*hóa|rà\s*soát|làm\s*sạch).{0,25}?dữ\s*liệu\s*(?:đảng\s*viên|đv)',
         ],
         "the_loai": "KH",
-        "so": "144",
+        "so": "69",
         "co_quan": "ĐU",
-        "canonical": "144-KH/ĐU",
-        "search_patterns": ["144-KH/ĐU%", "%144-KH/ĐU%"]
+        "canonical": "69-KH/ĐU",
+        "search_patterns": ["69-KH/ĐU%", "%69-KH/ĐU%", "144-KH/ĐU%", "%144-KH/ĐU%"]
     },
 ]
 
@@ -201,9 +199,9 @@ def extract_entities(query: str) -> List[Dict[str, Any]]:
                 "search_patterns": patterns
             })
 
-    # Mẫu 3: Dạng tên tiếng Việt: e.g. "Nghị quyết số 11", "Kế hoạch 69", "Báo cáo số 42"
+    # Mẫu 3: Dạng tên tiếng Việt (cả có dấu và không dấu): e.g. "Nghị quyết số 11", "nghi quyet 08"
     pat3 = re.compile(
-        r'(nghị\s*quyết|kế\s*hoạch|báo\s*cáo|quyết\s*định|công\s*văn|thông\s*báo|kết\s*luận|chỉ\s*thị|tờ\s*trình|chương\s*trình|hướng\s*dẫn|quy\s*định|quy\s*chế)\s*(?:số\s*)?(\d+)',
+        r'(nghị\s*quyết|nghi\s*quyet|kế\s*hoạch|ke\s*hoach|báo\s*cáo|bao\s*cao|quyết\s*định|quyet\s*dinh|công\s*văn|cong\s*van|thông\s*báo|thong\s*bao|kết\s*luận|ket\s*luan|chỉ\s*thị|chi\s*thi|tờ\s*trình|to\s*trinh|chương\s*trình|chuong\s*trinh|hướng\s*dẫn|huong\s*dan|quy\s*định|quy\s*dinh|quy\s*chế|quy\s*che)\s*(?:số\s*|so\s*)?(\d+)\b',
         re.IGNORECASE
     )
     for m in pat3.finditer(query):
@@ -305,6 +303,8 @@ def is_implementation_lookup_query(query: str, entities: List[Dict[str, Any]]) -
         "văn bản nào thực hiện", "văn bản nào triển khai", "văn bản lãnh đạo",
         "đã có văn bản nào", "cụ thể hoá", "cụ thể hóa",
         "triển khai thực hiện", "quán triệt, tuyên truyền",
+        "ban hanh van ban nao", "da ban van ban", "van ban nao thuc hien",
+        "trien khai thuc hien", "quan triet", "tuyen truyen",
     ]
     if any(m in q_lower for m in lookup_markers):
         return True
