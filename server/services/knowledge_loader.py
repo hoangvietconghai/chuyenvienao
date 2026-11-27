@@ -62,22 +62,24 @@ def get_local_knowledge_summary() -> str:
         return _LOCAL_KNOWLEDGE_CACHE
 
     _LOCAL_KNOWLEDGE_CACHE = """=== TRI THỨC & SỐ LIỆU ĐỊA PHƯƠNG CHÍNH THỐNG XÃ CÔNG HẢI ===
-- Diện tích tự nhiên: 124,19 km² (12.419,00 ha). Chiều dài bờ biển: 4,7 km (vịnh Bình Tiên, Bãi Thùng, Bãi Nước Ngọt, Bãi Chuối).
-- Dân số: Hơn 13.000 người; gồm đồng bào Kinh, Raglai (tập trung tại Phước Chiến, Động Thông, Kà Rôm).
+(Cập nhật theo references/tong_quan_xa_cong_hai.md ngày 14/10/2026)
+- Diện tích tự nhiên: 124,19 km² (12.419,00 ha); tỷ lệ che phủ rừng đạt 69,17% (hơn 8.590 ha). Chiều dài bờ biển: 4,7 km (vịnh Bình Tiên, Bãi Thùng, Bãi Nước Ngọt, Bãi Chuối).
+- Dân số & Dân tộc: Dân số thường trú 14.972 người (tổng quy mô kể cả tạm trú: 15.110 người); gồm đồng bào dân tộc thiểu số chiếm 78,5% (chủ yếu dân tộc Raglai, tập trung tại các thôn Phước Chiến, Động Thông, Ma Trai) và người Kinh chiếm 21,5%. Cơ sở tôn giáo: Chùa Long Cát (thôn Hiệp Kiết) và Nhà thờ Tin lành Báp Tít Hy Vọng (thôn Kà Rôm).
+- Tổ chức Đảng & Bộ máy: Từ 30/9/2026 có 23 chi bộ trực thuộc Đảng uỷ xã (không còn 02 Đảng bộ bộ phận), tổng 382 đảng viên; 08 thôn mới (Bình Tiên, Ma Trai, Suối Vang, Phước Chiến, Động Thông, Hiệp Kiết, Kà Rôm, Suối Giếng); biên chế 72 cán bộ, công chức (Khối Đảng-MTTQ: 31, Chính quyền: 41).
 - Thủy văn & Công trình trọng điểm: Hồ chứa nước Sông Trâu (800 ha mặt nước, tưới 3.000 ha, an ninh nguồn nước toàn xã); Hồ Ma Trai, Hồ Ba Chi.
 - MỤC TIÊU ĐẠI HỘI ĐẢNG BỘ XÃ LẦN THỨ I (NHIỆM KỲ 2025 - 2030):
-  + Tốc độ tăng trưởng giá trị sản xuất: 11 - 12%/năm.
+  + Tốc độ tăng trưởng tổng giá trị sản phẩm: 11 - 12%/năm.
   + Thu ngân sách nhà nước trên địa bàn: tăng bình quân 12%/năm.
   + Xây dựng Nông thôn mới: Đạt chuẩn "Xã Nông thôn mới nâng cao".
   + Giảm nghèo: Đến năm 2030 KHÔNG CÒN HỘ NGHÈO (tuyệt đối không đặt nghi vấn chỉ tiêu này).
-  + Biên chế cán bộ, công chức toàn xã: 72 cán bộ.
+  + Cơ cấu kinh tế đến 2030: Công nghiệp - xây dựng - dịch vụ chiếm 77 - 78%.
 - TRỤ CỘT KINH TẾ:
-  1. Du lịch sinh thái, nghỉ dưỡng cao cấp ven biển (Bình Tiên, Bãi Thùng) và du lịch văn hoá bản địa Raglai.
-  2. Năng lượng tái tạo (điện gió, điện mặt trời) nhờ lợi thế eo hút gió tự nhiên.
+  1. Du lịch sinh thái, nghỉ dưỡng cao cấp ven biển (Bình Tiên, Bãi Thùng - 439 ha) và du lịch văn hoá bản địa Raglai.
+  2. Năng lượng tái tạo (tổ hợp quy hoạch 758 MW: 108 MW đang vận hành, 650 MW quy hoạch mới).
   3. Khai thác, chế biến khoáng sản đá xây dựng chất lượng cao (núi Giác Lan, Cô Lô, Tây Kà Rôm).
   4. Nông nghiệp ứng dụng công nghệ cao thích ứng biến đổi khí hậu (cây ăn quả chịu hạn: điều, xoài, mít, mãng cầu).
 - CHUYỂN ĐỔI SỐ & ĐỀ ÁN 06 (BAN CHỈ ĐẠO 57):
-  + Bộ phận Một cửa / Trung tâm Phục vụ Hành chính công xã đặt tại Nhà Văn hoá thôn Ba Hồ cũ (Kà Rôm).
+  + Trung tâm Phục vụ Hành chính công xã đặt tại Nhà Văn hoá thôn Ba Hồ (cũ) thuộc thôn Kà Rôm.
   + Triển khai 100% dịch vụ công trực tuyến toàn trình, làm sạch và chuẩn hoá dữ liệu đảng viên và dân cư.
 """
     return _LOCAL_KNOWLEDGE_CACHE

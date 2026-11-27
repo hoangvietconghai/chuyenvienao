@@ -237,8 +237,8 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 
 <!-- AUTO_GENERATED_SYMBOLS_START -->
 
-> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 26/11/2026 23:38:03*
-> *Quy mô: **59** tệp Python | **16,626** dòng mã | **54** API Endpoints*
+> *Tự động cập nhật bởi `scripts/generate_code_map.py` lúc: 27/11/2026 08:58:54*
+> *Quy mô: **59** tệp Python | **16,628** dòng mã | **54** API Endpoints*
 
 ### Danh mục API Endpoints (FastAPI Routes)
 
@@ -330,7 +330,7 @@ Khi bất kỳ AI hoặc lập trình viên nào chỉnh sửa mã nguồn, **B�
 | [`server/services/db_service.py`](server/services/db_service.py) | 1,702 | 48 Funcs | server/services/db_service.py |
 | [`server/services/embedding_service.py`](server/services/embedding_service.py) | 141 | 5 Funcs | server/services/embedding_service.py |
 | [`server/services/gdrive_service.py`](server/services/gdrive_service.py) | 210 | 4 Funcs | server/services/gdrive_service.py |
-| [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 148 | 4 Funcs | server/services/knowledge_loader.py |
+| [`server/services/knowledge_loader.py`](server/services/knowledge_loader.py) | 150 | 4 Funcs | server/services/knowledge_loader.py |
 | [`server/services/query_analyzer.py`](server/services/query_analyzer.py) | 375 | 6 Funcs | server/services/query_analyzer.py |
 | [`server/services/rag_service.py`](server/services/rag_service.py) | 1,250 | 15 Funcs | server/services/rag_service.py |
 | [`server/services/scheduler_service.py`](server/services/scheduler_service.py) | 307 | 10 Funcs | server/services/scheduler_service.py |

@@ -47,10 +47,10 @@
   * Đã chỉ đạo tổ chức bầu cử Trưởng thôn nhiệm kỳ 2026 – 2031 thành công và UBND xã đã ban hành Quyết định công nhận **08/08 Trưởng thôn** trên địa bàn.
 * **Danh sách 08 thôn chính thức & Phương án sắp xếp:**
   1. **Thôn Bình Tiên** *(giữ nguyên — 6 đảng viên)*: Vùng ven biển, gắn với du lịch sinh thái nghỉ dưỡng cao cấp và nuôi trồng thủy sản lồng bè.
-  2. **Thôn Ma Trai** *(giữ nguyên — 10 đảng viên)*: Vùng miền núi phía Tây, gắn với lâm nghiệp sinh thái hồ Sông Trâu.
+  2. **Thôn Ma Trai** *(giữ nguyên — 10 đảng viên)*: Địa bàn truyền thống đồng bào Raglai, Vùng miền núi phía Tây, gắn với lâm nghiệp sinh thái hồ Sông Trâu.
   3. **Thôn Suối Vang** *(giữ nguyên — 8 đảng viên)*: Vùng trung tâm đồng bằng, sản xuất nông nghiệp công nghệ cao.
   4. **Thôn Phước Chiến** *(hợp nhất thôn Tập Lá [17 ĐV] và thôn Đầu Suối A [17 ĐV] — 34 đảng viên)*: Địa bàn truyền thống đồng bào Raglai, phát triển kinh tế lâm nghiệp và văn hóa bản địa.
-  5. **Thôn Động Thông** *(sáp nhập thôn Động Thông [29 ĐV] và thôn Đầu Suối B [12 ĐV] — 41 đảng viên)*: Vùng nông - lâm nghiệp và hỗ trợ năng lượng tái tạo phía Tây.
+  5. **Thôn Động Thông** *(sáp nhập thôn Động Thông [29 ĐV] và thôn Đầu Suối B [12 ĐV] — 41 đảng viên)*: Địa bàn truyền thống đồng bào Raglai, Vùng nông - lâm nghiệp và hỗ trợ năng lượng tái tạo phía Tây.
   6. **Thôn Hiệp Kiết** *(sáp nhập thôn Hiệp Kiết [16 ĐV] và thôn Xóm Đèn [5 ĐV] — 21 đảng viên)*: Vùng nông nghiệp, dịch vụ và du lịch văn hóa (Đình Hiệp Kiết).
   7. **Thôn Kà Rôm** *(sáp nhập thôn Kà Rôm [7 ĐV] và thôn Ba Hồ [5 ĐV] — 12 đảng viên)*: Khu vực hạt nhân trung tâm hành chính, thương mại, dịch vụ của xã mới.
   8. **Thôn Suối Giếng** *(sáp nhập thôn Suối Giếng [18 ĐV] và thôn Giác Lan [18 ĐV] — 36 đảng viên)*: Vùng nông nghiệp công nghệ cao, dịch vụ phụ trợ trung tâm xã.
